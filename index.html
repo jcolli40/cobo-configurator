@@ -50,10 +50,6 @@
   .panel { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   .p-head { padding: 16px 16px 12px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
   h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
-  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: #ebe7e0; padding: 3px; border-radius: 12px; }
-  .tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; border-radius: 9px; padding: 8px 6px; font-size: 14px; font-weight: 550; color: var(--muted); cursor: pointer; position: relative; }
-  .tabs button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-  .tabs .badge { min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; line-height: 18px; padding: 0 5px; }
   .p-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; display: grid; gap: 12px; align-content: start; }
   .tabpane { display: grid; gap: 12px; }
 
@@ -126,14 +122,19 @@
   .chipbtn.on { border-color: var(--accent); background: var(--tint); color: var(--accent); font-weight: 600; }
 
   /* Wilsonart call-out */
-  .wa { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #faf8f5); border-radius: 12px; padding: 14px 14px 13px 16px; cursor: pointer; }
+  /* arrow on the left, pointing left: the laminate panel slides out to the left */
+  .wa { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #faf8f5); border-radius: 12px; padding: 14px 14px 13px 12px; cursor: pointer; }
   .wa:hover { border-color: var(--accent); }
+  .wa:hover .go { transform: translateX(-3px); }
+  .wa .go svg { transition: transform .25s; }
+  .wa[aria-expanded="true"] .go svg { transform: rotate(180deg); }          /* panel open: arrow points back (close) */
+  .wa[aria-expanded="true"]:hover .go { transform: translateX(3px); }
   .wa.on { border-color: var(--accent); background: var(--tint); }
-  .wa img.logo { height: 26px; width: auto; display: block; }
-  .wa b { font-size: 15px; font-weight: 650; grid-column: 1; }
-  .wa small { font-size: 12.5px; color: var(--muted); grid-column: 1; }
-  .wa .go { grid-column: 2; grid-row: 1 / span 3; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; }
-  .wa .thumb { width: 34px; height: 34px; border-radius: var(--sw); object-fit: cover; grid-column: 2; grid-row: 1 / span 3; border: 1px solid rgba(0,0,0,.12); }
+  .wa img.logo { height: 26px; width: auto; display: block; grid-column: 2; }
+  .wa b { font-size: 15px; font-weight: 650; grid-column: 2; }
+  .wa small { font-size: 12.5px; color: var(--muted); grid-column: 2; }
+  .wa .go { grid-column: 1; grid-row: 1 / span 3; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; transition: transform .2s; }
+  .wa .thumb { width: 38px; height: 38px; border-radius: var(--sw); object-fit: cover; grid-column: 3; grid-row: 1 / span 3; border: 1px solid rgba(0,0,0,.12); }
 
   /* cap finish rows */
   #fastSw { display: grid; gap: 6px; }
@@ -163,42 +164,47 @@
   input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* order tab */
-  dl.spec { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
-  dl.spec dt { color: var(--muted); }
-  dl.spec dd { margin: 0; text-align: right; }
+  /* ---------- cart: the bottom panel (handle, cart lines, bar) ---------- */
+  .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(40,32,20,.08); display: flex; flex-direction: column; }
+  .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
+  .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d6d0c6; }
+  .grab .gtxt b { color: var(--accent); }
+  .grab .chev { position: absolute; right: 16px; top: 12px; transform: rotate(180deg); transition: transform .25s; }
+  .buysheet.open .grab .chev { transform: none; }
+  .sheet-body { overflow-y: auto; max-height: 0; transition: max-height .3s ease, padding .3s ease; padding: 0 14px; background: var(--panel); display: grid; gap: 10px; align-content: start; }
+  .buysheet.open .sheet-body { max-height: min(62vh, 600px); padding: 12px 14px 14px; }
+  .sheet-dim { display: none; }
   #note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
-  .cart ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .cart li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 13.5px; }
-  .cart li b { font-weight: 600; display: block; }
-  .cart li small { color: var(--muted); font-size: 12px; }
-  .cart li .q { color: var(--muted); }
-  .cart li .lp { font-weight: 600; }
-  .cart-foot { border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; }
-  .cart li { display: block; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
-  .cart li:last-child { border-bottom: 0; padding-bottom: 0; }
-  .ci-top { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; }
-  details.ci-d { margin-top: 6px; }
+  .cart { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .ci { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; }
+  .ci .th { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: var(--bg); grid-row: 1 / span 3; }
+  .ci .nm { font-weight: 600; align-self: center; }
+  .ci .lp { font-weight: 650; text-align: right; align-self: center; }
+  .ci .acts { display: flex; gap: 12px; align-items: center; }
+  .ci .acts .link { font-size: 12.5px; padding: 2px 0; }
+  .ci .rm { color: var(--muted); }
+  .ci .qty { grid-column: 3; grid-row: 2 / span 2; align-self: end; justify-self: end; }
+  .ci details { grid-column: 1 / -1; }
   details.ci-d summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
   details.ci-d summary::-webkit-details-marker { display: none; }
   details.ci-d summary .i { width: 14px; height: 14px; transition: transform .2s; }
   details.ci-d[open] summary .i { transform: rotate(180deg); }
-  details.ci-d dl.spec { margin-top: 8px; font-size: 12.5px; gap: 5px 12px; padding: 10px 12px; background: var(--panel); border-radius: 8px; }
-  .ci-edit { font-size: 12.5px; padding: 6px 0 0; }
-  /* bottom sheet parts: only used on phones */
-  .grab, .sheet-body:empty, .sheet-dim { display: none; }
-
-  /* buy bar (always visible at the bottom of the panel) */
-  .buybar { border-top: 1px solid var(--line); background: var(--card); padding: 12px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
-  #specTitle { font-size: 12.5px; color: var(--muted); }
-  #price { font-size: 22px; font-weight: 700; line-height: 1.15; }
-  #price.quote { font-size: 17px; white-space: nowrap; }
-  #price small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
-  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; height: 44px; }
-  .qty button { border: 0; background: none; width: 30px; height: 100%; font-size: 18px; cursor: pointer; color: var(--muted); }
-  .qty input { width: 34px; border: 0; background: none; text-align: center; font: inherit; font-size: 15px; -moz-appearance: textfield; }
-  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  #cta { white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; height: 44px; padding: 0 16px; font-weight: 650; font-size: 14.5px; cursor: pointer; }
+  dl.spec { display: grid; grid-template-columns: auto 1fr; margin: 8px 0 0; font-size: 12.5px; gap: 5px 12px; padding: 10px 12px; background: var(--panel); border-radius: 8px; }
+  dl.spec dt { color: var(--muted); }
+  dl.spec dd { margin: 0; text-align: right; }
+  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; height: 30px; }
+  .qty button { border: 0; background: none; width: 26px; height: 100%; font-size: 16px; cursor: pointer; color: var(--muted); }
+  .qty span { min-width: 22px; text-align: center; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .cart-foot { font-size: 13px; }
+  .editbar { font-size: 12.5px; color: var(--accent); background: var(--tint); padding: 6px 16px; }
+  .buybar { padding: 6px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .tot { border: 0; background: none; text-align: left; cursor: pointer; padding: 0; display: grid; line-height: 1.15; }
+  .tot small { font-size: 12px; color: var(--muted); }
+  .tot b { font-size: 22px; font-weight: 700; }
+  .ghost { border: 1.5px solid var(--accent); color: var(--accent); background: #fff; border-radius: 10px; height: 48px; padding: 0 14px; font-weight: 650; font-size: 14px; cursor: pointer; }
+  .ghost:hover { background: var(--tint); }
+  #cta { display: grid; place-items: center; line-height: 1.15; white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; height: 48px; padding: 0 16px; font-weight: 650; font-size: 14.5px; cursor: pointer; }
+  #cta small { font-size: 11.5px; font-weight: 500; opacity: .85; }
   #cta:hover { filter: brightness(1.12); }
 
   /* ---------- Wilsonart side panel (slides out to the left of the options panel) ---------- */
@@ -267,7 +273,7 @@
   .photo-result { position: absolute; inset: 0; background: rgba(0,0,0,.85); display: grid; place-items: center; align-content: center; gap: 16px; padding: 20px; }
   .photo-result img { max-width: 100%; max-height: 75vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
 
-  #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; max-width: 90vw; }
+  #toast { position: fixed; left: 50%; bottom: 100px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   @media (max-width: 860px) {
@@ -280,29 +286,18 @@
     .side { overflow-x: hidden; top: 46vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(40,32,20,.18); }   /* board stays visible above */
     .side-body { padding-left: 12px; padding-right: 12px; }
     .grid { gap: 8px; }
-    /* bottom sheet: buy bar always showing; slide up for board details + cart */
-    body { padding-bottom: 120px; }
-    .tabs { grid-template-columns: 1fr 1fr; }
-    .tabs [data-tab="order"] { display: none; }
-    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(40,32,20,.16); display: flex; flex-direction: column; max-height: 90vh; }
-    .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
-    .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d6d0c6; }
-    .grab .gtxt b { color: var(--accent); }
-    .grab .chev { position: absolute; right: 16px; top: 14px; transform: rotate(180deg); transition: transform .25s; }
-    .buysheet.open .grab .chev { transform: none; }
-    .buybar { border-top: 0; padding-top: 6px; }
-    .sheet-body { display: block; overflow-y: auto; max-height: 0; transition: max-height .3s ease; padding: 0 12px; background: var(--panel); }
-    .buysheet.open .sheet-body { max-height: 70vh; padding: 12px 12px 20px; }
-    .sheet-body .tabpane { display: grid !important; }
-    .sheet-body [data-sec="cart"] { order: -1; }                     /* cart first, board details under it */
-    .sheet-body .cart-foot { flex-direction: column; align-items: stretch; }
-    .sheet-body .cart-foot > span { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 6px; }
-    .sheet-body #cartCheckout { width: 100%; padding: 13px; font-size: 15px; }
+    /* phones: the cart panel is fixed to the bottom of the screen */
+    body { padding-bottom: 130px; }
+    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(40,32,20,.16); max-height: 90vh; }
+    .buysheet.open .sheet-body { max-height: 66vh; }
+    .buybar { padding: 6px 12px 12px; gap: 6px; }
+    .tot b { font-size: 19px; }
+    .ghost, #cta { height: 46px; padding: 0 12px; }
     .sheet-dim { display: block; position: fixed; inset: 0; background: rgba(20,16,10,.3); z-index: 11; }
     /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
     #stageWrap { display: flex; flex-direction: column; }
     #stage { position: relative; inset: auto; height: 50vh; }
-    .viewbar { position: static; align-self: flex-start; margin: 8px 0 10px 12px; max-width: calc(100% - 24px); }
+    .viewbar { position: static; order: -1; align-self: flex-start; margin: 10px 0 4px 12px; max-width: calc(100% - 24px); }   /* top of the screen, board below */
     .viewbar button { padding: 7px 12px; }
     .viewbar .ar-btn { gap: 5px; }
     .hint { display: none; }
@@ -332,6 +327,9 @@
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol>
   <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
 </svg>
 
@@ -350,14 +348,10 @@
   <div class="panel">
     <div class="p-head">
       <h1>Design your compliance board</h1>
-      <nav class="tabs" role="tablist" aria-label="Options">
-        <button role="tab" data-tab="board" class="on" aria-selected="true"><svg class="i"><use href="#i-board"/></svg>Board</button>
-        <button role="tab" data-tab="design" aria-selected="false"><svg class="i"><use href="#i-design"/></svg>Design</button>
-        <button role="tab" data-tab="order" aria-selected="false"><svg class="i"><use href="#i-bag"/></svg>Order<span class="badge" id="cartBadge" hidden></span></button>
-      </nav>
     </div>
 
     <div class="p-body">
+      <!-- All options in one panel, in three groups. Sections fold; clicking part of the board opens its section. -->
       <!-- ====== BOARD ====== -->
       <div class="tabpane" data-pane="board">
         <section class="sec" data-sec="size">
@@ -381,12 +375,18 @@
           <div class="sec-b">
             <div class="swgrid" id="faceSw"></div>
             <div class="opt"><span>Any other color <span class="lbl">(matched on request)</span></span><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom board color"></div>
-            <hr class="div">
-            <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel">
+          </div>
+        </section>
+
+        <section class="sec" data-sec="laminate">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-layers"/></svg><span class="sec-t">Custom laminate</span><span class="sec-v" data-v="laminate"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <!-- the arrow points left (panel opens to the left) and flips to point right while the panel is open -->
+            <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel" aria-expanded="false">
+              <span class="go"><svg class="i"><use href="#i-left"/></svg></span>
               <img class="logo" src="img/wilsonart-logo.png" alt="Wilsonart">
-              <b>Custom laminate</b>
-              <small id="lamBtnLabel">Browse Wilsonart designs: woodgrains, stones, solids and more</small>
-              <span class="go" id="lamGo"><svg class="i"><use href="#i-right"/></svg></span>
+              <b id="lamBtnTitle">Browse Wilsonart designs</b>
+              <small id="lamBtnLabel">Woodgrains, stones, solids and more</small>
               <img class="thumb" id="lamThumb" alt="" hidden>
             </button>
             <div class="rowsb" id="lamSelRow" hidden>
@@ -416,18 +416,18 @@
       </div>
 
       <!-- ====== DESIGN ====== -->
-      <div class="tabpane" data-pane="design" hidden>
+      <div class="tabpane" data-pane="design">
         <section class="sec" data-sec="bgimg">
-          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Board background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
-          <div class="sec-b">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Board background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
             <p class="help">Printed across the board face, behind your logo and certificates. Printed boards are made to order and quoted.</p>
             <div id="bgArt"></div>
           </div>
         </section>
 
         <section class="sec" data-sec="logo">
-          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-logo"/></svg><span class="sec-t">Logo</span><span class="sec-v" data-v="logo"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
-          <div class="sec-b">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-logo"/></svg><span class="sec-t">Logo</span><span class="sec-v" data-v="logo"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
             <p class="help">Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. Logo boards are made to order and quoted.</p>
             <div id="logoArt"></div>
           </div>
@@ -452,46 +452,26 @@
         </section>
       </div>
 
-      <!-- ====== ORDER ====== -->
-      <div class="tabpane" data-pane="order" hidden>
-        <section class="sec" data-sec="spec">
-          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-list"/></svg><span class="sec-t">Your board</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
-          <div class="sec-b">
-            <dl class="spec" id="specList"></dl>
-            <p id="note"></p>
-          </div>
-        </section>
-        <section class="sec cart" data-sec="cart">
-          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-bag"/></svg><span class="sec-t">Your cart</span><span class="sec-v" id="cartCount"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
-          <div class="sec-b">
-            <p class="help" id="cartEmpty">Nothing in your cart yet.</p>
-            <div id="cartBox" hidden>
-              <ul id="cartList"></ul>
-              <div class="rowsb cart-foot" style="margin-top:12px">
-                <strong id="cartTotal"></strong>
-                <span><button id="cartView" class="link" type="button">View cart</button> <button id="cartCheckout" class="primary" type="button">Checkout</button></span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
     </div>
 
-    <!-- Buy bar. On phones this is a bottom sheet: swipe/tap the handle up to see board details + cart (the Order tab moves in here). -->
+    <!-- Cart = the bottom panel (computers and phones). The bar always shows the cart total, Checkout and Add to cart;
+         tap or swipe the handle up to see each board in the cart. -->
     <div class="buysheet" id="buysheet">
-    <button class="grab" id="sheetGrab" type="button" aria-expanded="false" aria-controls="sheetBody">
-      <span class="bar"></span><span class="gtxt">Board details &amp; cart <b id="sheetCount"></b></span><svg class="i chev"><use href="#i-chev"/></svg>
-    </button>
-    <div class="buybar">
-      <div><div id="specTitle">—</div><div id="price">—</div></div>
-      <div class="qty" role="group" aria-label="Quantity">
-        <button type="button" data-q="-1" aria-label="One fewer">−</button>
-        <input id="qty" type="number" min="1" max="999" value="1" aria-label="Quantity">
-        <button type="button" data-q="1" aria-label="One more">+</button>
+      <button class="grab" id="sheetGrab" type="button" aria-expanded="false" aria-controls="sheetBody">
+        <span class="bar"></span><span class="gtxt">Your cart <b id="sheetCount"></b></span><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <div class="sheet-body" id="sheetBody">
+        <p class="help" id="cartEmpty">Nothing in your cart yet. Design a board and tap Add to cart.</p>
+        <ul id="cartList" class="cart"></ul>
+        <div class="rowsb cart-foot" id="cartFoot" hidden><span id="cartCount" class="lbl"></span><button id="cartView" class="link" type="button">View full cart</button></div>
+        <p class="help" id="note"></p>
       </div>
-      <button id="cta">Add to cart</button>
-    </div>
-    <div class="sheet-body" id="sheetBody"></div>
+      <div class="editbar" id="editBar" hidden>Editing a board in your cart · <button class="link" type="button" id="cancelEdit">Cancel</button></div>
+      <div class="buybar">
+        <button class="tot" id="cartTotBtn" type="button" aria-controls="sheetBody"><small>Cart total</small><b id="cartTotal">$0.00</b></button>
+        <button id="cartCheckout" class="ghost" type="button" hidden>Checkout</button>
+        <button id="cta" type="button"><span id="ctaLabel">Add to cart</span><small id="price"></small></button>
+      </div>
     </div>
   </div>
 </div>

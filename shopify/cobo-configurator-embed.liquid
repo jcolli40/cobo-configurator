@@ -44,6 +44,14 @@
 
     if (d.type === 'cobo:get-cart') { sendCart(false); return; }
 
+    if (d.type === 'cobo:qty') {                                 // − / + / Remove on a board in the viewer's cart
+      fetch('/cart/change.js', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: d.key, quantity: Math.max(0, parseInt(d.quantity, 10) || 0) })
+      }).then(function () { return sendCart(false); });
+      return;
+    }
+
     if (d.type === 'cobo:go') {                                  // "View cart" / "Checkout" buttons
       if (d.path === '/cart' || d.path === '/checkout') window.location.href = d.path;
       return;

@@ -541,9 +541,9 @@ function paintActive() {
   const L = state.lamSel;
   document.querySelectorAll('#faceSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.face && !L));
   $('#lamBtn').classList.toggle('on', !!L);
-  $('#lamBtnLabel').textContent = L ? `Selected: ${L.n}${L.name ? ' · ' + L.name : ''}` : 'Browse Wilsonart designs: woodgrains, stones, solids and more';
+  $('#lamBtnTitle').textContent = L ? `${L.n}${L.name ? ' · ' + L.name : ''}` : 'Browse Wilsonart designs';
+  $('#lamBtnLabel').textContent = L ? 'Selected · open to change' : 'Woodgrains, stones, solids and more';
   $('#lamThumb').hidden = !L?.thumb; if (L?.thumb) $('#lamThumb').src = L.thumb;
-  $('#lamGo').hidden = !!L?.thumb;
   $('#lamSelRow').hidden = !L;
   $('#grainWrap').hidden = !(L && L.full);
   document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
@@ -580,24 +580,14 @@ function renderSizes() {
     `<button class="tile custom" type="button" data-k="custom"><svg viewBox="0 0 60 60" aria-hidden="true"><rect class="bd" x="14" y="8" width="32" height="44" rx="1.5"/><path d="M30 23v14M23 30h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><b>Custom</b><small>up to ${CUSTOM.maxShort}×${CUSTOM.maxLong}</small></button>`;
 }
 
-// Tabs + collapsible sections
-function showTab(t) {
-  if (t === 'order' && phone.matches) { setSheet(true); return; }    // phones: the Order tab lives in the bottom sheet
-  document.querySelectorAll('.tabs [data-tab]').forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== t && !p.closest('#sheetBody'); });
-}
+// Collapsible sections (all in one panel)
 
-// Phones: the buy bar is a bottom sheet. Tap or swipe the handle up to see board details + cart; swipe down to close.
+// The cart is a bottom panel (computers and phones): tap or swipe the handle (or the cart total) up to see it; swipe down to close.
 const phone = matchMedia('(max-width: 860px)');
 function setSheet(open) {
   $('#buysheet').classList.toggle('open', open);
   $('#sheetGrab').setAttribute('aria-expanded', open);
   $('#sheetDim').hidden = !open || !phone.matches;
-}
-function placeOrderPane() {   // move the Order tab's content into the sheet on phones, back into the panel on computers
-  const pane = $('[data-pane="order"]');
-  if (phone.matches) { $('#sheetBody').appendChild(pane); pane.hidden = false; if ($('.tabs .on')?.dataset.tab === 'order') showTab('board'); }
-  else { $('.p-body').appendChild(pane); setSheet(false); pane.hidden = $('.tabs .on')?.dataset.tab !== 'order'; }
 }
 function wireSheet() {
   const g = $('#sheetGrab');
@@ -610,20 +600,18 @@ function wireSheet() {
     setSheet(Math.abs(dy) < 8 ? !open : dy < 0);     // tap toggles; swipe up opens, swipe down closes
   });
   $('#sheetDim').addEventListener('click', () => setSheet(false));
-  phone.addEventListener('change', placeOrderPane);
-  placeOrderPane();
+  $('#cartTotBtn').addEventListener('click', () => setSheet(!$('#buysheet').classList.contains('open')));
+  phone.addEventListener('change', () => setSheet(false));
 }
 function setSec(sec, open) {
   sec.querySelector('.sec-h').setAttribute('aria-expanded', open);
   sec.querySelector('.sec-b').hidden = !open;
 }
-// Clicking a part of the board: switch to its tab, open its section, fold the others (like Photoshop's auto-collapse)
+// Clicking a part of the board: open its section and fold the others (like Photoshop's auto-collapse)
 function openSection(name) {
-  const sec = document.querySelector(`.sec[data-sec="${name}"]`);
+  const sec = document.querySelector(`.p-body .sec[data-sec="${name}"]`);
   if (!sec) return;
-  const pane = sec.closest('[data-pane]');
-  showTab(pane.dataset.pane);
-  pane.querySelectorAll('.sec').forEach(s => setSec(s, s === sec));
+  document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
 }
@@ -663,13 +651,10 @@ function logoLine(lg) {
 function updateUI() {
   paintActive();
   const sp = currentSpec();
-  if (editing && sp.price) $('#specTitle').innerHTML = 'Editing a cart item · <button class="link" type="button" id="cancelEdit" style="font-size:12px;padding:0">Cancel</button>';
-  else $('#specTitle').textContent = `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" board${sp.quantity > 1 ? ` × ${sp.quantity}` : ''}`;
-  $('#price').innerHTML = sp.price
-    ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? `<small>$${sp.price.toFixed(2)} each</small>` : ''}`
-    : 'Custom quote';
-  $('#price').classList.toggle('quote', !sp.price);
-  $('#cta').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
+  // main button: what it does + this board's price (quantity is set per board in the cart)
+  $('#editBar').hidden = !(editing && sp.price);
+  $('#ctaLabel').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
+  $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';
   $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
     : (sp.logo || sp.background)
@@ -681,7 +666,8 @@ function updateUI() {
   const S0 = lastSheets;
   const v = {
     size: `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" · ${state.orient}`,
-    color: state.lamSel ? `Wilsonart ${state.lamSel.n}` : (state.face[0] === '#' ? 'Custom color' : state.face),
+    color: state.lamSel ? 'Custom laminate' : (state.face[0] === '#' ? 'Custom color' : state.face),
+    laminate: state.lamSel ? `Wilsonart ${state.lamSel.n}` : 'None',
     edge: edgeTxt, caps: sp.fastenerFinish,
     bgimg: sp.background ? sp.background.layout : 'None',
     logo: sp.logo ? sp.logo.file : 'None',
@@ -690,15 +676,6 @@ function updateUI() {
   };
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
 
-  // full spec on the Order tab
-  const rows = [
-    ['Size', `${fmt(sp.widthIn)}" W × ${fmt(sp.heightIn)}" H (${sp.size})`], ['Board', sp.boardColor], ['Edge banding', edgeTxt],
-    ['Caps & studs', sp.fastenerFinish], ['Background image', sp.background ? sp.background.file : 'None'],
-    ['Logo', sp.logo ? sp.logo.file : 'None'], ['8.5×11 certificates', `${sp.certificatesFit} fit`], ['Quantity', sp.quantity],
-    ['Price', sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote'],
-  ];
-  $('#specList').innerHTML = rows.map(([k, val]) => `<dt>${k}</dt><dd></dd>`).join('');
-  $('#specList').querySelectorAll('dd').forEach((dd, i) => { dd.textContent = rows[i][1]; });   // textContent: file names are user input
   // how many certificates fit
   const S = lastSheets;
   $('#sheetFit').textContent = !S
@@ -720,8 +697,7 @@ function build() {
     if (t) { state.sizeId = t.dataset.k; refresh(true); }
   });
 
-  // tabs + collapsible sections
-  document.querySelectorAll('.tabs [data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  // collapsible sections
   document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
@@ -741,9 +717,6 @@ function build() {
   wireArt('background', $('#bgArt'));
 
   // quantity
-  const setQty = (v) => { state.qty = Math.max(1, Math.min(999, Math.round(+v) || 1)); $('#qty').value = state.qty; updateUI(); };
-  $('#qty').addEventListener('change', (e) => setQty(e.target.value));
-  document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => setQty(state.qty + +b.dataset.q)));
   $('#cartView').addEventListener('click', () => goShopify('/cart'));
   $('#cartCheckout').addEventListener('click', () => goShopify('/checkout'));
 
@@ -1035,7 +1008,9 @@ function onCta() {
     return;
   }
   const ed = editing;
-  editing = null;
+  editing = null; state.qty = 1;
+  const id = JSON.stringify(sp.config), thumb = boardThumb();
+  if (thumb) { thumbs.set(id, thumb); saveThumbs(); }
   if (embedded) {
     // editing a cart line = remove the old line and add the new board in its place (done by the Shopify page)
     window.parent.postMessage(ed ? { type: 'cobo:update', key: ed.key, payload: sp } : { type: SHOPIFY.messageType, payload: sp }, '*');
@@ -1043,16 +1018,48 @@ function onCta() {
   } else {
     // standalone preview (not inside Shopify): keep a pretend cart so the panel can be designed and tested
     if (ed) localCart.splice(ed.key, 1);
-    const id = JSON.stringify(sp.config);
     const hit = localCart.find(it => JSON.stringify(it.cfg) === id);
-    if (hit) { hit.qty += sp.quantity; hit.line = hit.qty * sp.price; }
-    else localCart.push({ label: `${sp.size} board · ${sp.boardColor}`, rows: specRows(sp), qty: sp.quantity, line: sp.quantity * sp.price, cfg: sp.config });
-    localCart.forEach((it, i) => { it.key = i; });
-    renderCart({ items: localCart, total: localCart.reduce((s, it) => s + it.line, 0), demo: true });
-    if (phone.matches) setSheet(true);
-    toast(ed ? 'Cart updated' : sp.variantId ? `Added ${sp.quantity} to the preview cart` : 'Added to the preview cart (no Shopify variant ID mapped yet for this combination)');
+    if (hit) { hit.qty += sp.quantity; hit.line = hit.qty * hit.unit; }
+    else localCart.push({ label: `${sp.size} board · ${sp.boardColor}`, rows: specRows(sp), qty: sp.quantity, unit: sp.price, line: sp.quantity * sp.price, cfg: sp.config });
+    localCartChanged();
+    setSheet(true);
+    toast(ed ? 'Cart updated' : sp.variantId ? 'Added to the preview cart' : 'Added to the preview cart (no Shopify variant ID mapped yet for this combination)');
   }
   updateUI();
+}
+function localCartChanged() {
+  localCart.forEach((it, i) => { it.key = i; });
+  renderCart({ items: localCart, total: localCart.reduce((s, it) => s + it.line, 0), demo: true });
+}
+// per-board quantity in the cart (0 = remove)
+function setLineQty(i, q) {
+  const it = cartItems[i];
+  if (!it) return;
+  q = Math.max(0, Math.min(999, q));
+  if (embedded) { window.parent.postMessage({ type: 'cobo:qty', key: it.key, quantity: q }, '*'); return; }
+  if (q === 0) localCart.splice(i, 1);
+  else { it.qty = q; it.line = q * it.unit; }
+  localCartChanged();
+}
+
+// Cart thumbnails: a small picture of the board, taken from the 3D view when it's added (kept for this browser tab)
+const thumbs = new Map();
+try { for (const [k, v] of JSON.parse(sessionStorage.getItem('cobo.thumbs') || '[]')) thumbs.set(k, v); } catch { /* none */ }
+function saveThumbs() { try { sessionStorage.setItem('cobo.thumbs', JSON.stringify([...thumbs].slice(-30))); } catch { /* storage full/blocked */ } }
+function boardThumb() {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  if (!W || !H) return null;
+  const pos = camera.position.clone(), tgt = controls.target.clone();
+  const v = viewTarget('angle');
+  camera.position.copy(v.pos); camera.lookAt(v.tgt);
+  renderer.render(scene, camera);
+  const src = renderer.domElement, k = src.width / W, s = Math.min(src.height, (W - inset.now) * k) * 0.92;
+  const cx = (W - inset.now) * k / 2;                          // middle of the part of the view the side panel doesn't cover
+  const c = document.createElement('canvas'); c.width = c.height = 160;
+  c.getContext('2d').drawImage(src, cx - s / 2, (src.height - s) / 2, s, s, 0, 0, 160, 160);
+  camera.position.copy(pos); camera.lookAt(tgt);
+  dirty = true;
+  return c.toDataURL('image/jpeg', 0.82);
 }
 function specRows(sp) {
   return [['Size', `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}"`], ['Orientation', sp.orientation[0].toUpperCase() + sp.orientation.slice(1)],
@@ -1067,10 +1074,9 @@ function editCartItem(it) {
   for (const k of ['logo', 'background']) { state.art[k].img = null; state.art[k].name = ''; }   // cart boards have no printing
   document.querySelectorAll('.art [data-r="opts"]').forEach(o => { o.hidden = true; });
   document.querySelectorAll('.art [data-r="name"]').forEach(n => { n.textContent = 'No image yet'; });
-  $('#qty').value = it.qty;
-  editing = { key: it.key, label: it.label };
+  editing = { key: it.key, label: it.label };   // state.qty = the line's quantity, so updating keeps it
   setSheet(false);
-  showTab('board');
+  openSection('size');
   refresh(true);
   toast(`Editing: ${it.label}`);
 }
@@ -1084,32 +1090,36 @@ let cartItems = [];
 function renderCart(cart) {
   cartItems = cart.items;
   const count = cart.items.reduce((s, it) => s + it.qty, 0);
-  $('#cartBox').hidden = !count;
   $('#cartEmpty').hidden = !!count;
-  $('#cartBadge').hidden = !count; $('#cartBadge').textContent = count;
+  $('#cartFoot').hidden = !count;
+  $('#cartCheckout').hidden = !count;
   $('#sheetCount').textContent = count ? `(${count})` : '';
-  $('#cartCount').textContent = count ? `${count} item${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
-  if (!count) return;
+  $('#cartCount').textContent = count ? `${count} board${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
+  $('#cartTotal').textContent = `$${cart.total.toFixed(2)}`;               // the bar always shows the cart total
   const list = $('#cartList'); list.innerHTML = '';
   cart.items.forEach((it, i) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<div class="ci-top"><b></b><span class="q"></span><span class="lp"></span></div>
-      <details class="ci-d"><summary>Board details<svg class="i chev"><use href="#i-chev"/></svg></summary><dl class="spec"></dl></details>
-      ${it.cfg ? `<button class="link ci-edit" type="button" data-edit="${i}">Edit board</button>` : ''}`;
-    li.querySelector('b').textContent = it.label;
-    li.querySelector('.q').textContent = `× ${it.qty}`;
+    const li = document.createElement('li'); li.className = 'ci';
+    const th = (it.cfg && thumbs.get(JSON.stringify(it.cfg))) || it.image || '';
+    li.innerHTML = `${th ? '<img class="th" alt="">' : '<span class="th"></span>'}<span class="nm"></span><span class="lp"></span>
+      <span class="acts">${it.cfg ? `<button class="link" type="button" data-edit="${i}">Edit board</button>` : ''}<button class="link rm" type="button" data-rm="${i}">Remove</button></span>
+      <span class="qty" role="group" aria-label="Quantity"><button type="button" data-qd="-1" data-i="${i}" aria-label="One fewer">−</button><span></span><button type="button" data-qd="1" data-i="${i}" aria-label="One more">+</button></span>
+      <details class="ci-d"><summary>Board details<svg class="i chev"><use href="#i-chev"/></svg></summary><dl class="spec"></dl></details>`;
+    if (th) li.querySelector('img').src = th;
+    li.querySelector('.nm').textContent = it.label;
     li.querySelector('.lp').textContent = `$${it.line.toFixed(2)}`;
+    li.querySelector('.qty span').textContent = it.qty;
     const dl = li.querySelector('dl');
     for (const [k, v] of it.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
     li.querySelector('.ci-d').hidden = !it.rows.length;
     list.appendChild(li);
   });
-  $('#cartTotal').textContent = `Subtotal $${cart.total.toFixed(2)}`;
 }
-document.addEventListener('click', (e) => { if (e.target.id === 'cancelEdit') { editing = null; updateUI(); toast('Edit cancelled'); } });
+$('#cancelEdit').addEventListener('click', () => { editing = null; state.qty = 1; updateUI(); toast('Edit cancelled'); });
 $('#cartList').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-edit]');
-  if (b) editCartItem(cartItems[+b.dataset.edit]);
+  const ed = e.target.closest('[data-edit]'), rm = e.target.closest('[data-rm]'), q = e.target.closest('[data-qd]');
+  if (ed) editCartItem(cartItems[+ed.dataset.edit]);
+  if (rm) setLineQty(+rm.dataset.rm, 0);
+  if (q) setLineQty(+q.dataset.i, cartItems[+q.dataset.i].qty + +q.dataset.qd);
 });
 function goShopify(path) {
   if (embedded) window.parent.postMessage({ type: 'cobo:go', path }, '*');
@@ -1123,13 +1133,13 @@ window.addEventListener('message', (e) => {
       let cfg = null;
       try { cfg = it.properties?._cobo ? JSON.parse(it.properties._cobo) : null; } catch { /* not one of ours */ }
       return {
-        key: it.key, cfg, qty: it.quantity, line: (it.final_line_price ?? it.line_price) / 100,
+        key: it.key, cfg, qty: it.quantity, line: (it.final_line_price ?? it.line_price) / 100, image: it.image || '',
         label: it.product_title + (it.variant_title ? ` · ${it.variant_title}` : ''),
         rows: Object.entries(it.properties || {}).filter(([k, v]) => v && k[0] !== '_'),   // "_" properties are hidden data
       };
     });
     renderCart({ items, total: (d.cart.total_price || 0) / 100 });
-    if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); if (phone.matches) setSheet(true); }
+    if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); setSheet(true); }
   }
   if (d?.type === 'cobo:notice' && d.text) toast(String(d.text));
 });
