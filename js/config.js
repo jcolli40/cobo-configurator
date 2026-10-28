@@ -36,11 +36,32 @@ export const FASTENERS = [
   { id: 'black',  name: 'Gloss Black',      color: '#0b0b0c', metal: 0.65, rough: 0.12, brushed: false },
 ];
 
+// Viewer background (the wall behind the board in the 3D preview; not part of the product)
 export const WALLS = [
   { name: 'Warm White', hex: '#ebe7e0' },
   { name: 'Greige',     hex: '#b9b2a6' },
   { name: 'Charcoal',   hex: '#3a3c40' },
 ];
+
+// ---- Sample certificates shown under the acrylic (preview only) ----
+// The viewer fits as many as it can, keeping clear of the edges and the 4 caps.
+export const SHEETS = {
+  sizes: [[8.5, 11], [5, 7], [4, 6], [3, 5]],  // first = the real certificate size; the rest are fallbacks for boards too small for it
+  edgeMargin: 0.375,     // minimum space between a certificate and the board edge
+  gaps: [1, 0.75, 0.5],  // space between certificates to try, largest first
+  capClearance: 0.125,   // keep certificates this far from the edge of each 1" cap
+  titles: ['Certificate of Compliance', 'Business License', 'Certificate of Inspection', 'Certificate of Occupancy',
+           'Fire Safety Inspection', 'Health Permit', 'Elevator Certificate', 'Operating Permit'],
+};
+
+// ---- Uploaded artwork: logo (printed on the board face) and background image (viewer wall) ----
+// size = width of one copy of the image, in inches. gap = space between copies. offsetMax = range of the move sliders.
+export const ARTWORK = {
+  logo:       { layout: 'single', size: 6,  sizeMin: 0.5, sizeMax: 24,  gap: 1, gapMax: 12, offsetMax: 24 },
+  background: { layout: 'single', size: 96, sizeMin: 2,   sizeMax: 240, gap: 0, gapMax: 24, offsetMax: 120 },
+  maxUploadPx: 2048,   // uploads are shrunk to this many pixels on the long side
+  maxTexPx: 2048,      // largest texture made for one repeat of the pattern
+};
 
 // ---- Hardware dimensions (match the Fusion 360 master COBO-Board-Master) ----
 export const HW = {

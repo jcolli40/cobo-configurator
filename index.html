@@ -8,17 +8,17 @@
 { "imports": {
     "three": "./vendor/three.module.min.js",
     "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js",
-    "three/addons/environments/RoomEnvironment.js": "./vendor/RoomEnvironment.js"
+    "three/addons/environments/RoomEnvironment.js": "./vendor/RoomEnvironment.js",
+    "three/addons/exporters/GLTFExporter.js": "./vendor/GLTFExporter.js"
 } }
 </script>
 <style>
   :root {
-    --ink: #17191c; --muted: #6a6f76; --line: #e3e4e6; --panel: #ffffff; --bg: #f4f4f5;
+    /* warm white options panel (always light, even when the computer is in dark mode) */
+    --ink: #1f1d1a; --muted: #6f6a62; --line: #e4ddd2; --panel: #faf7f2; --bg: #f2eee7;
     --accent: #1b3a6b; --accent-ink: #ffffff; --radius: 10px;
+    color-scheme: light;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --ink:#eceef0; --muted:#9aa0a8; --line:#2d3136; --panel:#1b1e22; --bg:#121416; --accent:#6f9bec; --accent-ink:#0c1118; }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
@@ -109,9 +109,47 @@
   #specLine { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
   .buy { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
   #price { font-size: 24px; font-weight: 700; }
-  #cta { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 13px 22px; font: inherit; font-weight: 650; font-size: 15px; cursor: pointer; }
+  #cta { white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 13px 18px; font: inherit; font-weight: 650; font-size: 15px; cursor: pointer; }
   #cta:hover { filter: brightness(1.08); }
   #note { font-size: 11.5px; color: var(--muted); margin-top: 10px; line-height: 1.45; }
+  #price small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+  .help { font-size: 12px; color: var(--muted); line-height: 1.45; margin: -3px 0 10px; }
+  .sub { font-size: 12.5px; font-weight: 600; margin: 16px 0 8px; }
+  /* quantity */
+  .buy-r { display: flex; gap: 8px; align-items: center; }
+  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; height: 46px; }
+  .qty button { border: 0; background: none; color: var(--ink); width: 30px; height: 100%; font-size: 18px; cursor: pointer; }
+  .qty input { width: 40px; border: 0; background: none; text-align: center; font: inherit; font-size: 15px; color: var(--ink); -moz-appearance: textfield; }
+  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  /* cart preview */
+  .cart { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; padding: 12px 14px; }
+  .cart h2 { margin: 0; }
+  .cart ul { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
+  .cart li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 13px; }
+  .cart li b { font-weight: 600; display: block; }
+  .cart li small { color: var(--muted); font-size: 11.5px; }
+  .cart li .q { color: var(--muted); }
+  .cart li .lp { font-weight: 600; }
+  .cart-foot { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; }
+  /* artwork upload controls */
+  .upload { position: relative; display: inline-flex; align-items: center; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  .upload:hover { border-color: var(--accent); }
+  .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fname { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .art-opts { display: grid; gap: 10px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+  .fld { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  .fld > span { display: flex; justify-content: space-between; }
+  .fld output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fld select { font: inherit; font-size: 13px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  /* phone AR */
+  .ar-btn { position: absolute; right: 16px; top: 12px; display: inline-flex; gap: 7px; align-items: center; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 15px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+  .ar-panel { width: min(560px, 100%); height: min(680px, 100%); }
+  .ar-body { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0 18px 14px; }
+  #arViewer { flex: 1; width: 100%; min-height: 0; background: var(--bg); border-radius: var(--radius); margin-top: 14px; --poster-color: transparent; }
+  .ar-go { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 12px 20px; font-size: 15px; white-space: nowrap; }
+  #arMsg { margin: 10px 0 0; text-align: center; }
   label.chk { display: flex; gap: 8px; align-items: center; font-size: 13px; cursor: pointer; }
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 5; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -128,6 +166,7 @@
   <div id="stageWrap">
     <div id="stage"></div>
     <div class="hint">Drag to rotate · scroll to zoom</div>
+    <button id="arBtn" class="ar-btn" type="button" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></svg>View on your wall</button>
     <div class="viewbar" role="group" aria-label="Camera view">
       <button data-view="front">Front</button>
       <button data-view="angle" class="on">Angle</button>
@@ -167,7 +206,7 @@
     </section>
 
     <section>
-      <h2>Edge banding (1 mm PVC)</h2>
+      <h2>Edge banding</h2>
       <div class="sws" id="edgeSw"></div>
       <div class="row" style="margin-top:10px"><input type="color" id="edgeCustom" value="#555555" aria-label="Custom edge color"><span class="lbl">Custom edge color</span></div>
     </section>
@@ -178,16 +217,50 @@
     </section>
 
     <section>
-      <h2>Preview</h2>
-      <label class="chk"><input type="checkbox" id="sheets" checked> Show sample compliance sheet</label>
-      <div class="sws" id="wallSw" style="margin-top:10px"></div>
+      <h2>Logo on board</h2>
+      <p class="help">Optional. Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. Logo boards are made to order and quoted.</p>
+      <div id="logoArt"></div>
+    </section>
+
+    <section>
+      <h2>Sample certificates</h2>
+      <label class="chk"><input type="checkbox" id="sheets" checked> Show sample 8.5×11 certificates</label>
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="sheetTurn"> Rotate certificates 90°</label>
+      <p class="help" id="sheetFit" style="margin:8px 0 0"></p>
+    </section>
+
+    <section>
+      <h2>Viewer background (preview only)</h2>
+      <p class="help">Changes the wall behind the board in this 3D view, so you can see it in your space. It does not change the board you order.</p>
+      <div class="sws" id="wallSw"></div>
+      <div class="row" style="margin-top:10px"><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom background color"><span class="lbl">Any background color</span></div>
+      <div class="sub">Background image</div>
+      <div id="bgArt"></div>
     </section>
 
     <div class="spec">
       <div id="specTitle">—</div>
       <div id="specLine"></div>
-      <div class="buy"><div id="price">—</div><button id="cta">Add to cart</button></div>
+      <div class="buy">
+        <div id="price">—</div>
+        <div class="buy-r">
+          <div class="qty" role="group" aria-label="Quantity">
+            <button type="button" data-q="-1" aria-label="One fewer">−</button>
+            <input id="qty" type="number" min="1" max="999" value="1" aria-label="Quantity">
+            <button type="button" data-q="1" aria-label="One more">+</button>
+          </div>
+          <button id="cta">Add to cart</button>
+        </div>
+      </div>
       <div id="note"></div>
+      <div id="cartBox" class="cart" hidden>
+        <div class="rowsb"><h2>Your cart</h2><span id="cartCount" class="lbl"></span></div>
+        <ul id="cartList"></ul>
+        <div class="rowsb cart-foot">
+          <strong id="cartTotal"></strong>
+          <span><button id="cartView" class="link" type="button">View cart</button> <button id="cartCheckout" class="primary" type="button">Checkout</button></span>
+        </div>
+      </div>
     </div>
   </aside>
 </div>
@@ -215,6 +288,45 @@
     </div>
   </div>
 </div>
+<!-- Phone AR: Google's <model-viewer> (vendor/model-viewer.min.js, loaded on first use) opens Apple Quick Look on
+     iPhone/iPad and WebXR in Chrome on Android, with the board placed on a wall at real size. -->
+<div id="arModal" class="modal" hidden>
+  <div class="mpanel ar-panel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
+    <header class="mhead"><h2 id="arTitle" style="display:block">See it on your wall</h2><span style="flex:1"></span><button class="x" data-close aria-label="Close">×</button></header>
+    <div class="ar-body">
+      <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="fixed" camera-controls
+        shadow-intensity="1" alt="Your compliance board in 3D">
+        <button slot="ar-button" class="primary ar-go" type="button">Open camera &amp; place on wall</button>
+      </model-viewer>
+      <p class="help" id="arMsg">Preparing your board…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Upload + layout controls, used twice (logo and background image). Wired up in js/main.js (wireArt). -->
+<template id="artTpl">
+  <div class="art">
+    <div class="row">
+      <label class="upload"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" data-r="file" style="position:absolute;opacity:0;width:1px;height:1px"><span data-r="pick">Upload image…</span></label>
+      <span class="lbl fname" data-r="name"></span>
+      <button class="link" type="button" data-r="clear" hidden>Remove</button>
+    </div>
+    <div class="art-opts" data-r="opts" hidden>
+      <label class="fld"><span>Layout</span><select data-r="layout"></select></label>
+      <label class="fld"><span>Width of image <output data-r="sizeOut"></output></span><input type="range" data-r="size"></label>
+      <label class="fld" data-r="gapWrap"><span>Spacing between copies <output data-r="gapOut"></output></span><input type="range" data-r="gap"></label>
+      <div class="two">
+        <label class="fld"><span><span data-r="rotLbl">Rotation</span> <output data-r="rotOut"></output></span><input type="range" data-r="rot"></label>
+        <label class="fld"><span>Opacity <output data-r="opacityOut"></output></span><input type="range" data-r="opacity"></label>
+      </div>
+      <div class="two">
+        <label class="fld"><span>Move left / right <output data-r="offXOut"></output></span><input type="range" data-r="offX"></label>
+        <label class="fld"><span>Move down / up <output data-r="offYOut"></output></span><input type="range" data-r="offY"></label>
+      </div>
+      <div class="row"><button class="link" type="button" data-r="shuffle" hidden>Shuffle</button><button class="link" type="button" data-r="reset">Reset layout</button></div>
+    </div>
+  </div>
+</template>
 <div id="toast" role="status"></div>
 <script type="module" src="./js/main.js"></script>
 </body>
