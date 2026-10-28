@@ -61,7 +61,7 @@ function dims() {
 const stage = $('#stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
 renderer.setPixelRatio(new URLSearchParams(location.search).get('lowfx') ? 1 : Math.min(window.devicePixelRatio || 1, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.NeutralToneMapping;   // keeps board colors true to their hex values (ACES washed them out)
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -69,7 +69,10 @@ stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = envTex;
+scene.environmentIntensity = 0.35;   // studio-room reflections on laminate/paint; higher = hazier boards
+// Metals and acrylic get the room at their own strength (envMap + envMapIntensity) so they still shine.
 
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -78,13 +81,13 @@ controls.dampingFactor = 0.08;
 controls.minPolarAngle = 0.15;
 controls.maxPolarAngle = Math.PI - 0.15;
 
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
+const key = new THREE.DirectionalLight(0xffffff, 2.3);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
 key.shadow.bias = -0.0004;
 key.shadow.radius = 6;
 scene.add(key);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 0.35));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 0.5));
 const backFill = new THREE.DirectionalLight(0xffffff, 1.6);   // lights the back / z-clip when viewed from behind
 backFill.position.set(40, 60, -120);
 scene.add(backFill);
@@ -115,23 +118,23 @@ function fastenerMaterial() {
   const f = FASTENERS.find(x => x.id === state.fastener);
   const m = new THREE.MeshPhysicalMaterial({
     color: f.color, metalness: f.metal, roughness: f.rough,
-    roughnessMap: f.brushed ? brushedMap : null,
+    roughnessMap: f.brushed ? brushedMap : null, envMap: envTex, envMapIntensity: 1,
     clearcoat: f.brushed ? 0 : 1, clearcoatRoughness: 0.05,
   });
   return m;
 }
 
-// Clear acrylic: a faint, glossy transparent sheet (crisp poster underneath, no transmission blur)
+// Clear acrylic: nearly invisible glossy sheet. Raising opacity or envMapIntensity puts a white haze over the board.
 const acrylicMat = new THREE.MeshPhysicalMaterial({
-  color: 0xe6f6ff, metalness: 0, roughness: 0.04, transparent: true, opacity: 0.16, depthWrite: false,
-  clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, envMapIntensity: 1.6, side: THREE.FrontSide,
+  color: 0xffffff, metalness: 0, roughness: 0.04, transparent: true, opacity: 0.04, depthWrite: false,
+  clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, envMap: envTex, envMapIntensity: 0.5, side: THREE.FrontSide,
 });
 const laminate = (hex, rough = 0.55) => new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 });
 const bandMat = (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.4, metalness: 0 });
 const mdoMat = new THREE.MeshStandardMaterial({ color: '#a8845a', roughness: 0.85 });
 const backLamMat = new THREE.MeshStandardMaterial({ color: '#17171a', roughness: 0.38 });
-const alumMat = new THREE.MeshStandardMaterial({ color: '#c3c6cb', metalness: 1, roughness: 0.4, roughnessMap: brushedMap });
-const steelMat = new THREE.MeshStandardMaterial({ color: '#b9bcc2', metalness: 1, roughness: 0.35 });
+const alumMat = new THREE.MeshStandardMaterial({ color: '#c3c6cb', metalness: 1, roughness: 0.4, roughnessMap: brushedMap, envMap: envTex });
+const steelMat = new THREE.MeshStandardMaterial({ color: '#b9bcc2', metalness: 1, roughness: 0.35, envMap: envTex });
 
 /* ------------------------------------------------------------------ sample certificates */
 const certCache = new Map();
