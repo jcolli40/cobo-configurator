@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+
+# Local-only: Claude notes/config and preview screenshots
+CLAUDE.md
+.claude/
+preview-*.png
+
+# Old placeholder swatches (not in data/laminates.json)
+textures/**/DEMO-*.jpg

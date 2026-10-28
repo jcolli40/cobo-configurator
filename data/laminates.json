@@ -1,0 +1,162 @@
+{
+ "updated": "2026-10-28",
+ "count": 13,
+ "items": [
+  {
+   "n": "13096",
+   "name": "Candy Apple",
+   "type": "",
+   "color": "Red",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#d24845",
+   "thumb": "textures/thumb/13096.jpg",
+   "full": "textures/full/13096.jpg"
+  },
+  {
+   "n": "Y0745",
+   "name": "Ceramic Blue",
+   "type": "",
+   "color": "Blue",
+   "shade": "Dark",
+   "cut": "",
+   "match": "",
+   "avg": "#1a2945",
+   "thumb": "textures/thumb/Y0745.jpg",
+   "full": "textures/full/Y0745.jpg"
+  },
+  {
+   "n": "5085",
+   "name": "Cinder Strata",
+   "type": "",
+   "color": "Taupe",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#8f8577",
+   "thumb": "textures/thumb/5085.jpg",
+   "full": "textures/full/5085.jpg"
+  },
+  {
+   "n": "5081",
+   "name": "Greige Strata",
+   "type": "",
+   "color": "Beige",
+   "shade": "Light",
+   "cut": "",
+   "match": "",
+   "avg": "#b1a187",
+   "thumb": "textures/thumb/5081.jpg",
+   "full": "textures/full/5081.jpg"
+  },
+  {
+   "n": "5084",
+   "name": "Iron Strata",
+   "type": "",
+   "color": "Gray",
+   "shade": "Dark",
+   "cut": "",
+   "match": "",
+   "avg": "#62584c",
+   "thumb": "textures/thumb/5084.jpg",
+   "full": "textures/full/5084.jpg"
+  },
+  {
+   "n": "5075",
+   "name": "Ivory Terrene",
+   "type": "",
+   "color": "Neutral",
+   "shade": "Light",
+   "cut": "",
+   "match": "",
+   "avg": "#d7d3c7",
+   "thumb": "textures/thumb/5075.jpg",
+   "full": "textures/full/5075.jpg"
+  },
+  {
+   "n": "Y0822",
+   "name": "Java Cane",
+   "type": "",
+   "color": "Brown",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#81664f",
+   "thumb": "textures/thumb/Y0822.jpg",
+   "full": "textures/full/Y0822.jpg"
+  },
+  {
+   "n": "Y0823",
+   "name": "Natural Raffia",
+   "type": "",
+   "color": "Beige",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#ad9874",
+   "thumb": "textures/thumb/Y0823.jpg",
+   "full": "textures/full/Y0823.jpg"
+  },
+  {
+   "n": "Y0825",
+   "name": "Oolong Tea",
+   "type": "",
+   "color": "Blue",
+   "shade": "Light",
+   "cut": "",
+   "match": "",
+   "avg": "#87a2ad",
+   "thumb": "textures/thumb/Y0825.jpg",
+   "full": "textures/full/Y0825.jpg"
+  },
+  {
+   "n": "Y0811",
+   "name": "Pomegranate",
+   "type": "",
+   "color": "Red",
+   "shade": "Dark",
+   "cut": "",
+   "match": "",
+   "avg": "#8c282a",
+   "thumb": "textures/thumb/Y0811.jpg",
+   "full": "textures/full/Y0811.jpg"
+  },
+  {
+   "n": "5082",
+   "name": "Sable Strata",
+   "type": "",
+   "color": "Brown",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#837256",
+   "thumb": "textures/thumb/5082.jpg",
+   "full": "textures/full/5082.jpg"
+  },
+  {
+   "n": "13089",
+   "name": "Sunny Side Up",
+   "type": "",
+   "color": "Yellow",
+   "shade": "Light",
+   "cut": "",
+   "match": "",
+   "avg": "#ebc65c",
+   "thumb": "textures/thumb/13089.jpg",
+   "full": "textures/full/13089.jpg"
+  },
+  {
+   "n": "5083",
+   "name": "Umber Strata",
+   "type": "",
+   "color": "Brown",
+   "shade": "Medium",
+   "cut": "",
+   "match": "",
+   "avg": "#806f5d",
+   "thumb": "textures/thumb/5083.jpg",
+   "full": "textures/full/5083.jpg"
+  }
+ ]
+}
