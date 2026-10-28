@@ -16,7 +16,7 @@
     title="Compliance Board configurator"
     loading="lazy"
     style="width:100%;height:min(860px,92vh);min-height:620px;border:0;border-radius:12px;"
-    allow="fullscreen; xr-spatial-tracking"></iframe>
+    allow="fullscreen; xr-spatial-tracking; camera"></iframe>
 </div>
 
 <script>
@@ -25,10 +25,17 @@
   var frame = document.getElementById('cobo-config-frame');
 
   function tell(msg) { frame.contentWindow.postMessage(msg, ALLOWED_ORIGIN); }
-  function sendCart(added) {
+  function sendCart(added, updated) {
     return fetch('/cart.js')
       .then(function (r) { return r.json(); })
-      .then(function (cart) { tell({ type: 'cobo:cart', cart: cart, added: !!added }); });
+      .then(function (cart) { tell({ type: 'cobo:cart', cart: cart, added: !!added, updated: !!updated }); });
+  }
+  function removeLine(key) {                                     // used when a cart board is edited
+    if (!key) return Promise.resolve();
+    return fetch('/cart/change.js', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: key, quantity: 0 })
+    });
   }
 
   window.addEventListener('message', function (e) {
@@ -42,13 +49,15 @@
       return;
     }
 
-    if (d.type !== 'cobo:add-to-cart') return;
+    // cobo:add-to-cart adds a board; cobo:update replaces the cart line being edited (d.key) with the new board
+    if (d.type !== 'cobo:add-to-cart' && d.type !== 'cobo:update') return;
     var p = d.payload || {};
     if (!p.variantId) {
       tell({ type: 'cobo:notice', text: 'That combination is not linked to a product yet. Please contact us and we will set it up.' });
       return;
     }
-    fetch('/cart/add.js', {
+    var updating = d.type === 'cobo:update';
+    removeLine(updating ? d.key : null).then(function () { return fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -58,12 +67,13 @@
           properties: {                                         // shows on the order so production knows the build
             'Edge banding': p.edgeBanding,
             'Cap & stud finish': p.fastenerFinish,
-            'Orientation': p.orientation
+            'Orientation': p.orientation,
+            '_cobo': JSON.stringify(p.config || {})              // hidden: lets "Edit board" reopen this exact board
           }
         }]
       })
-    })
-    .then(function (r) { if (!r.ok) throw new Error('cart error'); return sendCart(true); })
+    }); })
+    .then(function (r) { if (!r.ok) throw new Error('cart error'); return sendCart(true, updating); })
     .catch(function () { tell({ type: 'cobo:notice', text: 'Sorry, we could not add that to the cart. Please try again.' }); });
   });
 })();

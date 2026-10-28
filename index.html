@@ -27,7 +27,7 @@
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
-  button { font: inherit; color: inherit; }
+  button { font: inherit; color: inherit; touch-action: manipulation; }   /* no double-tap zoom on quick taps */
   svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
   .app { display: grid; grid-template-columns: minmax(0, 1fr) var(--pw); height: 100vh; min-height: 560px; }
@@ -37,11 +37,14 @@
   #stage { position: absolute; inset: 0; }
   #stage canvas { width: 100%; height: 100%; display: block; outline: none; }
   .pill { background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow); }
-  .viewbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 2px; padding: 4px; }
-  .viewbar button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+  /* one pill, lower left: Front / Angle / Back | View on your wall (the AR part only shows on phones that support it) */
+  .viewbar { position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 2px; padding: 4px; }
+  .viewbar button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px; font-size: 13px; cursor: pointer; white-space: nowrap; }
   .viewbar button.on { background: var(--accent); color: var(--accent-ink); }
+  .viewbar .ar-btn { display: inline-flex; gap: 7px; align-items: center; color: var(--accent); font-weight: 600; margin-left: 4px; position: relative; }
+  .viewbar .ar-btn::before { content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; border-left: 1px solid var(--line-2); }   /* divider */
+  .viewbar .ar-btn:hover { background: var(--tint); }
   .hint { position: absolute; left: 16px; top: 14px; font-size: 12px; color: var(--muted); padding: 6px 12px; }
-  .ar-btn { position: absolute; right: 16px; top: 12px; display: inline-flex; gap: 7px; align-items: center; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 15px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
 
   /* ---------- options panel ---------- */
   .panel { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
@@ -114,6 +117,8 @@
   .sw { width: 34px; height: 34px; border-radius: var(--sw); border: 1px solid rgba(0,0,0,.12); background: var(--c); cursor: pointer; padding: 0; }
   .sw:hover { transform: translateY(-1px); }
   .sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .swgrid.dim .sw { opacity: .4; }                       /* edge swatches while "Match board color" is on */
+  .swgrid.dim .sw:hover { opacity: 1; }
   input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--sw); background: none; cursor: pointer; flex: none; }
   input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
   input[type=color]::-webkit-color-swatch { border: 0; border-radius: 3px; }
@@ -170,6 +175,18 @@
   .cart li .q { color: var(--muted); }
   .cart li .lp { font-weight: 600; }
   .cart-foot { border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; }
+  .cart li { display: block; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .cart li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .ci-top { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; }
+  details.ci-d { margin-top: 6px; }
+  details.ci-d summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  details.ci-d summary::-webkit-details-marker { display: none; }
+  details.ci-d summary .i { width: 14px; height: 14px; transition: transform .2s; }
+  details.ci-d[open] summary .i { transform: rotate(180deg); }
+  details.ci-d dl.spec { margin-top: 8px; font-size: 12.5px; gap: 5px 12px; padding: 10px 12px; background: var(--panel); border-radius: 8px; }
+  .ci-edit { font-size: 12.5px; padding: 6px 0 0; }
+  /* bottom sheet parts: only used on phones */
+  .grab, .sheet-body:empty, .sheet-dim { display: none; }
 
   /* buy bar (always visible at the bottom of the panel) */
   .buybar { border-top: 1px solid var(--line); background: var(--card); padding: 12px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
@@ -211,7 +228,8 @@
   .chip:disabled { opacity: .35; cursor: default; }
   .dot { width: 12px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0,0,0,.2); }
   .dot.multi { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }   /* minmax(0,…): long names can't widen a column */
+  .card .nm, .card .no { overflow-wrap: anywhere; }
   .card { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 1.5px solid transparent; background: none; padding: 5px; border-radius: 10px; cursor: pointer; }
   .card:hover, .card:focus-visible { border-color: var(--accent); background: var(--tint); outline: none; }
   .card.on { border-color: var(--accent); background: var(--tint); }
@@ -231,6 +249,19 @@
   #arViewer { flex: 1; width: 100%; min-height: 0; background: var(--bg); border-radius: 12px; margin-top: 14px; --poster-color: transparent; }
   .ar-go { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 12px 20px; font-size: 15px; white-space: nowrap; }
   #arMsg { margin: 10px 0 0; text-align: center; }
+  .photo-btn { display: inline-flex; align-items: center; gap: 8px; justify-content: center; margin: 10px auto 0; }
+
+  /* photo mode */
+  .photo { position: fixed; inset: 0; z-index: 50; background: #000; }
+  .photo video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #photoStage { position: absolute; inset: 0; }
+  #photoStage canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+  .photo-top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; background: linear-gradient(rgba(0,0,0,.5), transparent); color: #fff; font-size: 13px; pointer-events: none; }
+  .photo-top .x { color: #fff; pointer-events: auto; font-size: 30px; }
+  .shutter { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: #fff; border: 5px solid rgba(255,255,255,.45); background-clip: padding-box; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+  .shutter:active { transform: translateX(-50%) scale(.94); }
+  .photo-result { position: absolute; inset: 0; background: rgba(0,0,0,.85); display: grid; place-items: center; align-content: center; gap: 16px; padding: 20px; }
+  .photo-result img { max-width: 100%; max-height: 75vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
 
   #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -239,13 +270,37 @@
     .app { grid-template-columns: 1fr; grid-template-rows: 54vh auto; height: auto; }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
     .p-body { overflow: visible; }
-    .buybar { position: sticky; bottom: 0; z-index: 4; }
+    /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
+    input[type=search], input[type=number], input[type=text], select { font-size: 16px !important; }
+    html, body { overflow-x: clip; }
+    .side { overflow-x: hidden; top: 46vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(40,32,20,.18); }   /* board stays visible above */
+    .side-body { padding-left: 12px; padding-right: 12px; }
+    .grid { gap: 8px; }
+    /* bottom sheet: buy bar always showing; slide up for board details + cart */
+    body { padding-bottom: 120px; }
+    .tabs { grid-template-columns: 1fr 1fr; }
+    .tabs [data-tab="order"] { display: none; }
+    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(40,32,20,.16); display: flex; flex-direction: column; max-height: 90vh; }
+    .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
+    .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d6d0c6; }
+    .grab .gtxt b { color: var(--accent); }
+    .grab .chev { position: absolute; right: 16px; top: 14px; transform: rotate(180deg); transition: transform .25s; }
+    .buysheet.open .grab .chev { transform: none; }
+    .buybar { border-top: 0; padding-top: 6px; }
+    .sheet-body { display: block; overflow-y: auto; max-height: 0; transition: max-height .3s ease; padding: 0 12px; background: var(--panel); }
+    .buysheet.open .sheet-body { max-height: 70vh; padding: 12px 12px 20px; }
+    .sheet-body .tabpane { display: grid !important; }
+    .sheet-body [data-sec="cart"] { order: -1; }                     /* cart first, board details under it */
+    .sheet-body .cart-foot { flex-direction: column; align-items: stretch; }
+    .sheet-body .cart-foot > span { display: flex; flex-direction: column-reverse; align-items: stretch; gap: 6px; }
+    .sheet-body #cartCheckout { width: 100%; padding: 13px; font-size: 15px; }
+    .sheet-dim { display: block; position: fixed; inset: 0; background: rgba(20,16,10,.3); z-index: 11; }
     /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
     #stageWrap { display: flex; flex-direction: column; }
     #stage { position: relative; inset: auto; height: 50vh; }
-    .viewbar { position: static; transform: none; align-self: center; margin: 8px 0 10px; }
-    .viewbar button { padding: 7px 18px; }
-    .ar-btn { top: 10px; right: 10px; padding: 8px 13px; font-size: 12.5px; }
+    .viewbar { position: static; align-self: flex-start; margin: 8px 0 10px 12px; max-width: calc(100% - 24px); }
+    .viewbar button { padding: 7px 12px; }
+    .viewbar .ar-btn { gap: 5px; }
     .hint { display: none; }
     .side { left: 0; right: 0; width: auto; z-index: 25; }
     .modal { padding: 0; }
@@ -280,11 +335,11 @@
   <div id="stageWrap">
     <div id="stage"></div>
     <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
-    <button id="arBtn" class="ar-btn" type="button" hidden><svg class="i"><use href="#i-ar"/></svg>View on your wall</button>
-    <div class="viewbar pill" role="group" aria-label="Camera view">
+    <div class="viewbar pill" role="group" aria-label="View">
       <button data-view="front">Front</button>
       <button data-view="angle" class="on">Angle</button>
       <button data-view="back">Back</button>
+      <button id="arBtn" class="ar-btn" type="button" hidden><svg class="i"><use href="#i-ar"/></svg>View on your wall</button>
     </div>
   </div>
 
@@ -341,7 +396,7 @@
         <section class="sec" data-sec="edge">
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-edge"/></svg><span class="sec-t">Edge banding</span><span class="sec-v" data-v="edge"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
-            <div class="row"><button class="chipbtn" id="edgeMatch" type="button">Match board color</button></div>
+            <label class="opt"><span>Match board color</span><input type="checkbox" class="switch" id="edgeMatch" checked></label>
             <div class="swgrid" id="edgeSw"></div>
             <div class="opt"><span>Custom edge color</span><input type="color" id="edgeCustom" value="#555555" aria-label="Custom edge color"></div>
           </div>
@@ -418,6 +473,11 @@
       </div>
     </div>
 
+    <!-- Buy bar. On phones this is a bottom sheet: swipe/tap the handle up to see board details + cart (the Order tab moves in here). -->
+    <div class="buysheet" id="buysheet">
+    <button class="grab" id="sheetGrab" type="button" aria-expanded="false" aria-controls="sheetBody">
+      <span class="bar"></span><span class="gtxt">Board details &amp; cart <b id="sheetCount"></b></span><svg class="i chev"><use href="#i-chev"/></svg>
+    </button>
     <div class="buybar">
       <div><div id="specTitle">—</div><div id="price">—</div></div>
       <div class="qty" role="group" aria-label="Quantity">
@@ -427,8 +487,11 @@
       </div>
       <button id="cta">Add to cart</button>
     </div>
+    <div class="sheet-body" id="sheetBody"></div>
+    </div>
   </div>
 </div>
+<div class="sheet-dim" id="sheetDim" hidden></div>
 
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
 <aside id="lamPanel" class="side" role="dialog" aria-labelledby="lamTitle" hidden>
@@ -439,7 +502,7 @@
   </header>
   <div class="side-search">
     <svg class="i"><use href="#i-search"/></svg>
-    <input id="lamSearch" type="search" placeholder="Search by design number (e.g. 5075) or name" autocomplete="off" aria-label="Search laminates by number or name">
+    <input id="lamSearch" type="search" placeholder="Design number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name">
   </div>
   <div class="side-body">
     <div class="rowsb"><span id="lamCount" class="lbl"></span><button id="lamReset" class="link" type="button" hidden>Clear filters</button></div>
@@ -460,12 +523,26 @@
   <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
     <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close">×</button></header>
     <div class="ar-body">
-      <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="fixed" camera-controls
+      <!-- ar-scale="auto": starts at real size, pinch to resize while in AR -->
+      <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="auto" camera-controls
         shadow-intensity="1" alt="Your compliance board in 3D">
         <button slot="ar-button" class="primary ar-go" type="button">Open camera &amp; place on wall</button>
       </model-viewer>
       <p class="help" id="arMsg">Preparing your board…</p>
+      <button id="photoBtn" class="chipbtn photo-btn" type="button" hidden><svg class="i"><use href="#i-image"/></svg>Photo on your wall: pinch, place &amp; snap</button>
     </div>
+  </div>
+</div>
+
+<!-- Photo on your wall: live camera behind, the 3D board on top. Drag to move, pinch to resize, twist to rotate, tap the shutter. -->
+<div id="photoMode" class="photo" hidden>
+  <video id="photoVideo" playsinline muted autoplay></video>
+  <div id="photoStage"></div>
+  <div class="photo-top"><span class="photo-tip">Drag to move · pinch to resize · twist to rotate</span><button class="x" id="photoClose" aria-label="Close photo mode">×</button></div>
+  <button id="photoShutter" class="shutter" type="button" aria-label="Take photo"></button>
+  <div id="photoResult" class="photo-result" hidden>
+    <img id="photoImg" alt="Your board on your wall">
+    <div class="row"><button id="photoRetake" class="chipbtn" type="button">Retake</button><button id="photoSave" class="primary" type="button">Save photo</button></div>
   </div>
 </div>
 

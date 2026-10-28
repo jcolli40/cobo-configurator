@@ -61,7 +61,7 @@ function dims() {
 
 /* ------------------------------------------------------------------ three setup */
 const stage = $('#stage');
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });   // alpha: photo mode draws over the camera
 renderer.setPixelRatio(new URLSearchParams(location.search).get('lowfx') ? 1 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;   // keeps board colors true to their hex values (ACES washed them out)
 renderer.toneMappingExposure = 1.0;
@@ -534,7 +534,8 @@ function paintActive() {
   $('#lamSelRow').hidden = !L;
   $('#grainWrap').hidden = !(L && L.full);
   document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
-  $('#edgeMatch').classList.toggle('on', state.edge === 'match');
+  $('#edgeMatch').checked = state.edge === 'match';
+  $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
   renderSizes();
@@ -568,8 +569,36 @@ function renderSizes() {
 
 // Tabs + collapsible sections
 function showTab(t) {
+  if (t === 'order' && phone.matches) { setSheet(true); return; }    // phones: the Order tab lives in the bottom sheet
   document.querySelectorAll('.tabs [data-tab]').forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== t; });
+  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== t && !p.closest('#sheetBody'); });
+}
+
+// Phones: the buy bar is a bottom sheet. Tap or swipe the handle up to see board details + cart; swipe down to close.
+const phone = matchMedia('(max-width: 860px)');
+function setSheet(open) {
+  $('#buysheet').classList.toggle('open', open);
+  $('#sheetGrab').setAttribute('aria-expanded', open);
+  $('#sheetDim').hidden = !open || !phone.matches;
+}
+function placeOrderPane() {   // move the Order tab's content into the sheet on phones, back into the panel on computers
+  const pane = $('[data-pane="order"]');
+  if (phone.matches) { $('#sheetBody').appendChild(pane); pane.hidden = false; if ($('.tabs .on')?.dataset.tab === 'order') showTab('board'); }
+  else { $('.p-body').appendChild(pane); setSheet(false); pane.hidden = $('.tabs .on')?.dataset.tab !== 'order'; }
+}
+function wireSheet() {
+  const g = $('#sheetGrab');
+  let y0 = null;
+  g.addEventListener('pointerdown', (e) => { y0 = e.clientY; g.setPointerCapture(e.pointerId); });
+  g.addEventListener('pointerup', (e) => {
+    if (y0 == null) return;
+    const dy = e.clientY - y0; y0 = null;
+    const open = $('#buysheet').classList.contains('open');
+    setSheet(Math.abs(dy) < 8 ? !open : dy < 0);     // tap toggles; swipe up opens, swipe down closes
+  });
+  $('#sheetDim').addEventListener('click', () => setSheet(false));
+  phone.addEventListener('change', placeOrderPane);
+  placeOrderPane();
 }
 function setSec(sec, open) {
   sec.querySelector('.sec-h').setAttribute('aria-expanded', open);
@@ -610,6 +639,8 @@ function currentSpec() {
                           rotationDeg: B.rot, opacityPct: B.opacity, moveXIn: B.offX, moveYIn: B.offY } : null,
     quantity: state.qty,
     price: custom ? null : std.price, variantId,
+    // everything needed to reopen this board from the cart ("Edit board")
+    config: { sizeId: state.sizeId, orient: state.orient, face: state.face, edge: state.edge, fastener: state.fastener },
   };
 }
 function logoLine(lg) {
@@ -619,12 +650,13 @@ function logoLine(lg) {
 function updateUI() {
   paintActive();
   const sp = currentSpec();
-  $('#specTitle').textContent = `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" board${sp.quantity > 1 ? ` × ${sp.quantity}` : ''}`;
+  if (editing && sp.price) $('#specTitle').innerHTML = 'Editing a cart item · <button class="link" type="button" id="cancelEdit" style="font-size:12px;padding:0">Cancel</button>';
+  else $('#specTitle').textContent = `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" board${sp.quantity > 1 ? ` × ${sp.quantity}` : ''}`;
   $('#price').innerHTML = sp.price
     ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? `<small>$${sp.price.toFixed(2)} each</small>` : ''}`
     : 'Custom quote';
   $('#price').classList.toggle('quote', !sp.price);
-  $('#cta').textContent = sp.price ? 'Add to cart' : 'Request a quote';
+  $('#cta').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
   $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
     : (sp.logo || sp.background)
@@ -681,10 +713,15 @@ function build() {
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
   wireBoardClicks();
+  wireSheet();
 
   swatchRow($('#faceSw'), COLORS, null, (n) => { state.face = n; state.lamSel = null; refresh(); });
-  $('#edgeMatch').addEventListener('click', () => { state.edge = 'match'; refresh(); });
-  swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = n; refresh(); });
+  // Match toggle: off = back to the last edge color picked (or one that contrasts with the board)
+  $('#edgeMatch').addEventListener('change', (e) => {
+    state.edge = e.target.checked ? 'match' : (state.lastEdge || (state.face === 'Black' ? 'White' : 'Black'));
+    refresh();
+  });
+  swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
   wireArt('logo', $('#logoArt'));
@@ -709,7 +746,7 @@ function build() {
   $('#lamBtn').addEventListener('click', () => ($('#lamPanel').hidden ? openPicker() : closePicker()));
   $('#lamClear').addEventListener('click', () => { state.lamSel = null; refresh(); });
   $('#grain').addEventListener('change', (e) => { state.grain = e.target.checked; refresh(); });
-  $('#edgeCustom').addEventListener('input', (e) => { state.edge = e.target.value; refresh(); });
+  $('#edgeCustom').addEventListener('input', (e) => { state.edge = state.lastEdge = e.target.value; refresh(); });
   $('#cw').addEventListener('input', (e) => { state.customA = clamp(+e.target.value); refresh(true); });
   $('#ch').addEventListener('input', (e) => { state.customB = clamp(+e.target.value); refresh(true); });
   document.querySelectorAll('[data-orient]').forEach(b => b.addEventListener('click', () => { state.orient = b.dataset.orient; refresh(true); }));
@@ -747,12 +784,12 @@ function wireBoardClicks() {
   let down = null, hoverQueued = false;
   el.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
   el.addEventListener('pointerup', (e) => {
-    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
+    if (photo.on || !down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // photo mode, or a drag (rotate)
     const sec = partAt(e);
     if (sec) openSection(sec);
   });
   el.addEventListener('pointermove', (e) => {
-    if (e.buttons || hoverQueued) return;
+    if (e.buttons || hoverQueued || photo.on) return;
     hoverQueued = true;
     requestAnimationFrame(() => { hoverQueued = false; el.style.cursor = partAt(e) ? 'pointer' : ''; });
   });
@@ -897,7 +934,8 @@ function openPicker() {
   $('#lamPanel').hidden = false;
   $('#lamBtn').setAttribute('aria-expanded', 'true');
   renderPicker();
-  setTimeout(() => $('#lamSearch').focus(), 30);
+  if (!phone.matches) setTimeout(() => $('#lamSearch').focus(), 30);   // on phones, focusing would pop up the keyboard
+  else window.scrollTo({ top: 0, behavior: 'smooth' });                // phones: bring the board into view above the picker
 }
 function closePicker() {
   $('#lamPanel').hidden = true;
@@ -969,19 +1007,45 @@ function onCta() {
     window.open(url, '_blank');
     return;
   }
+  const ed = editing;
+  editing = null;
   if (embedded) {
-    window.parent.postMessage({ type: SHOPIFY.messageType, payload: sp }, '*');
-    toast('Adding to cart…');
+    // editing a cart line = remove the old line and add the new board in its place (done by the Shopify page)
+    window.parent.postMessage(ed ? { type: 'cobo:update', key: ed.key, payload: sp } : { type: SHOPIFY.messageType, payload: sp }, '*');
+    toast(ed ? 'Updating your cart…' : 'Adding to cart…');
   } else {
     // standalone preview (not inside Shopify): keep a pretend cart so the panel can be designed and tested
-    const label = `${sp.size} board · ${sp.boardColor}`;
-    const detail = `${sp.edgeBanding === 'Match board' ? 'Matching' : sp.edgeBanding} edge · ${sp.fastenerFinish}`;
-    const hit = localCart.find(it => it.label === label && it.detail === detail);
+    if (ed) localCart.splice(ed.key, 1);
+    const id = JSON.stringify(sp.config);
+    const hit = localCart.find(it => JSON.stringify(it.cfg) === id);
     if (hit) { hit.qty += sp.quantity; hit.line = hit.qty * sp.price; }
-    else localCart.push({ label, detail, qty: sp.quantity, line: sp.quantity * sp.price });
+    else localCart.push({ label: `${sp.size} board · ${sp.boardColor}`, rows: specRows(sp), qty: sp.quantity, line: sp.quantity * sp.price, cfg: sp.config });
+    localCart.forEach((it, i) => { it.key = i; });
     renderCart({ items: localCart, total: localCart.reduce((s, it) => s + it.line, 0), demo: true });
-    toast(sp.variantId ? `Added ${sp.quantity} to the preview cart` : 'Added to the preview cart (no Shopify variant ID mapped yet for this combination)');
+    if (phone.matches) setSheet(true);
+    toast(ed ? 'Cart updated' : sp.variantId ? `Added ${sp.quantity} to the preview cart` : 'Added to the preview cart (no Shopify variant ID mapped yet for this combination)');
   }
+  updateUI();
+}
+function specRows(sp) {
+  return [['Size', `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}"`], ['Orientation', sp.orientation[0].toUpperCase() + sp.orientation.slice(1)],
+    ['Board color', sp.boardColor], ['Edge banding', sp.edgeBanding === 'Match board' ? 'Matches board' : sp.edgeBanding], ['Caps & studs', sp.fastenerFinish]];
+}
+
+// "Edit board" on a cart line: load that board back into the builder; the main button becomes "Update cart item"
+let editing = null;   // { key, label } while a cart line is being edited
+function editCartItem(it) {
+  const c = it.cfg;
+  Object.assign(state, { sizeId: c.sizeId, orient: c.orient, face: c.face, edge: c.edge, fastener: c.fastener, lamSel: null, qty: it.qty });
+  for (const k of ['logo', 'background']) { state.art[k].img = null; state.art[k].name = ''; }   // cart boards have no printing
+  document.querySelectorAll('.art [data-r="opts"]').forEach(o => { o.hidden = true; });
+  document.querySelectorAll('.art [data-r="name"]').forEach(n => { n.textContent = 'No image yet'; });
+  $('#qty').value = it.qty;
+  editing = { key: it.key, label: it.label };
+  setSheet(false);
+  showTab('board');
+  refresh(true);
+  toast(`Editing: ${it.label}`);
 }
 
 /* ------------------------------------------------------------------ cart preview */
@@ -989,25 +1053,37 @@ function onCta() {
 // Opened on its own, the panel shows a pretend cart so the design can be tested.
 const embedded = window.parent !== window;
 const localCart = [];
+let cartItems = [];
 function renderCart(cart) {
+  cartItems = cart.items;
   const count = cart.items.reduce((s, it) => s + it.qty, 0);
   $('#cartBox').hidden = !count;
   $('#cartEmpty').hidden = !!count;
   $('#cartBadge').hidden = !count; $('#cartBadge').textContent = count;
+  $('#sheetCount').textContent = count ? `(${count})` : '';
   $('#cartCount').textContent = count ? `${count} item${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
   if (!count) return;
   const list = $('#cartList'); list.innerHTML = '';
-  for (const it of cart.items) {
+  cart.items.forEach((it, i) => {
     const li = document.createElement('li');
-    li.innerHTML = '<div><b></b><small></small></div><span class="q"></span><span class="lp"></span>';
+    li.innerHTML = `<div class="ci-top"><b></b><span class="q"></span><span class="lp"></span></div>
+      <details class="ci-d"><summary>Board details<svg class="i chev"><use href="#i-chev"/></svg></summary><dl class="spec"></dl></details>
+      ${it.cfg ? `<button class="link ci-edit" type="button" data-edit="${i}">Edit board</button>` : ''}`;
     li.querySelector('b').textContent = it.label;
-    li.querySelector('small').textContent = it.detail;
     li.querySelector('.q').textContent = `× ${it.qty}`;
     li.querySelector('.lp').textContent = `$${it.line.toFixed(2)}`;
+    const dl = li.querySelector('dl');
+    for (const [k, v] of it.rows) { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+    li.querySelector('.ci-d').hidden = !it.rows.length;
     list.appendChild(li);
-  }
+  });
   $('#cartTotal').textContent = `Subtotal $${cart.total.toFixed(2)}`;
 }
+document.addEventListener('click', (e) => { if (e.target.id === 'cancelEdit') { editing = null; updateUI(); toast('Edit cancelled'); } });
+$('#cartList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-edit]');
+  if (b) editCartItem(cartItems[+b.dataset.edit]);
+});
 function goShopify(path) {
   if (embedded) window.parent.postMessage({ type: 'cobo:go', path }, '*');
   else toast(`In Shopify this opens ${path}`);
@@ -1016,13 +1092,17 @@ window.addEventListener('message', (e) => {
   if (!embedded || e.source !== window.parent) return;
   const d = e.data;
   if (d?.type === 'cobo:cart' && d.cart) {
-    const items = (d.cart.items || []).map(it => ({
-      label: it.product_title + (it.variant_title ? ` · ${it.variant_title}` : ''),
-      detail: Object.entries(it.properties || {}).filter(([k, v]) => v && k[0] !== '_').map(([, v]) => v).join(' · '),
-      qty: it.quantity, line: (it.final_line_price ?? it.line_price) / 100,
-    }));
+    const items = (d.cart.items || []).map(it => {
+      let cfg = null;
+      try { cfg = it.properties?._cobo ? JSON.parse(it.properties._cobo) : null; } catch { /* not one of ours */ }
+      return {
+        key: it.key, cfg, qty: it.quantity, line: (it.final_line_price ?? it.line_price) / 100,
+        label: it.product_title + (it.variant_title ? ` · ${it.variant_title}` : ''),
+        rows: Object.entries(it.properties || {}).filter(([k, v]) => v && k[0] !== '_'),   // "_" properties are hidden data
+      };
+    });
     renderCart({ items, total: (d.cart.total_price || 0) / 100 });
-    if (d.added) toast(`Added to cart`);
+    if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); if (phone.matches) setSheet(true); }
   }
   if (d?.type === 'cobo:notice' && d.text) toast(String(d.text));
 });
@@ -1035,7 +1115,9 @@ if (embedded) window.parent.postMessage({ type: 'cobo:get-cart' }, '*');
   let ok = new URLSearchParams(location.search).get('ar') === '1';
   if (!ok) ok = !!document.createElement('a').relList?.supports?.('ar');               // Apple Quick Look
   if (!ok) { try { ok = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); } catch { /* no WebXR */ } }
-  $('#arBtn').hidden = !ok;
+  const cam = !!navigator.mediaDevices?.getUserMedia;
+  $('#arBtn').hidden = !(ok || (cam && phone.matches));   // phones without AR still get photo mode
+  $('#photoBtn').hidden = !cam;
 })();
 
 let arUrl = null;
@@ -1060,8 +1142,10 @@ async function openAR() {
     await new Promise((res) => mv.addEventListener('load', res, { once: true }));
     const { w, h } = dims();
     msg.textContent = mv.canActivateAR
-      ? `Tap the button, then point your phone at a wall. Your ${fmt(w)}" × ${fmt(h)}" board appears at real size.`
-      : 'Open this page on an iPhone, iPad or Android phone to place the board on your wall.';
+      ? `Tap the button, then point your phone at a wall. Your ${fmt(w)}" × ${fmt(h)}" board appears at real size; pinch to resize it.`
+      : !$('#photoBtn').hidden
+        ? 'Live AR isn\'t available here, but photo mode works: see the board over your camera, then snap a picture.'
+        : 'Open this page on an iPhone, iPad or Android phone to place the board on your wall.';
   } catch (err) {
     console.error(err);
     msg.textContent = 'Sorry, the AR view could not be prepared on this device.';
@@ -1072,8 +1156,121 @@ $('#arBtn').addEventListener('click', openAR);
 $('#arModal').addEventListener('click', (e) => { if (e.target.id === 'arModal' || e.target.closest('[data-close]')) closeAR(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#arModal').hidden) closeAR(); });
 
+/* ------------------------------------------------------------------ photo on your wall */
+// Works on any phone or computer with a camera (no AR needed): the live camera fills the screen, the 3D board is
+// drawn on top. Drag to move, pinch to resize, twist to rotate; the shutter saves camera + board as one photo.
+const photo = { on: false, stream: null, blob: null, saved: null, pts: new Map(), g0: null };
+const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.25 }));
+shadowCatcher.receiveShadow = true;
+
+async function openPhoto() {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+  } catch { return toast('Camera not available. Allow camera access to use photo mode.'); }
+  closeAR();
+  photo.stream = stream;
+  const v = $('#photoVideo'); v.srcObject = stream; v.play().catch(() => {});
+  $('#photoMode').hidden = false; $('#photoResult').hidden = true;
+  document.body.style.overflow = 'hidden';
+  photo.on = true;
+  $('#photoStage').appendChild(renderer.domElement);
+  controls.enabled = false;
+  setView('front', true);
+  camera.position.z *= 1.7;                                  // start with the board at about half the screen
+  root.getObjectByName('wall').visible = false;
+  shadowCatcher.position.z = root.getObjectByName('wall').position.z;
+  root.add(shadowCatcher);
+  scene.background = null;
+  photoResize();
+}
+function closePhoto() {
+  photo.on = false;
+  photo.stream?.getTracks().forEach(t => t.stop());
+  $('#photoMode').hidden = true;
+  document.body.style.overflow = '';
+  root.remove(shadowCatcher);
+  root.position.set(0, 0, 0); root.scale.setScalar(1); root.rotation.set(0, 0, 0);
+  stage.appendChild(renderer.domElement);
+  controls.enabled = true;
+  resize();
+  refresh();
+  setView('angle', true);
+}
+function photoResize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  dirty = true;
+}
+// gestures: 1 finger = move, 2 fingers = pinch to resize + twist to rotate (mouse: drag + wheel)
+function wirePhotoGestures() {
+  const el = renderer.domElement, P = photo.pts;
+  const base = () => ({ pts: new Map([...P].map(([k, p]) => [k, { ...p }])), pos: root.position.clone(), s: root.scale.x, rot: root.rotation.z });
+  const perPx = () => 2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / innerHeight;
+  el.addEventListener('pointerdown', (e) => {
+    if (!photo.on) return;
+    try { el.setPointerCapture(e.pointerId); } catch { /* not capturable; gestures still work */ }
+    P.set(e.pointerId, { x: e.clientX, y: e.clientY }); photo.g0 = base();
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!photo.on || !P.has(e.pointerId)) return;
+    P.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const g = photo.g0, now = [...P.values()], then = [...P.keys()].map(k => g.pts.get(k));
+    if (now.length === 1) {
+      root.position.set(g.pos.x + (now[0].x - then[0].x) * perPx(), g.pos.y - (now[0].y - then[0].y) * perPx(), 0);
+    } else if (now.length >= 2) {
+      const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
+      const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+      root.scale.setScalar(Math.min(4, Math.max(0.15, g.s * d(now[0], now[1]) / Math.max(1, d(then[0], then[1])))));
+      root.rotation.z = g.rot - (ang(now[0], now[1]) - ang(then[0], then[1]));
+      const m1 = mid(now[0], now[1]), m0 = mid(then[0], then[1]);
+      root.position.set(g.pos.x + (m1.x - m0.x) * perPx(), g.pos.y - (m1.y - m0.y) * perPx(), 0);
+    }
+    dirty = true;
+  });
+  const up = (e) => { if (!P.delete(e.pointerId)) return; photo.g0 = base(); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  el.addEventListener('wheel', (e) => {
+    if (!photo.on) return;
+    e.preventDefault();
+    root.scale.setScalar(Math.min(4, Math.max(0.15, root.scale.x * (e.deltaY < 0 ? 1.08 : 1 / 1.08)))); dirty = true;
+  }, { passive: false });
+}
+// shutter: camera frame (cropped like the screen) + the board render, as one JPEG
+function snapPhoto() {
+  const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const g = out.getContext('2d'), v = $('#photoVideo');
+  if (v.videoWidth) {
+    const s = Math.max(W / v.videoWidth, H / v.videoHeight);
+    g.drawImage(v, (W - v.videoWidth * s) / 2, (H - v.videoHeight * s) / 2, v.videoWidth * s, v.videoHeight * s);
+  }
+  renderer.render(scene, camera);
+  g.drawImage(renderer.domElement, 0, 0, W, H);
+  out.toBlob((b) => {
+    photo.blob = b;
+    $('#photoImg').src = URL.createObjectURL(b);
+    $('#photoResult').hidden = false;
+  }, 'image/jpeg', 0.92);
+}
+async function savePhoto() {
+  const file = new File([photo.blob], 'my-compliance-board.jpg', { type: 'image/jpeg' });
+  if (navigator.canShare?.({ files: [file] })) {               // phones: share sheet (Save to Photos, Messages, ...)
+    try { await navigator.share({ files: [file], title: 'My compliance board' }); return; } catch { /* cancelled: fall back */ }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+}
+$('#photoBtn').addEventListener('click', openPhoto);
+$('#photoClose').addEventListener('click', closePhoto);
+$('#photoShutter').addEventListener('click', snapPhoto);
+$('#photoRetake').addEventListener('click', () => { $('#photoResult').hidden = true; });
+$('#photoSave').addEventListener('click', savePhoto);
+addEventListener('resize', () => { if (photo.on) photoResize(); });
+wirePhotoGestures();
+
 /* ------------------------------------------------------------------ loop */
 function resize() {
+  if (photo.on) return photoResize();
   const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
   camera.aspect = r.width / Math.max(r.height, 1);
