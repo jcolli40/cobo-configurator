@@ -3,8 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK } from './config.js';
 
-// Layout choices for uploaded artwork (logo + background image)
+// Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
+  { id: 'cover',     name: 'Fill board (crop to cover)', only: 'background' },
+  { id: 'fit',       name: 'Fit whole image on board',   only: 'background' },
   { id: 'single',    name: 'Single (no repeat)' },
   { id: 'grid',      name: 'Grid' },
   { id: 'brick',     name: 'Offset rows (brick)' },
@@ -269,10 +271,10 @@ function lattice(L) {
     }
   }
 }
-function artTexture(L) {
+function artTexture(L) {   // L = layer settings (cover/fit already turned into a sized single image)
   const key = [L.imgId, L.layout, L.size, L.gap, L.rot, L.opacity, L.seed].join('|');
-  if (L._key === key) return L._tex;
-  if (L._tex) L._tex.dispose();
+  if (L.cache._key === key) return L.cache._tex;
+  if (L.cache._tex) L.cache._tex.dispose();
   const lat = lattice(L);
   const ppi = Math.min(96, ARTWORK.maxTexPx / Math.max(lat.W, lat.H));
   const c = document.createElement('canvas');
@@ -294,13 +296,18 @@ function artTexture(L) {
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   t.wrapS = t.wrapT = single ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;   // single: transparent border clamps to "nothing"
   t.userData = { keep: true, lat };
-  L._key = key; L._tex = t;
+  L.cache._key = key; L.cache._tex = t;
   return t;
 }
 // A transparent plane (sw x sh inches) carrying the artwork, centered on the surface + the move sliders.
 function artMesh(key, sw, sh, rough) {
-  const L = state.art[key];
-  if (!L.img) return null;
+  const A = state.art[key];
+  if (!A.img) return null;
+  let L = { ...A, cache: A };
+  if (A.layout === 'cover' || A.layout === 'fit') {          // size the image from the board instead of the slider
+    const wide = A.aspect > sw / sh;
+    L = { ...L, layout: 'single', size: ((A.layout === 'cover') === wide ? sh * A.aspect : sw) * (A.layout === 'cover' ? 1.003 : 1) };
+  }
   const tex = artTexture(L), { W, H } = tex.userData.lat;
   tex.repeat.set(sw / W, sh / H);
   tex.offset.set(0.5 - (0.5 + L.offX / sw) * tex.repeat.x, 0.5 - (0.5 + L.offY / sh) * tex.repeat.y);
@@ -403,9 +410,11 @@ function buildBoard() {
   root.add(boxMesh(b, ih, T, bm, w / 2 - b / 2, 0, T / 2));
   root.add(boxMesh(b, ih, T, bm, -w / 2 + b / 2, 0, T / 2));
 
-  // logo printed on the board face (under the certificates)
+  // printed artwork on the board face: background image, then logo (both under the certificates)
+  const bgArt = artMesh('background', iw, ih, 0.5);
+  if (bgArt) { bgArt.position.z = T + 0.004; bgArt.renderOrder = 1; bgArt.userData.sec = 'bgimg'; root.add(bgArt); }
   const logo = artMesh('logo', iw, ih, 0.5);
-  if (logo) { logo.position.z = T + 0.006; root.add(logo); }
+  if (logo) { logo.position.z = T + 0.008; logo.renderOrder = 2; logo.userData.sec = 'logo'; root.add(logo); }
 
   // sample certificates between board face and acrylic
   lastSheets = sheetLayout(w, h, state.sheetTurn);
@@ -413,7 +422,7 @@ function buildBoard() {
     lastSheets.rects.forEach((r, i) => {
       const mat = new THREE.MeshStandardMaterial({ map: certificateTexture(r.w, r.h, SHEETS.titles[i % SHEETS.titles.length]), roughness: 0.8 });
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
-      p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; root.add(p);
+      p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; root.add(p);
     });
   }
 
@@ -448,14 +457,23 @@ function buildBoard() {
   add(ywl, ywl + L, -D - t, -D);               // wall-half lip
   add(ywl - F, ywl, -D - 2 * t, -D - t);       // wall-half flange
 
-  // wall (viewer background color + optional background image)
+  // wall (viewer background color)
   const wallG = new THREE.Group();
   wallG.name = 'wall'; wallG.position.z = -(D + 2 * t); wallG.visible = state.view !== 'back';
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 }));
   wall.receiveShadow = true; wallG.add(wall);
-  const bgArt = artMesh('background', 400, 400, 0.95);
-  if (bgArt) { bgArt.position.z = 0.05; wallG.add(bgArt); }
   root.add(wallG);
+
+  // which panel section opens when this part of the board is clicked
+  const tag = (sec, ...objs) => objs.forEach(o => { o.userData.sec = sec; });
+  root.children.forEach(o => {
+    if (o.userData.sec) return;
+    const m = o.material;
+    if (m === frontMat) tag('color', o);
+    else if (m === bm) tag('edge', o);
+    else if (m === fm) tag('caps', o);
+    else if (m === backLamMat || m === alumMat) tag('size', o);
+  });
 
   // light + shadow frustum scaled to the board
   const R = Math.max(w, h);
@@ -507,17 +525,65 @@ function swatchRow(el, items, getActive, onPick, extra) {
   }
 }
 function paintActive() {
-  document.querySelectorAll('#faceSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.face && !state.lamSel));
-  $('#lamBtn').classList.toggle('on', !!state.lamSel);
-  $('#lamBtnLabel').textContent = state.lamSel ? `${state.lamSel.n}${state.lamSel.name ? ' · ' + state.lamSel.name : ''}` : 'Wilsonart laminate…';
-  $('#lamClear').hidden = !state.lamSel;
-  $('#grainWrap').hidden = !(state.lamSel && state.lamSel.full);
-  document.querySelectorAll('#edgeSw .sw, #edgeSw .match').forEach(b => b.classList.toggle('on', (b.dataset.k ?? 'match') === state.edge));
+  const L = state.lamSel;
+  document.querySelectorAll('#faceSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.face && !L));
+  $('#lamBtn').classList.toggle('on', !!L);
+  $('#lamBtnLabel').textContent = L ? `Selected: ${L.n}${L.name ? ' · ' + L.name : ''}` : 'Browse Wilsonart designs: woodgrains, stones, solids and more';
+  $('#lamThumb').hidden = !L?.thumb; if (L?.thumb) $('#lamThumb').src = L.thumb;
+  $('#lamGo').hidden = !!L?.thumb;
+  $('#lamSelRow').hidden = !L;
+  $('#grainWrap').hidden = !(L && L.full);
+  document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
+  $('#edgeMatch').classList.toggle('on', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
-  document.querySelectorAll('#sizes button').forEach(b => b.classList.toggle('on', b.dataset.k === state.sizeId));
+  renderSizes();
+  document.querySelectorAll('#sizes .tile').forEach(b => b.classList.toggle('on', b.dataset.k === state.sizeId));
   document.querySelectorAll('[data-orient]').forEach(b => b.classList.toggle('on', b.dataset.orient === state.orient));
   $('#customBox').hidden = state.sizeId !== 'custom';
+  document.querySelectorAll('#lamGrid .card').forEach(c => c.classList.toggle('on', c.dataset.n === L?.n));
+}
+
+// Size tiles: each board drawn to scale (in the chosen orientation) with its 4 caps and the certificates that fit.
+function tileSVG(a, b) {
+  const [w, h] = state.orient === 'portrait' ? [a, b] : [b, a];
+  const k = 50 / Math.max(w, h), W = w * k, H = h * k, x0 = (60 - W) / 2, y0 = (60 - H) / 2;
+  let s = `<svg viewBox="0 0 60 60" aria-hidden="true"><rect class="bd" x="${x0}" y="${y0}" width="${W}" height="${H}" rx="1.5"/>`;
+  for (const r of sheetLayout(w, h, state.sheetTurn)?.rects ?? []) {
+    s += `<rect class="sh" x="${x0 + (w / 2 + r.x - r.w / 2) * k}" y="${y0 + (h / 2 - r.y - r.h / 2) * k}" width="${r.w * k}" height="${r.h * k}" rx=".5"/>`;
+  }
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    s += `<circle class="cap" cx="${30 + sx * (w / 2 - HW.inset) * k}" cy="${30 + sy * (h / 2 - HW.inset) * k}" r="${Math.max(1.3, 0.5 * k)}"/>`;
+  }
+  return s + '</svg>';
+}
+function renderSizes() {
+  const key = state.orient + state.sheetTurn;          // redraw only when the drawings would change
+  if (renderSizes.key === key) return;
+  renderSizes.key = key;
+  const el = $('#sizes');
+  el.innerHTML = SIZES.map(s => `<button class="tile" type="button" data-k="${s.id}">${tileSVG(s.a, s.b)}<b>${s.a} × ${s.b}</b><small>$${s.price.toFixed(2)}</small></button>`).join('') +
+    `<button class="tile custom" type="button" data-k="custom"><svg viewBox="0 0 60 60" aria-hidden="true"><rect class="bd" x="14" y="8" width="32" height="44" rx="1.5"/><path d="M30 23v14M23 30h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><b>Custom</b><small>up to ${CUSTOM.maxShort}×${CUSTOM.maxLong}</small></button>`;
+}
+
+// Tabs + collapsible sections
+function showTab(t) {
+  document.querySelectorAll('.tabs [data-tab]').forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== t; });
+}
+function setSec(sec, open) {
+  sec.querySelector('.sec-h').setAttribute('aria-expanded', open);
+  sec.querySelector('.sec-b').hidden = !open;
+}
+// Clicking a part of the board: switch to its tab, open its section, fold the others (like Photoshop's auto-collapse)
+function openSection(name) {
+  const sec = document.querySelector(`.sec[data-sec="${name}"]`);
+  if (!sec) return;
+  const pane = sec.closest('[data-pane]');
+  showTab(pane.dataset.pane);
+  pane.querySelectorAll('.sec').forEach(s => setSec(s, s === sec));
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
 }
 function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, ''); }
 
@@ -528,8 +594,8 @@ function currentSpec() {
   const edgeName = state.edge === 'match' ? 'Match board' : (state.edge[0] === '#' ? `Custom ${state.edge}` : state.edge);
   const faceName = state.face[0] === '#' ? `Custom laminate ${state.face}` : state.face;
   const L = state.lamSel;
-  const G = state.art.logo;
-  const custom = !std || L || G.img;   // custom size, laminate or logo = quoted, not priced online
+  const G = state.art.logo, B = state.art.background;
+  const custom = !std || L || G.img || B.img;   // custom size, laminate, logo or printed background = quoted, not priced online
   const variantId = custom ? null : (SHOPIFY.variantIds[std.id]?.[state.face] ?? null);
   return {
     size: std ? std.id : `custom ${fmt(w)}x${fmt(h)}`, widthIn: w, heightIn: h, orientation: state.orient,
@@ -540,27 +606,54 @@ function currentSpec() {
     certificatesFit: lastSheets?.primary ? lastSheets.n : 0,   // how many 8.5x11 certificates fit
     logo: G.img ? { file: G.name, layout: LAYOUTS.find(x => x.id === G.layout).name, widthIn: G.size, spacingIn: G.gap,
                     rotationDeg: G.rot, opacityPct: G.opacity, moveXIn: G.offX, moveYIn: G.offY } : null,
+    background: B.img ? { file: B.name, layout: LAYOUTS.find(x => x.id === B.layout).name, widthIn: B.size, spacingIn: B.gap,
+                          rotationDeg: B.rot, opacityPct: B.opacity, moveXIn: B.offX, moveYIn: B.offY } : null,
     quantity: state.qty,
     price: custom ? null : std.price, variantId,
   };
 }
 function logoLine(lg) {
-  return `${lg.file} (${lg.layout}, ${fmt(lg.widthIn)}" wide${lg.layout.startsWith('Single') ? '' : `, ${fmt(lg.spacingIn)}" spacing`}${lg.rotationDeg ? `, rotated ${lg.rotationDeg}°` : ''}${lg.opacityPct < 100 ? `, ${lg.opacityPct}% opacity` : ''})`;
+  const fixed = lg.layout.startsWith('Single') || lg.layout.startsWith('Fill') || lg.layout.startsWith('Fit');
+  return `${lg.file} (${lg.layout}${lg.layout.startsWith('Fill') || lg.layout.startsWith('Fit') ? '' : `, ${fmt(lg.widthIn)}" wide`}${fixed ? '' : `, ${fmt(lg.spacingIn)}" spacing`}${lg.rotationDeg ? `, rotated ${lg.rotationDeg}°` : ''}${lg.opacityPct < 100 ? `, ${lg.opacityPct}% opacity` : ''})`;
 }
 function updateUI() {
   paintActive();
   const sp = currentSpec();
-  $('#specTitle').textContent = `${fmt(sp.widthIn)}" W × ${fmt(sp.heightIn)}" H`;
-  $('#specLine').textContent = `${sp.boardColor} · ${sp.edgeBanding === 'Match board' ? 'matching edge' : sp.edgeBanding + ' edge'} · ${sp.fastenerFinish}${sp.logo ? ' · logo' : ''}`;
+  $('#specTitle').textContent = `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" board${sp.quantity > 1 ? ` × ${sp.quantity}` : ''}`;
   $('#price').innerHTML = sp.price
     ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? `<small>$${sp.price.toFixed(2)} each</small>` : ''}`
     : 'Custom quote';
+  $('#price').classList.toggle('quote', !sp.price);
   $('#cta').textContent = sp.price ? 'Add to cart' : 'Request a quote';
   $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
-    : sp.logo
-      ? 'Logo boards are made to order — send us this spec (and your logo file) and we will quote it.'
+    : (sp.logo || sp.background)
+      ? 'Printed boards are made to order — send us this spec (and your image files) and we will quote it.'
       : 'Custom boards are made to order — send us this spec and we will quote it.';
+
+  // current choice shown on each folded section header
+  const edgeTxt = sp.edgeBanding === 'Match board' ? 'Matches board' : sp.edgeBanding;
+  const S0 = lastSheets;
+  const v = {
+    size: `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" · ${state.orient}`,
+    color: state.lamSel ? `Wilsonart ${state.lamSel.n}` : (state.face[0] === '#' ? 'Custom color' : state.face),
+    edge: edgeTxt, caps: sp.fastenerFinish,
+    bgimg: sp.background ? sp.background.layout : 'None',
+    logo: sp.logo ? sp.logo.file : 'None',
+    certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
+    wall: `${state.wall < 0 ? 'Custom' : WALLS[state.wall].name} · preview only`,
+  };
+  document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
+
+  // full spec on the Order tab
+  const rows = [
+    ['Size', `${fmt(sp.widthIn)}" W × ${fmt(sp.heightIn)}" H (${sp.size})`], ['Board', sp.boardColor], ['Edge banding', edgeTxt],
+    ['Caps & studs', sp.fastenerFinish], ['Background image', sp.background ? sp.background.file : 'None'],
+    ['Logo', sp.logo ? sp.logo.file : 'None'], ['8.5×11 certificates', `${sp.certificatesFit} fit`], ['Quantity', sp.quantity],
+    ['Price', sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote'],
+  ];
+  $('#specList').innerHTML = rows.map(([k, val]) => `<dt>${k}</dt><dd></dd>`).join('');
+  $('#specList').querySelectorAll('dd').forEach((dd, i) => { dd.textContent = rows[i][1]; });   // textContent: file names are user input
   // how many certificates fit
   const S = lastSheets;
   $('#sheetFit').textContent = !S
@@ -577,23 +670,21 @@ function updateUI() {
 }
 
 function build() {
-  const sizesEl = $('#sizes');
-  sizesEl.innerHTML = '';
-  for (const s of SIZES) {
-    const b = document.createElement('button'); b.dataset.k = s.id;
-    b.innerHTML = `<span>${s.a}×${s.b}</span><small>$${s.price.toFixed(2)}</small>`;
-    b.addEventListener('click', () => { state.sizeId = s.id; refresh(true); });
-    sizesEl.appendChild(b);
-  }
-  const cb = document.createElement('button'); cb.dataset.k = 'custom';
-  cb.innerHTML = '<span>Custom</span><small>up to 48×96</small>';
-  cb.addEventListener('click', () => { state.sizeId = 'custom'; refresh(true); });
-  sizesEl.appendChild(cb);
+  $('#sizes').addEventListener('click', (e) => {
+    const t = e.target.closest('.tile');
+    if (t) { state.sizeId = t.dataset.k; refresh(true); }
+  });
+
+  // tabs + collapsible sections
+  document.querySelectorAll('.tabs [data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
+    setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
+  }));
+  wireBoardClicks();
 
   swatchRow($('#faceSw'), COLORS, null, (n) => { state.face = n; state.lamSel = null; refresh(); });
-  const match = document.createElement('button'); match.className = 'match'; match.textContent = 'Match board';
-  match.addEventListener('click', () => { state.edge = 'match'; refresh(); });
-  swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = n; refresh(); }, match);
+  $('#edgeMatch').addEventListener('click', () => { state.edge = 'match'; refresh(); });
+  swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = n; refresh(); });
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
   wireArt('logo', $('#logoArt'));
@@ -615,7 +706,7 @@ function build() {
   }
 
   $('#faceCustom').addEventListener('input', (e) => { state.face = e.target.value; state.lamSel = null; refresh(); });
-  $('#lamBtn').addEventListener('click', openPicker);
+  $('#lamBtn').addEventListener('click', () => ($('#lamPanel').hidden ? openPicker() : closePicker()));
   $('#lamClear').addEventListener('click', () => { state.lamSel = null; refresh(); });
   $('#grain').addEventListener('change', (e) => { state.grain = e.target.checked; refresh(); });
   $('#edgeCustom').addEventListener('input', (e) => { state.edge = e.target.value; refresh(); });
@@ -638,12 +729,41 @@ function build() {
 }
 function clamp(v) { return Math.max(1, Math.min(96, isFinite(v) ? v : 12)); }
 
+// Click a part of the board (a click, not a drag) to open its section in the panel; the cursor shows what's clickable.
+function wireBoardClicks() {
+  const el = renderer.domElement, ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+  const partAt = (ev) => {
+    const r = el.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    for (const hit of ray.intersectObjects(root.children, true)) {
+      if (!shown(hit.object)) continue;
+      if (hit.object.userData.sec) return hit.object.userData.sec;
+      if (hit.object.material !== acrylicMat) return null;   // look through the clear acrylic only
+    }
+    return null;
+  };
+  let down = null, hoverQueued = false;
+  el.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+  el.addEventListener('pointerup', (e) => {
+    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
+    const sec = partAt(e);
+    if (sec) openSection(sec);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (e.buttons || hoverQueued) return;
+    hoverQueued = true;
+    requestAnimationFrame(() => { hoverQueued = false; el.style.cursor = partAt(e) ? 'pointer' : ''; });
+  });
+}
+
 // Upload + layout controls for one artwork layer, cloned from <template id="artTpl"> in index.html
 function wireArt(key, mount) {
   const L = state.art[key], cfg = ARTWORK[key];
   const node = $('#artTpl').content.firstElementChild.cloneNode(true);
   const r = (n) => node.querySelector(`[data-r="${n}"]`);
-  for (const l of LAYOUTS) r('layout').add(new Option(l.name, l.id));
+  for (const l of LAYOUTS.filter(x => !x.only || x.only === key)) r('layout').add(new Option(l.name, l.id));
   const sliders = {
     size: [cfg.sizeMin, cfg.sizeMax, 0.25, '"'], gap: [0, cfg.gapMax, 0.25, '"'], rot: [-180, 180, 5, '°'],
     opacity: [10, 100, 5, '%'], offX: [-cfg.offsetMax, cfg.offsetMax, 0.25, '"'], offY: [-cfg.offsetMax, cfg.offsetMax, 0.25, '"'],
@@ -654,7 +774,9 @@ function wireArt(key, mount) {
     r('name').textContent = L.img ? L.name : 'No image yet';
     r('pick').textContent = L.img ? 'Replace image…' : 'Upload image…';
     r('layout').value = L.layout;
-    r('gapWrap').hidden = L.layout === 'single';
+    const fitted = L.layout === 'cover' || L.layout === 'fit';   // size comes from the board
+    r('sizeWrap').hidden = fitted;
+    r('gapWrap').hidden = L.layout === 'single' || fitted;
     r('shuffle').hidden = L.layout !== 'scatter';
     r('rotLbl').textContent = L.layout === 'scatter' ? 'Random spin (±)' : 'Rotation';
     for (const [k, [, , , u]] of Object.entries(sliders)) { r(k).value = L[k]; r(k + 'Out').textContent = fmt(L[k]) + u; }
@@ -691,7 +813,8 @@ function lamTexture(url) {
 
 let library = [];
 let libraryReady = false;
-const pick = { q: '', type: new Set(), color: new Set(), shade: new Set(), cut: new Set(), match: new Set(), shown: 60 };
+const pick = { q: '', type: new Set(), color: new Set(), shade: new Set(), cut: new Set(), match: new Set(), shown: 60,
+               open: new Set() };   // open = which filter categories are expanded (all start folded)
 const FIELD = { type: 'type', color: 'color', shade: 'shade', cut: 'cut', match: 'match' };
 
 fetch(LAMINATE.libraryUrl, { cache: 'no-cache' })
@@ -702,7 +825,7 @@ fetch(LAMINATE.libraryUrl, { cache: 'no-cache' })
     libraryReady = true;
     const want = new URLSearchParams(location.search).get('lam');      // ?lam=5075 preset
     if (want) { selectLam(findByNumber(want) || unknownLam(want, '#bdbdbd'), true); }
-    if (!$('#lamModal').hidden) renderPicker();
+    if (!$('#lamPanel').hidden) renderPicker();
   });
 
 const findByNumber = (n) => library.find(it => it.n.toLowerCase() === String(n).trim().toLowerCase());
@@ -730,8 +853,10 @@ function renderPicker() {
   const f = $('#lamFilters');
   f.innerHTML = '';
   for (const g of groups) {
-    const box = document.createElement('div'); box.className = 'fgroup';
-    box.innerHTML = `<h3>${g.label}</h3>`;
+    const box = document.createElement('details'); box.className = 'fgroup'; box.dataset.g = g.key;
+    box.open = pick.open.has(g.key);
+    const n = pick[g.key].size;
+    box.innerHTML = `<summary><span>${g.label}</span><em>${n ? `${n} selected` : ''}</em><svg class="i chev"><use href="#i-chev"/></svg></summary>`;
     const row = document.createElement('div'); row.className = 'chips';
     for (const o of g.opts) {
       const count = library.filter(it => passes(it, g.key) && it[FIELD[g.key]] === o.name).length;
@@ -754,7 +879,7 @@ function renderPicker() {
 
   const grid = $('#lamGrid'); grid.innerHTML = '';
   for (const it of items.slice(0, pick.shown)) {
-    const b = document.createElement('button'); b.className = 'card'; b.dataset.n = it.n;
+    const b = document.createElement('button'); b.className = 'card' + (state.lamSel?.n === it.n ? ' on' : ''); b.dataset.n = it.n;
     b.innerHTML = `<img src="${it.thumb}" alt="" loading="lazy" width="256" height="256"><span class="nm">${it.name || 'Design'}</span><span class="no">${it.n}</span>${it.demo ? '<b class="demo">Demo</b>' : ''}`;
     grid.appendChild(b);
   }
@@ -767,29 +892,32 @@ function renderPicker() {
   if (!nf.hidden) $('#lamNfNum').textContent = q;
 }
 
+// The picker is a side panel, not a pop-up: the board stays visible, so each pick shows on it right away.
 function openPicker() {
-  const m = $('#lamModal');
-  m.hidden = false;
-  document.body.style.overflow = 'hidden';
+  $('#lamPanel').hidden = false;
+  $('#lamBtn').setAttribute('aria-expanded', 'true');
   renderPicker();
   setTimeout(() => $('#lamSearch').focus(), 30);
 }
 function closePicker() {
-  $('#lamModal').hidden = true;
-  document.body.style.overflow = '';
+  $('#lamPanel').hidden = true;
+  $('#lamBtn').setAttribute('aria-expanded', 'false');
   $('#lamBtn').focus();
 }
-function selectLam(item, silent) {
+function selectLam(item) {
   state.lamSel = item;
   state.grain = false; $('#grain').checked = false;
-  if (!silent) closePicker();
   refresh();
 }
 
 function wirePicker() {
-  const m = $('#lamModal');
+  const m = $('#lamPanel');
+  m.addEventListener('toggle', (e) => {                     // remember which categories are open across re-renders
+    const d = e.target.closest?.('details.fgroup');
+    if (d) d.open ? pick.open.add(d.dataset.g) : pick.open.delete(d.dataset.g);
+  }, true);
   m.addEventListener('click', (e) => {
-    if (e.target === m || e.target.closest('[data-close]')) return closePicker();
+    if (e.target.closest('[data-close]')) return closePicker();
     const chip = e.target.closest('.chip');
     if (chip) {
       const s = pick[chip.dataset.g];
@@ -833,7 +961,9 @@ function onCta() {
   const sp = currentSpec();
   if (!sp.price) {
     const body = encodeURIComponent(`Custom compliance board quote request\n\nQuantity: ${sp.quantity}\nSize: ${fmt(sp.widthIn)}" W x ${fmt(sp.heightIn)}" H\nBoard color: ${sp.boardColor}\nEdge banding: ${sp.edgeBanding}\nFastener finish: ${sp.fastenerFinish}\n` +
-      (sp.logo ? `Logo: ${logoLine(sp.logo)}\n\nPlease attach your logo file to this email.\n` : ''));
+      (sp.background ? `Background image: ${logoLine(sp.background)}\n` : '') +
+      (sp.logo ? `Logo: ${logoLine(sp.logo)}\n` : '') +
+      (sp.logo || sp.background ? '\nPlease attach your image files to this email.\n' : ''));
     const url = `mailto:${SHOPIFY.quoteEmail}?subject=${encodeURIComponent('Custom board quote')}&body=${body}`;
     if (embedded) window.parent.postMessage({ type: 'cobo:quote', payload: sp }, '*');
     window.open(url, '_blank');
@@ -860,11 +990,12 @@ function onCta() {
 const embedded = window.parent !== window;
 const localCart = [];
 function renderCart(cart) {
-  const box = $('#cartBox');
-  box.hidden = !cart.items.length;
-  if (!cart.items.length) return;
   const count = cart.items.reduce((s, it) => s + it.qty, 0);
-  $('#cartCount').textContent = `${count} item${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}`;
+  $('#cartBox').hidden = !count;
+  $('#cartEmpty').hidden = !!count;
+  $('#cartBadge').hidden = !count; $('#cartBadge').textContent = count;
+  $('#cartCount').textContent = count ? `${count} item${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
+  if (!count) return;
   const list = $('#cartList'); list.innerHTML = '';
   for (const it of cart.items) {
     const li = document.createElement('li');

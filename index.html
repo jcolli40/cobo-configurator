@@ -14,285 +14,451 @@
 </script>
 <style>
   :root {
-    /* warm white options panel (always light, even when the computer is in dark mode) */
-    --ink: #1f1d1a; --muted: #6f6a62; --line: #e4ddd2; --panel: #faf7f2; --bg: #f2eee7;
-    --accent: #1b3a6b; --accent-ink: #ffffff; --radius: 10px;
+    /* Colors. Panel is warm white (always light, even in dark mode); accent is COBO navy. */
+    --ink: #1f1d1a; --muted: #77716a; --faint: #a19b93; --line: #e9e4dc; --line-2: #dcd6cc;
+    --panel: #f7f4ef; --card: #ffffff; --bg: #f2efe9; --hover: #f4f1ec;
+    --accent: #1b3a6b; --accent-ink: #ffffff; --tint: #e8edf5; --tint-2: #c9d4e6;
+    --radius: 14px; --r-sm: 10px; --sw: 5px;              /* --sw = swatch corner radius */
+    --shadow: 0 1px 2px rgba(40, 32, 20, .05), 0 4px 14px rgba(40, 32, 20, .05);
+    --pw: 400px;                                            /* width of the options panel */
     color-scheme: light;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
-  .app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100vh; min-height: 560px; }
+  button { font: inherit; color: inherit; }
+  svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) var(--pw); height: 100vh; min-height: 560px; }
+
+  /* ---------- 3D stage ---------- */
   #stageWrap { position: relative; min-width: 0; }
   #stage { position: absolute; inset: 0; }
   #stage canvas { width: 100%; height: 100%; display: block; outline: none; }
-  .viewbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 4px;
-    background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line);
-    padding: 4px; border-radius: 999px; }
-  .viewbar button { border: 0; background: transparent; color: var(--ink); padding: 8px 16px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; }
+  .pill { background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow); }
+  .viewbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 2px; padding: 4px; }
+  .viewbar button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px; font-size: 13px; cursor: pointer; }
   .viewbar button.on { background: var(--accent); color: var(--accent-ink); }
-  .hint { position: absolute; left: 16px; top: 14px; font-size: 12px; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); }
-  aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 20px; }
-  h1 { font-size: 15px; letter-spacing: .02em; margin: 0; font-weight: 650; }
-  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 9px; font-weight: 600; }
-  section { display: block; }
-  #sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-  #sizes button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 9px 4px 8px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 2px; align-items: center; }
-  #sizes button span { font-weight: 650; font-size: 14px; }
-  #sizes button small { color: var(--muted); font-size: 11px; }
-  #sizes button.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button { border: 0; background: transparent; color: var(--ink); padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
-  .seg button.on { background: var(--accent); color: var(--accent-ink); }
-  .sws { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .sw { width: 30px; height: 30px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent); background: var(--c); cursor: pointer; padding: 0; }
-  .sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .match { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12px; cursor: pointer; }
-  .match.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
-  input[type=color] { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: none; cursor: pointer; }
+  .hint { position: absolute; left: 16px; top: 14px; font-size: 12px; color: var(--muted); padding: 6px 12px; }
+  .ar-btn { position: absolute; right: 16px; top: 12px; display: inline-flex; gap: 7px; align-items: center; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 15px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+
+  /* ---------- options panel ---------- */
+  .panel { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .p-head { padding: 16px 16px 12px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: #ebe7e0; padding: 3px; border-radius: 12px; }
+  .tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; border-radius: 9px; padding: 8px 6px; font-size: 14px; font-weight: 550; color: var(--muted); cursor: pointer; position: relative; }
+  .tabs button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .tabs .badge { min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; line-height: 18px; padding: 0 5px; }
+  .p-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; display: grid; gap: 12px; align-content: start; }
+  .tabpane { display: grid; gap: 12px; }
+
+  /* collapsible section cards */
+  .sec { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); scroll-margin-top: 12px; }
+  .sec-h { width: 100%; display: flex; align-items: center; gap: 11px; border: 0; background: none; padding: 14px 16px; cursor: pointer; text-align: left; border-radius: var(--radius); }
+  .sec-h:hover { background: var(--hover); }
+  .sec-t { font-size: 15px; font-weight: 550; flex: none; }
+  .sec-v { flex: 1; min-width: 0; text-align: right; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sec-h .chev { color: var(--faint); transition: transform .2s; }
+  .sec-h[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .sec-h[aria-expanded="true"] .sec-v { visibility: hidden; }
+  .sec-b { padding: 2px 16px 16px; display: grid; gap: 14px; }
+  .sec.flash { animation: flash 1s ease; }
+  @keyframes flash { 0% { box-shadow: 0 0 0 3px var(--tint-2); } 100% { box-shadow: var(--shadow); } }
+
+  .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 600; margin: 0 0 -4px; }
+  hr.div { border: 0; border-top: 1px solid var(--line); margin: 0; }
+  .help { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin: 0; }
   .lbl { font-size: 12px; color: var(--muted); }
-  #fastSw { display: grid; gap: 7px; }
-  .fast { display: flex; gap: 10px; align-items: center; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
-  .fast i { width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 30% 28%, #fff, var(--c) 55%, #000 160%); border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); flex: none; }
-  .fast.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
-  #customBox { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
-  [hidden] { display: none !important; }
-  .lam-btn { display: inline-flex; gap: 9px; align-items: center; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 7px 14px 7px 8px; font: inherit; font-size: 13px; cursor: pointer; }
-  .lam-btn.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
-  .lam-ico { width: 20px; height: 20px; border-radius: 50%; background: repeating-linear-gradient(115deg, #b38a5b 0 3px, #8f6a41 3px 5px, #c79d6c 5px 8px); border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
-  .link { border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; padding: 4px 6px; text-decoration: underline; }
-  .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+
+  /* a row: icon + label on the left, control on the right */
+  .opt { display: flex; align-items: center; gap: 11px; min-height: 36px; font-size: 14px; }
+  .opt > span:first-of-type { flex: 1; }
+  .opt .i { color: var(--muted); }
+
+  /* segmented control */
+  .seg { display: inline-flex; background: #efebe5; padding: 3px; border-radius: 10px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* switch (checkbox) */
+  input.switch { appearance: none; width: 38px; height: 22px; border-radius: 11px; background: #ddd7ce; position: relative; cursor: pointer; transition: background .2s; flex: none; margin: 0; }
+  input.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s; }
+  input.switch:checked { background: var(--accent); }
+  input.switch:checked::after { transform: translateX(16px); }
+  input.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* size tiles */
+  #sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile { border: 1.5px solid transparent; background: #f3f0ea; border-radius: 12px; padding: 8px 4px 7px; cursor: pointer; display: grid; justify-items: center; gap: 3px; }
+  .tile:hover { background: #ede9e2; }
+  .tile svg { width: 58px; height: 58px; }
+  .tile .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
+  .tile .sh { fill: #ece8e1; }
+  .tile .cap { fill: #c3bdb4; }
+  .tile b { font-size: 13px; font-weight: 600; }
+  .tile small { font-size: 11px; color: var(--muted); }
+  .tile.on { border-color: var(--accent); background: var(--tint); }
+  .tile.on b { color: var(--accent); }
+  .tile.on .bd { stroke: var(--tint-2); }
+  .tile.on .sh { fill: var(--tint-2); }
+  .tile.on .cap { fill: var(--accent); }
+  .tile.custom .bd { stroke-dasharray: 3 2.5; fill: none; }
+  #customBox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #customBox input { width: 72px; padding: 7px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; font: inherit; }
+  #customWarn { font-size: 12px; color: #b3261e; width: 100%; }
+
+  /* swatches: rounded squares */
+  .swgrid { display: grid; grid-template-columns: repeat(auto-fill, 34px); gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .sw { width: 34px; height: 34px; border-radius: var(--sw); border: 1px solid rgba(0,0,0,.12); background: var(--c); cursor: pointer; padding: 0; }
+  .sw:hover { transform: translateY(-1px); }
+  .sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--sw); background: none; cursor: pointer; flex: none; }
+  input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
+  input[type=color]::-webkit-color-swatch { border: 0; border-radius: 3px; }
+  .chipbtn { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .chipbtn.on { border-color: var(--accent); background: var(--tint); color: var(--accent); font-weight: 600; }
+
+  /* Wilsonart call-out */
+  .wa { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 12px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #faf8f5); border-radius: 12px; padding: 14px 14px 13px 16px; cursor: pointer; }
+  .wa:hover { border-color: var(--accent); }
+  .wa.on { border-color: var(--accent); background: var(--tint); }
+  .wa img.logo { height: 26px; width: auto; display: block; }
+  .wa b { font-size: 15px; font-weight: 650; grid-column: 1; }
+  .wa small { font-size: 12.5px; color: var(--muted); grid-column: 1; }
+  .wa .go { grid-column: 2; grid-row: 1 / span 3; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; }
+  .wa .thumb { width: 34px; height: 34px; border-radius: var(--sw); object-fit: cover; grid-column: 2; grid-row: 1 / span 3; border: 1px solid rgba(0,0,0,.12); }
+
+  /* cap finish rows */
+  #fastSw { display: grid; gap: 6px; }
+  .fast { display: flex; gap: 11px; align-items: center; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 12px; font-size: 14px; cursor: pointer; text-align: left; }
+  .fast i { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 30% 28%, #fff, var(--c) 55%, #000 160%); border: 1px solid rgba(0,0,0,.2); flex: none; }
+  .fast span { flex: 1; }
+  .fast::after { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+  .fast.on { border-color: var(--accent); background: var(--tint); }
+  .fast.on::after { border: 5px solid var(--accent); }
+
+  .link { border: 0; background: none; color: var(--accent); font-size: 13px; cursor: pointer; padding: 4px 2px; text-decoration: underline; }
+  .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .rowsb { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .center { text-align: center; padding: 14px 0 4px; }
-  /* laminate picker */
-  .modal { position: fixed; inset: 0; background: rgba(10, 12, 14, .55); z-index: 20; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .mpanel { background: var(--panel); color: var(--ink); width: min(1040px, 100%); height: min(780px, 100%); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
-  .mhead { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
-  .mhead h2 { margin: 0; font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--ink); white-space: nowrap; font-weight: 650; }
-  .mhead input[type=search] { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
-  .x { border: 0; background: none; color: var(--ink); font-size: 26px; line-height: 1; cursor: pointer; padding: 2px 8px; }
-  .mbody { flex: 1; display: grid; grid-template-columns: 250px 1fr; min-height: 0; }
-  .mside { border-right: 1px solid var(--line); padding: 14px 16px; overflow-y: auto; }
-  .mmain { padding: 14px 18px; overflow-y: auto; }
-  .fgroup { margin-top: 14px; }
-  .fgroup h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .center { text-align: center; padding: 12px 0 4px; }
+
+  /* artwork upload controls */
+  .upload { position: relative; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-2); background: #fff; border-radius: 10px; padding: 8px 14px; font-size: 13.5px; cursor: pointer; }
+  .upload:hover { border-color: var(--accent); }
+  .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fname { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .art-opts { display: grid; gap: 12px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .fld { display: grid; gap: 5px; font-size: 12.5px; color: var(--muted); }
+  .fld > span { display: flex; justify-content: space-between; }
+  .fld output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fld select { font: inherit; font-size: 13.5px; color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* order tab */
+  dl.spec { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
+  dl.spec dt { color: var(--muted); }
+  dl.spec dd { margin: 0; text-align: right; }
+  #note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+  .cart ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .cart li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 13.5px; }
+  .cart li b { font-weight: 600; display: block; }
+  .cart li small { color: var(--muted); font-size: 12px; }
+  .cart li .q { color: var(--muted); }
+  .cart li .lp { font-weight: 600; }
+  .cart-foot { border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; }
+
+  /* buy bar (always visible at the bottom of the panel) */
+  .buybar { border-top: 1px solid var(--line); background: var(--card); padding: 12px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+  #specTitle { font-size: 12.5px; color: var(--muted); }
+  #price { font-size: 22px; font-weight: 700; line-height: 1.15; }
+  #price.quote { font-size: 17px; white-space: nowrap; }
+  #price small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; height: 44px; }
+  .qty button { border: 0; background: none; width: 30px; height: 100%; font-size: 18px; cursor: pointer; color: var(--muted); }
+  .qty input { width: 34px; border: 0; background: none; text-align: center; font: inherit; font-size: 15px; -moz-appearance: textfield; }
+  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  #cta { white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; height: 44px; padding: 0 16px; font-weight: 650; font-size: 14.5px; cursor: pointer; }
+  #cta:hover { filter: brightness(1.12); }
+
+  /* ---------- Wilsonart side panel (slides out to the left of the options panel) ---------- */
+  .side { position: fixed; top: 0; bottom: 0; right: var(--pw); width: min(440px, calc(100vw - var(--pw))); background: var(--panel); border-left: 1px solid var(--line); box-shadow: -12px 0 32px rgba(40,32,20,.12); z-index: 15; display: flex; flex-direction: column; animation: slidein .22s ease; }
+  @keyframes slidein { from { transform: translateX(24px); opacity: 0; } }
+  .side-h { display: flex; align-items: center; gap: 12px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--line); }
+  .side-h img { height: 22px; width: auto; }
+  .side-h h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
+  .x { border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 8px; color: var(--muted); border-radius: 8px; }
+  .x:hover { background: var(--hover); color: var(--ink); }
+  .side-search { padding: 12px 16px 0; position: relative; }
+  .side-search .i { position: absolute; left: 28px; top: 23px; color: var(--faint); }
+  .side-search input { width: 100%; padding: 11px 12px 11px 38px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
+  .side-body { flex: 1; overflow-y: auto; padding: 12px 16px 20px; display: grid; gap: 12px; align-content: start; }
+  details.fgroup { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  details.fgroup summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; font-size: 14px; font-weight: 550; }
+  details.fgroup summary::-webkit-details-marker { display: none; }
+  details.fgroup summary em { flex: 1; text-align: right; font-style: normal; font-size: 12px; color: var(--accent); font-weight: 600; }
+  details.fgroup summary .chev { color: var(--faint); transition: transform .2s; }
+  details.fgroup[open] summary .chev { transform: rotate(180deg); }
+  details.fgroup .chips { padding: 0 14px 14px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
   .chip em { font-style: normal; color: var(--muted); font-size: 11px; }
   .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .chip.on em { color: inherit; opacity: .8; }
   .chip:disabled { opacity: .35; cursor: default; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
+  .dot { width: 12px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0,0,0,.2); }
   .dot.multi { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
-  .card { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 1px solid transparent; background: none; color: var(--ink); padding: 6px; border-radius: 10px; cursor: pointer; font: inherit; }
-  .card:hover, .card:focus-visible { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); outline: none; }
-  .card img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--bg); display: block; }
-  .card .nm { font-size: 13px; font-weight: 600; line-height: 1.25; }
-  .card .no { font-size: 12px; color: #c2182b; letter-spacing: .06em; }
-  .card .demo { position: absolute; top: 10px; left: 10px; background: #000; color: #fff; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; }
-  .nf { border: 1px dashed var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; font-size: 13.5px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .card { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 1.5px solid transparent; background: none; padding: 5px; border-radius: 10px; cursor: pointer; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); background: var(--tint); outline: none; }
+  .card.on { border-color: var(--accent); background: var(--tint); }
+  .card img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 7px; background: var(--bg); display: block; }
+  .card .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .card .no { font-size: 11.5px; color: #c2182b; letter-spacing: .06em; }
+  .card .demo { position: absolute; top: 9px; left: 9px; background: #000; color: #fff; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; }
+  .nf { border: 1px dashed var(--line-2); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; background: #fff; }
   .nf p { margin: 6px 0 10px; color: var(--muted); }
-  @media (max-width: 760px) {
-    .modal { padding: 0; }
-    .mpanel { height: 100%; border-radius: 0; }
-    .mbody { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    .mside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 36vh; }
-    .mhead h2 { display: none; }
-  }
-  #customBox[hidden] { display: none; }
-  #customBox input { width: 76px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
-  #customWarn { font-size: 12px; color: #b3261e; width: 100%; min-height: 0; }
-  .spec { border-top: 1px solid var(--line); padding-top: 16px; margin-top: auto; }
-  #specTitle { font-size: 18px; font-weight: 650; }
-  #specLine { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-  .buy { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-  #price { font-size: 24px; font-weight: 700; }
-  #cta { white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 13px 18px; font: inherit; font-weight: 650; font-size: 15px; cursor: pointer; }
-  #cta:hover { filter: brightness(1.08); }
-  #note { font-size: 11.5px; color: var(--muted); margin-top: 10px; line-height: 1.45; }
-  #price small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
-  .help { font-size: 12px; color: var(--muted); line-height: 1.45; margin: -3px 0 10px; }
-  .sub { font-size: 12.5px; font-weight: 600; margin: 16px 0 8px; }
-  /* quantity */
-  .buy-r { display: flex; gap: 8px; align-items: center; }
-  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; height: 46px; }
-  .qty button { border: 0; background: none; color: var(--ink); width: 30px; height: 100%; font-size: 18px; cursor: pointer; }
-  .qty input { width: 40px; border: 0; background: none; text-align: center; font: inherit; font-size: 15px; color: var(--ink); -moz-appearance: textfield; }
-  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  /* cart preview */
-  .cart { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; padding: 12px 14px; }
-  .cart h2 { margin: 0; }
-  .cart ul { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
-  .cart li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; font-size: 13px; }
-  .cart li b { font-weight: 600; display: block; }
-  .cart li small { color: var(--muted); font-size: 11.5px; }
-  .cart li .q { color: var(--muted); }
-  .cart li .lp { font-weight: 600; }
-  .cart-foot { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; }
-  /* artwork upload controls */
-  .upload { position: relative; display: inline-flex; align-items: center; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
-  .upload:hover { border-color: var(--accent); }
-  .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .fname { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .art-opts { display: grid; gap: 10px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
-  .fld { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-  .fld > span { display: flex; justify-content: space-between; }
-  .fld output { color: var(--ink); font-variant-numeric: tabular-nums; }
-  .fld select { font: inherit; font-size: 13px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; }
-  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  /* phone AR */
-  .ar-btn { position: absolute; right: 16px; top: 12px; display: inline-flex; gap: 7px; align-items: center; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 15px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
-  .ar-panel { width: min(560px, 100%); height: min(680px, 100%); }
+
+  /* ---------- pop-ups (AR) ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(10, 12, 14, .55); z-index: 20; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .mpanel { background: var(--panel); width: min(560px, 100%); height: min(680px, 100%); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .mhead { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .mhead h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
   .ar-body { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0 18px 14px; }
-  #arViewer { flex: 1; width: 100%; min-height: 0; background: var(--bg); border-radius: var(--radius); margin-top: 14px; --poster-color: transparent; }
+  #arViewer { flex: 1; width: 100%; min-height: 0; background: var(--bg); border-radius: 12px; margin-top: 14px; --poster-color: transparent; }
   .ar-go { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 12px 20px; font-size: 15px; white-space: nowrap; }
   #arMsg { margin: 10px 0 0; text-align: center; }
-  label.chk { display: flex; gap: 8px; align-items: center; font-size: 13px; cursor: pointer; }
-  #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 5; max-width: 90vw; }
+
+  #toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; max-width: 90vw; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
   @media (max-width: 860px) {
     .app { grid-template-columns: 1fr; grid-template-rows: 54vh auto; height: auto; }
-    aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
-    #stageWrap { height: 54vh; }
+    .panel { border-left: 0; border-top: 1px solid var(--line); }
+    .p-body { overflow: visible; }
+    .buybar { position: sticky; bottom: 0; z-index: 4; }
+    /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
+    #stageWrap { display: flex; flex-direction: column; }
+    #stage { position: relative; inset: auto; height: 50vh; }
+    .viewbar { position: static; transform: none; align-self: center; margin: 8px 0 10px; }
+    .viewbar button { padding: 7px 18px; }
+    .ar-btn { top: 10px; right: 10px; padding: 8px 13px; font-size: 12.5px; }
     .hint { display: none; }
+    .side { left: 0; right: 0; width: auto; z-index: 25; }
+    .modal { padding: 0; }
+    .mpanel { height: 100%; border-radius: 0; }
   }
 </style>
 </head>
 <body>
+<!-- Icon set (used as <svg class="i"><use href="#i-name"/></svg>) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="8" cy="6" r=".6"/><circle cx="16" cy="6" r=".6"/><circle cx="8" cy="18" r=".6"/><circle cx="16" cy="18" r=".6"/></symbol>
+  <symbol id="i-design" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12.5h-11z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></symbol>
+  <symbol id="i-size" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-color" viewBox="0 0 24 24"><path d="M12 3.5s6 6.3 6 10.7a6 6 0 0 1-12 0C6 9.8 12 3.5 12 3.5z"/></symbol>
+  <symbol id="i-edge" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><rect x="7.5" y="7.5" width="9" height="9" rx="1"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 4l2.4 5 5.4.7-4 3.7 1.1 5.4L12 16.2 7.1 18.8l1.1-5.4-4-3.7 5.4-.7z"/></symbol>
+  <symbol id="i-cert" viewBox="0 0 24 24"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4M9.5 12h6M9.5 15.5h6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r=".7"/><circle cx="4.5" cy="12" r=".7"/><circle cx="4.5" cy="17.5" r=".7"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></symbol>
+  <symbol id="i-orient" viewBox="0 0 24 24"><rect x="4" y="7" width="9" height="13" rx="1.5"/><rect x="11" y="4" width="9" height="6" rx="1.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
+</svg>
+
 <div class="app">
   <div id="stageWrap">
     <div id="stage"></div>
-    <div class="hint">Drag to rotate · scroll to zoom</div>
-    <button id="arBtn" class="ar-btn" type="button" hidden><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></svg>View on your wall</button>
-    <div class="viewbar" role="group" aria-label="Camera view">
+    <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
+    <button id="arBtn" class="ar-btn" type="button" hidden><svg class="i"><use href="#i-ar"/></svg>View on your wall</button>
+    <div class="viewbar pill" role="group" aria-label="Camera view">
       <button data-view="front">Front</button>
       <button data-view="angle" class="on">Angle</button>
       <button data-view="back">Back</button>
     </div>
   </div>
 
-  <aside>
-    <h1>Design your compliance board</h1>
+  <div class="panel">
+    <div class="p-head">
+      <h1>Design your compliance board</h1>
+      <nav class="tabs" role="tablist" aria-label="Options">
+        <button role="tab" data-tab="board" class="on" aria-selected="true"><svg class="i"><use href="#i-board"/></svg>Board</button>
+        <button role="tab" data-tab="design" aria-selected="false"><svg class="i"><use href="#i-design"/></svg>Design</button>
+        <button role="tab" data-tab="order" aria-selected="false"><svg class="i"><use href="#i-bag"/></svg>Order<span class="badge" id="cartBadge" hidden></span></button>
+      </nav>
+    </div>
 
-    <section>
-      <h2>Size (inches)</h2>
-      <div id="sizes"></div>
-      <div id="customBox" hidden>
-        <span class="lbl">W</span><input id="cw" type="number" min="6" max="96" value="18">
-        <span class="lbl">H</span><input id="ch" type="number" min="6" max="96" value="30">
-        <span class="lbl">in</span>
-        <div id="customWarn" role="status"></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Orientation</h2>
-      <div class="seg"><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></div>
-    </section>
-
-    <section>
-      <h2>Board color</h2>
-      <div class="sws" id="faceSw"></div>
-      <div class="row" style="margin-top:10px"><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom color"><span class="lbl">Any other color (matched on request)</span></div>
-      <div class="row" style="margin-top:12px">
-        <button id="lamBtn" class="lam-btn" type="button" aria-haspopup="dialog"><span class="lam-ico" aria-hidden="true"></span><span id="lamBtnLabel">Wilsonart laminate…</span></button>
-        <button id="lamClear" class="link" type="button" hidden>Clear</button>
-      </div>
-      <label class="chk" id="grainWrap" style="margin-top:10px" hidden><input type="checkbox" id="grain"> Rotate pattern 90°</label>
-      <div class="lbl" style="margin-top:8px">Laminate boards are custom-made, so they are quoted rather than priced online.</div>
-    </section>
-
-    <section>
-      <h2>Edge banding</h2>
-      <div class="sws" id="edgeSw"></div>
-      <div class="row" style="margin-top:10px"><input type="color" id="edgeCustom" value="#555555" aria-label="Custom edge color"><span class="lbl">Custom edge color</span></div>
-    </section>
-
-    <section>
-      <h2>Cap &amp; stud finish (1" dia)</h2>
-      <div id="fastSw"></div>
-    </section>
-
-    <section>
-      <h2>Logo on board</h2>
-      <p class="help">Optional. Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. Logo boards are made to order and quoted.</p>
-      <div id="logoArt"></div>
-    </section>
-
-    <section>
-      <h2>Sample certificates</h2>
-      <label class="chk"><input type="checkbox" id="sheets" checked> Show sample 8.5×11 certificates</label>
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="sheetTurn"> Rotate certificates 90°</label>
-      <p class="help" id="sheetFit" style="margin:8px 0 0"></p>
-    </section>
-
-    <section>
-      <h2>Viewer background (preview only)</h2>
-      <p class="help">Changes the wall behind the board in this 3D view, so you can see it in your space. It does not change the board you order.</p>
-      <div class="sws" id="wallSw"></div>
-      <div class="row" style="margin-top:10px"><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom background color"><span class="lbl">Any background color</span></div>
-      <div class="sub">Background image</div>
-      <div id="bgArt"></div>
-    </section>
-
-    <div class="spec">
-      <div id="specTitle">—</div>
-      <div id="specLine"></div>
-      <div class="buy">
-        <div id="price">—</div>
-        <div class="buy-r">
-          <div class="qty" role="group" aria-label="Quantity">
-            <button type="button" data-q="-1" aria-label="One fewer">−</button>
-            <input id="qty" type="number" min="1" max="999" value="1" aria-label="Quantity">
-            <button type="button" data-q="1" aria-label="One more">+</button>
+    <div class="p-body">
+      <!-- ====== BOARD ====== -->
+      <div class="tabpane" data-pane="board">
+        <section class="sec" data-sec="size">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-size"/></svg><span class="sec-t">Size</span><span class="sec-v" data-v="size"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <div id="sizes"></div>
+            <div id="customBox" hidden>
+              <span class="lbl">Width</span><input id="cw" type="number" min="6" max="96" value="18">
+              <span class="lbl">Height</span><input id="ch" type="number" min="6" max="96" value="30">
+              <span class="lbl">in</span>
+              <div id="customWarn" role="status"></div>
+            </div>
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-orient"/></svg><span>Orientation</span>
+              <div class="seg"><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></div></div>
           </div>
-          <button id="cta">Add to cart</button>
-        </div>
+        </section>
+
+        <section class="sec" data-sec="color">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-color"/></svg><span class="sec-t">Board color</span><span class="sec-v" data-v="color"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <div class="swgrid" id="faceSw"></div>
+            <div class="opt"><span>Any other color <span class="lbl">(matched on request)</span></span><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom board color"></div>
+            <hr class="div">
+            <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel">
+              <img class="logo" src="img/wilsonart-logo.png" alt="Wilsonart">
+              <b>Custom laminate</b>
+              <small id="lamBtnLabel">Browse Wilsonart designs: woodgrains, stones, solids and more</small>
+              <span class="go" id="lamGo"><svg class="i"><use href="#i-right"/></svg></span>
+              <img class="thumb" id="lamThumb" alt="" hidden>
+            </button>
+            <div class="rowsb" id="lamSelRow" hidden>
+              <label class="opt" id="grainWrap" style="min-height:0"><input type="checkbox" class="switch" id="grain"><span>Rotate pattern 90°</span></label>
+              <button id="lamClear" class="link" type="button">Remove laminate</button>
+            </div>
+            <p class="help">Laminate boards are custom-made, so they are quoted rather than priced online.</p>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="edge">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-edge"/></svg><span class="sec-t">Edge banding</span><span class="sec-v" data-v="edge"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <div class="row"><button class="chipbtn" id="edgeMatch" type="button">Match board color</button></div>
+            <div class="swgrid" id="edgeSw"></div>
+            <div class="opt"><span>Custom edge color</span><input type="color" id="edgeCustom" value="#555555" aria-label="Custom edge color"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="caps">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-cap"/></svg><span class="sec-t">Caps &amp; studs</span><span class="sec-v" data-v="caps"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <div id="fastSw"></div>
+            <p class="help">1" diameter aluminum caps on M6 studs, one in each corner.</p>
+          </div>
+        </section>
       </div>
-      <div id="note"></div>
-      <div id="cartBox" class="cart" hidden>
-        <div class="rowsb"><h2>Your cart</h2><span id="cartCount" class="lbl"></span></div>
-        <ul id="cartList"></ul>
-        <div class="rowsb cart-foot">
-          <strong id="cartTotal"></strong>
-          <span><button id="cartView" class="link" type="button">View cart</button> <button id="cartCheckout" class="primary" type="button">Checkout</button></span>
-        </div>
+
+      <!-- ====== DESIGN ====== -->
+      <div class="tabpane" data-pane="design" hidden>
+        <section class="sec" data-sec="bgimg">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Board background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <p class="help">Printed across the board face, behind your logo and certificates. Printed boards are made to order and quoted.</p>
+            <div id="bgArt"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="logo">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-logo"/></svg><span class="sec-t">Logo</span><span class="sec-v" data-v="logo"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <p class="help">Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. Logo boards are made to order and quoted.</p>
+            <div id="logoArt"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="certs">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-cert"/></svg><span class="sec-t">Sample certificates</span><span class="sec-v" data-v="certs"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <label class="opt"><span>Show sample 8.5×11 certificates</span><input type="checkbox" class="switch" id="sheets" checked></label>
+            <label class="opt"><svg class="i"><use href="#i-rotate"/></svg><span>Rotate certificates 90°</span><input type="checkbox" class="switch" id="sheetTurn"></label>
+            <p class="help" id="sheetFit"></p>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="wall">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-eye"/></svg><span class="sec-t">Viewer background</span><span class="sec-v" data-v="wall">Preview only</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">Changes the wall behind the board in this 3D view. It does not change the board you order.</p>
+            <div class="swgrid" id="wallSw"></div>
+            <div class="opt"><span>Any wall color</span><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom wall color"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====== ORDER ====== -->
+      <div class="tabpane" data-pane="order" hidden>
+        <section class="sec" data-sec="spec">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-list"/></svg><span class="sec-t">Your board</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <dl class="spec" id="specList"></dl>
+            <p id="note"></p>
+          </div>
+        </section>
+        <section class="sec cart" data-sec="cart">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-bag"/></svg><span class="sec-t">Your cart</span><span class="sec-v" id="cartCount"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <p class="help" id="cartEmpty">Nothing in your cart yet.</p>
+            <div id="cartBox" hidden>
+              <ul id="cartList"></ul>
+              <div class="rowsb cart-foot" style="margin-top:12px">
+                <strong id="cartTotal"></strong>
+                <span><button id="cartView" class="link" type="button">View cart</button> <button id="cartCheckout" class="primary" type="button">Checkout</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
-  </aside>
-</div>
-<div id="lamModal" class="modal" hidden>
-  <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="lamTitle">
-    <header class="mhead">
-      <h2 id="lamTitle">Choose a Wilsonart laminate</h2>
-      <input id="lamSearch" type="search" placeholder="Type a design number (e.g. 5075) or name" autocomplete="off" aria-label="Search laminates by number or name">
-      <button class="x" data-close aria-label="Close">×</button>
-    </header>
-    <div class="mbody">
-      <div class="mside">
-        <div class="rowsb"><span id="lamCount" class="lbl"></span><button id="lamReset" class="link" type="button" hidden>Clear filters</button></div>
-        <div id="lamFilters"></div>
+
+    <div class="buybar">
+      <div><div id="specTitle">—</div><div id="price">—</div></div>
+      <div class="qty" role="group" aria-label="Quantity">
+        <button type="button" data-q="-1" aria-label="One fewer">−</button>
+        <input id="qty" type="number" min="1" max="999" value="1" aria-label="Quantity">
+        <button type="button" data-q="1" aria-label="One more">+</button>
       </div>
-      <div class="mmain">
-        <div id="lamNotFound" class="nf" hidden>
-          <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
-          <p>You can still use it: we'll match the number when we quote your board. Pick a stand-in color for the preview:</p>
-          <div class="row"><input type="color" id="lamStand" value="#bdbdbd" aria-label="Stand-in preview color"><button id="lamUseNum" class="primary" type="button">Use this number</button></div>
-        </div>
-        <div id="lamGrid" class="grid"></div>
-        <div class="center"><button id="lamMore" class="link" type="button" hidden>Show more designs</button></div>
-      </div>
+      <button id="cta">Add to cart</button>
     </div>
   </div>
 </div>
+
+<!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
+<aside id="lamPanel" class="side" role="dialog" aria-labelledby="lamTitle" hidden>
+  <header class="side-h">
+    <img src="img/wilsonart-logo.png" alt="Wilsonart">
+    <h2 id="lamTitle">Custom laminate</h2>
+    <button class="x" data-close aria-label="Close laminate picker">×</button>
+  </header>
+  <div class="side-search">
+    <svg class="i"><use href="#i-search"/></svg>
+    <input id="lamSearch" type="search" placeholder="Search by design number (e.g. 5075) or name" autocomplete="off" aria-label="Search laminates by number or name">
+  </div>
+  <div class="side-body">
+    <div class="rowsb"><span id="lamCount" class="lbl"></span><button id="lamReset" class="link" type="button" hidden>Clear filters</button></div>
+    <div id="lamFilters" style="display:grid;gap:8px"></div>
+    <div id="lamNotFound" class="nf" hidden>
+      <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
+      <p>You can still use it: we'll match the number when we quote your board. Pick a stand-in color for the preview:</p>
+      <div class="row"><input type="color" id="lamStand" value="#bdbdbd" aria-label="Stand-in preview color"><button id="lamUseNum" class="primary" type="button">Use this number</button></div>
+    </div>
+    <div id="lamGrid" class="grid"></div>
+    <div class="center"><button id="lamMore" class="link" type="button" hidden>Show more designs</button></div>
+  </div>
+</aside>
+
 <!-- Phone AR: Google's <model-viewer> (vendor/model-viewer.min.js, loaded on first use) opens Apple Quick Look on
      iPhone/iPad and WebXR in Chrome on Android, with the board placed on a wall at real size. -->
 <div id="arModal" class="modal" hidden>
-  <div class="mpanel ar-panel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
-    <header class="mhead"><h2 id="arTitle" style="display:block">See it on your wall</h2><span style="flex:1"></span><button class="x" data-close aria-label="Close">×</button></header>
+  <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
+    <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close">×</button></header>
     <div class="ar-body">
       <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="fixed" camera-controls
         shadow-intensity="1" alt="Your compliance board in 3D">
@@ -303,17 +469,17 @@
   </div>
 </div>
 
-<!-- Upload + layout controls, used twice (logo and background image). Wired up in js/main.js (wireArt). -->
+<!-- Upload + layout controls, used twice (background image and logo). Wired up in js/main.js (wireArt). -->
 <template id="artTpl">
   <div class="art">
     <div class="row">
-      <label class="upload"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" data-r="file" style="position:absolute;opacity:0;width:1px;height:1px"><span data-r="pick">Upload image…</span></label>
+      <label class="upload"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" data-r="file" style="position:absolute;opacity:0;width:1px;height:1px"><svg class="i"><use href="#i-image"/></svg><span data-r="pick">Upload image…</span></label>
       <span class="lbl fname" data-r="name"></span>
       <button class="link" type="button" data-r="clear" hidden>Remove</button>
     </div>
     <div class="art-opts" data-r="opts" hidden>
       <label class="fld"><span>Layout</span><select data-r="layout"></select></label>
-      <label class="fld"><span>Width of image <output data-r="sizeOut"></output></span><input type="range" data-r="size"></label>
+      <label class="fld" data-r="sizeWrap"><span>Width of image <output data-r="sizeOut"></output></span><input type="range" data-r="size"></label>
       <label class="fld" data-r="gapWrap"><span>Spacing between copies <output data-r="gapOut"></output></span><input type="range" data-r="gap"></label>
       <div class="two">
         <label class="fld"><span><span data-r="rotLbl">Rotation</span> <output data-r="rotOut"></output></span><input type="range" data-r="rot"></label>

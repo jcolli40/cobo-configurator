@@ -54,11 +54,11 @@ export const SHEETS = {
            'Fire Safety Inspection', 'Health Permit', 'Elevator Certificate', 'Operating Permit'],
 };
 
-// ---- Uploaded artwork: logo (printed on the board face) and background image (viewer wall) ----
+// ---- Uploaded artwork, both printed on the board face: background image (behind) and logo (in front) ----
 // size = width of one copy of the image, in inches. gap = space between copies. offsetMax = range of the move sliders.
 export const ARTWORK = {
-  logo:       { layout: 'single', size: 6,  sizeMin: 0.5, sizeMax: 24,  gap: 1, gapMax: 12, offsetMax: 24 },
-  background: { layout: 'single', size: 96, sizeMin: 2,   sizeMax: 240, gap: 0, gapMax: 24, offsetMax: 120 },
+  logo:       { layout: 'single', size: 6,  sizeMin: 0.5, sizeMax: 24, gap: 1, gapMax: 12, offsetMax: 24 },
+  background: { layout: 'cover',  size: 12, sizeMin: 1,   sizeMax: 96, gap: 0, gapMax: 24, offsetMax: 48 },
   maxUploadPx: 2048,   // uploads are shrunk to this many pixels on the long side
   maxTexPx: 2048,      // largest texture made for one repeat of the pattern
 };
