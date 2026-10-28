@@ -31,13 +31,15 @@ Double-clicking `index.html` will not work (browsers block the 3D files when a p
 3. In the repo: Settings → Pages → Source: "Deploy from a branch" → Branch: `main` / `(root)` → Save.
 4. After a minute the viewer is live at `https://YOUR-GITHUB-USER.github.io/cobo-configurator/`.
 
+This is already done: the repo is https://github.com/jcolli40/cobo-configurator and the live viewer is https://jcolli40.github.io/cobo-configurator/.
+
 Updating later: edit `js/config.js` on GitHub (pencil icon) and commit. The live page updates in about a minute.
 
 ## Put it on Shopify
 
 1. In Shopify: Online Store → Pages → Add page (e.g. "Design Your Board").
 2. Add a **Custom Liquid** section (or edit the page HTML in your theme's page template).
-3. Paste in `shopify/cobo-configurator-embed.liquid` and replace both `YOUR-GITHUB-USER` spots.
+3. Paste in `shopify/cobo-configurator-embed.liquid` (it already points at `https://jcolli40.github.io/cobo-configurator/`).
 4. Save. The viewer appears inline, and "Add to cart" adds the matching variant to the Shopify cart.
 
 You can also link straight to a preset, handy from product pages:
