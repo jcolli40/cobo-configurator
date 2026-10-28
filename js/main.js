@@ -489,9 +489,22 @@ function buildBoard() {
 
 /* ------------------------------------------------------------------ camera */
 let tween = null;
+// When the Wilsonart side panel covers the right of the 3D view (desktop), the view slides left by half the panel
+// width and the board is framed to fit the part still visible. inset = covered width in pixels (animated).
+const inset = { now: 0, target: 0 };
+function applyInset() {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  if (inset.now > 0.5 && W && H) camera.setViewOffset(W, H, inset.now / 2, 0, W, H);
+  else camera.clearViewOffset();
+}
+function setInset(px) {
+  inset.target = px;
+  setView(state.view);   // re-frame for the visible width (animated)
+}
+
 function viewTarget(view) {
   const { w, h } = dims();
-  const aspect = camera.aspect;
+  const aspect = camera.aspect * (1 - inset.target / Math.max(1, stage.clientWidth));
   const fov = THREE.MathUtils.degToRad(camera.fov);
   const dist = Math.max(h / 2, w / 2 / aspect) / Math.tan(fov / 2) * 1.35 + 2;
   const tgt = new THREE.Vector3(0, 0, 0.5);
@@ -933,6 +946,7 @@ function renderPicker() {
 function openPicker() {
   $('#lamPanel').hidden = false;
   $('#lamBtn').setAttribute('aria-expanded', 'true');
+  if (!phone.matches) setInset($('#lamPanel').getBoundingClientRect().width);   // slide the board out from under the panel
   renderPicker();
   if (!phone.matches) setTimeout(() => $('#lamSearch').focus(), 30);   // on phones, focusing would pop up the keyboard
   else window.scrollTo({ top: 0, behavior: 'smooth' });                // phones: bring the board into view above the picker
@@ -940,6 +954,7 @@ function openPicker() {
 function closePicker() {
   $('#lamPanel').hidden = true;
   $('#lamBtn').setAttribute('aria-expanded', 'false');
+  if (inset.target) setInset(0);
   $('#lamBtn').focus();
 }
 function selectLam(item) {
@@ -948,8 +963,20 @@ function selectLam(item) {
   refresh();
 }
 
+// 1 / 2 / 3 swatches per row (remembered in this browser)
+function setCols(n) {
+  $('#lamGrid').style.setProperty('--cols', n);
+  $('#lamGrid').dataset.cols = n;
+  document.querySelectorAll('#lamCols [data-cols]').forEach(b => { b.classList.toggle('on', +b.dataset.cols === n); b.setAttribute('aria-pressed', +b.dataset.cols === n); });
+  try { localStorage.setItem('cobo.lamCols', n); } catch { /* storage blocked: fine */ }
+}
+
 function wirePicker() {
   const m = $('#lamPanel');
+  let cols = 3;
+  try { cols = +localStorage.getItem('cobo.lamCols') || 3; } catch { /* storage blocked */ }
+  setCols(cols);
+  $('#lamCols').addEventListener('click', (e) => { const b = e.target.closest('[data-cols]'); if (b) setCols(+b.dataset.cols); });
   m.addEventListener('toggle', (e) => {                     // remember which categories are open across re-renders
     const d = e.target.closest?.('details.fgroup');
     if (d) d.open ? pick.open.add(d.dataset.g) : pick.open.delete(d.dataset.g);
@@ -1169,6 +1196,8 @@ async function openPhoto() {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
   } catch { return toast('Camera not available. Allow camera access to use photo mode.'); }
   closeAR();
+  if (!$('#lamPanel').hidden) closePicker();
+  inset.now = inset.target = 0; camera.clearViewOffset();
   photo.stream = stream;
   const v = $('#photoVideo'); v.srcObject = stream; v.play().catch(() => {});
   $('#photoMode').hidden = false; $('#photoResult').hidden = true;
@@ -1275,6 +1304,7 @@ function resize() {
   renderer.setSize(r.width, r.height, false);
   camera.aspect = r.width / Math.max(r.height, 1);
   camera.updateProjectionMatrix();
+  applyInset();
   dirty = true;
 }
 const clock = new THREE.Clock();
@@ -1288,6 +1318,11 @@ function loop() {
     camera.position.lerpVectors(tween.p0, tween.p1, k);
     controls.target.lerpVectors(tween.t0, tween.t1, k);
     if (tween.t >= 1) tween = null;
+  }
+  if (inset.now !== inset.target) {      // slide the view while the laminate panel opens/closes
+    inset.now += (inset.target - inset.now) * Math.min(1, dt * 9);
+    if (Math.abs(inset.target - inset.now) < 0.5) inset.now = inset.target;
+    applyInset(); dirty = true;
   }
   if (controls.update()) dirty = true;   // true while the user is orbiting / damping
   if (tween) dirty = true;

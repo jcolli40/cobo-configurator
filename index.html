@@ -228,7 +228,11 @@
   .chip:disabled { opacity: .35; cursor: default; }
   .dot { width: 12px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0,0,0,.2); }
   .dot.multi { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
-  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }   /* minmax(0,…): long names can't widen a column */
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 10px; }   /* minmax(0,…): long names can't widen a column */
+  .grid[data-cols="1"] .card .nm { font-size: 15px; }
+  .grid[data-cols="1"] .card .no { font-size: 13px; }
+  .seg.cols button { padding: 5px 8px; display: grid; place-items: center; }
+  .seg.cols svg { width: 16px; height: 16px; fill: currentColor; }
   .card .nm, .card .no { overflow-wrap: anywhere; }
   .card { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 1.5px solid transparent; background: none; padding: 5px; border-radius: 10px; cursor: pointer; }
   .card:hover, .card:focus-visible { border-color: var(--accent); background: var(--tint); outline: none; }
@@ -505,7 +509,14 @@
     <input id="lamSearch" type="search" placeholder="Design number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name">
   </div>
   <div class="side-body">
-    <div class="rowsb"><span id="lamCount" class="lbl"></span><button id="lamReset" class="link" type="button" hidden>Clear filters</button></div>
+    <div class="rowsb">
+      <span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span>
+      <div class="seg cols" id="lamCols" role="group" aria-label="Swatches per row">
+        <button type="button" data-cols="1" aria-label="1 per row" title="1 per row"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="12" rx="1.5"/></svg></button>
+        <button type="button" data-cols="2" aria-label="2 per row" title="2 per row"><svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="6" height="10" rx="1.2"/><rect x="8.5" y="3" width="6" height="10" rx="1.2"/></svg></button>
+        <button type="button" data-cols="3" aria-label="3 per row" title="3 per row"><svg viewBox="0 0 16 16"><rect x="1" y="4" width="4" height="8" rx="1"/><rect x="6" y="4" width="4" height="8" rx="1"/><rect x="11" y="4" width="4" height="8" rx="1"/></svg></button>
+      </div>
+    </div>
     <div id="lamFilters" style="display:grid;gap:8px"></div>
     <div id="lamNotFound" class="nf" hidden>
       <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
