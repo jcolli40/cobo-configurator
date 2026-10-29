@@ -215,6 +215,16 @@
   .side-h h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
   .x { border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 8px; color: var(--muted); border-radius: 8px; }
   .x:hover { background: var(--hover); color: var(--ink); }
+  .lam-sel { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--tint); }
+  .lam-sel img { width: 40px; height: 40px; border-radius: var(--sw); object-fit: cover; border: 1px solid rgba(0,0,0,.12); flex: none; }
+  .lam-sel img:not([src]) { visibility: hidden; }
+  .lam-sel-nm { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
+  .lam-sel-nm small { font-size: 11px; color: var(--muted); }
+  .lam-sel-nm b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lam-sel .chipbtn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .lam-sel .chipbtn .i { width: 16px; height: 16px; }
+  .lam-sel .chipbtn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .lam-sel .link { font-size: 12.5px; }
   .side-search { padding: 12px 16px 0; position: relative; }
   .side-search .i { position: absolute; left: 28px; top: 23px; color: var(--faint); }
   .side-search input { width: 100%; padding: 11px 12px 11px 38px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
@@ -268,7 +278,18 @@
     .app { display: block; height: auto; padding-top: var(--stageMax, 56vh); padding-bottom: 150px; }   /* bottom: room to scroll the last option clear of the cart bar */
     html, body { height: auto; }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
-    .p-body { overflow: visible; }
+    /* phones: the options are a side-scrolling row of square buttons; tapping one opens its sheet */
+    .p-body { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 12px 16px 18px; scrollbar-width: none; }
+    .p-body::-webkit-scrollbar { display: none; }
+    .tabpane { display: contents; }
+    .p-body .sec { flex: 0 0 104px; height: 108px; scroll-snap-align: start; scroll-margin-left: 16px; }
+    .p-body .sec-h { height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 5px; padding: 10px 8px; text-align: center; }
+    .p-body .sec-h > .i:first-child { width: 26px; height: 26px; color: var(--accent); }
+    .p-body .sec-t { font-size: 12.5px; line-height: 1.2; font-weight: 600; }
+    .p-body .sec-v { flex: none; max-width: 100%; text-align: center; font-size: 11px; }
+    .p-body .sec-h .chev { display: none; }
+    .p-body .sec.active { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset, var(--shadow); background: var(--tint); }
+    .p-head { padding-bottom: 4px; border-bottom: 0; }
     /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
     input[type=search], input[type=number], input[type=text], select { font-size: 16px !important; }
     html, body { overflow-x: clip; }
@@ -387,10 +408,6 @@
               <small id="lamBtnLabel">Woodgrains, stones, solids and more</small>
               <img class="thumb" id="lamThumb" alt="" hidden>
             </button>
-            <div class="rowsb" id="lamSelRow" hidden>
-              <label class="opt" id="grainWrap" style="min-height:0"><input type="checkbox" class="switch" id="grain"><span>Rotate pattern 90°</span></label>
-              <button id="lamClear" class="link" type="button">Remove laminate</button>
-            </div>
             <p class="help">Laminate boards are custom-made, so they are quoted rather than priced online.</p>
           </div>
         </section>
@@ -488,6 +505,13 @@
     <h2 id="lamTitle">Custom laminate</h2>
     <button class="x" data-close aria-label="Close laminate picker">×</button>
   </header>
+  <!-- the chosen laminate, with Rotate 90° and Remove, at the top of the swatches panel -->
+  <div class="lam-sel" id="lamSelRow" hidden>
+    <img id="lamSelThumb" alt="">
+    <span class="lam-sel-nm"><small>Selected</small><b id="lamSelName"></b></span>
+    <button id="grainBtn" class="chipbtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-rotate"/></svg>Rotate 90°</button>
+    <button id="lamClear" class="link" type="button">Remove</button>
+  </div>
   <div class="side-search">
     <svg class="i"><use href="#i-search"/></svg>
     <input id="lamSearch" type="search" placeholder="Design number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name">

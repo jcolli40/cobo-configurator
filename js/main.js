@@ -547,7 +547,10 @@ function paintActive() {
   $('#lamBtnLabel').textContent = L ? 'Selected · open to change' : 'Woodgrains, stones, solids and more';
   $('#lamThumb').hidden = !L?.thumb; if (L?.thumb) $('#lamThumb').src = L.thumb;
   $('#lamSelRow').hidden = !L;
-  $('#grainWrap').hidden = !(L && L.full);
+  $('#lamSelName').textContent = L ? `${L.n}${L.name ? ' · ' + L.name : ''}` : '';
+  if (L?.thumb) $('#lamSelThumb').src = L.thumb; else $('#lamSelThumb').removeAttribute('src');
+  $('#grainBtn').hidden = !(L && L.full);                     // typed-in numbers have no pattern to rotate
+  $('#grainBtn').setAttribute('aria-pressed', state.grain);
   document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
   $('#edgeMatch').checked = state.edge === 'match';
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
@@ -614,7 +617,7 @@ function setSec(sec, open) {
 function openSection(name) {
   const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
-  if (phone.matches) return openOptSheet(sec);                       // phones: the option opens in a pop-up sheet
+  if (phone.matches) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
@@ -633,6 +636,7 @@ function openOptSheet(sec) {
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
   optOpen = { sec, body };
+  markActive(sec.dataset.sec);
   updateStage(true);
 }
 function closeOptSheet(switching) {
@@ -641,7 +645,13 @@ function closeOptSheet(switching) {
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
   optOpen = null;
-  if (!switching) updateStage(true);
+  if (!switching) { markActive(null); updateStage(true); }
+}
+// phones: highlight the option button whose sheet is open, and scroll it into view in the side-scrolling row
+function markActive(name) {
+  document.querySelectorAll('.p-body .sec').forEach(s => s.classList.toggle('active', s.dataset.sec === name));
+  const a = name && document.querySelector(`.p-body .sec[data-sec="${name}"]`);
+  if (a && phone.matches) a.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
 }
 // Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
 // it fits the space above the sheet, so the whole board is always visible while you make changes.
@@ -747,6 +757,7 @@ function build() {
 
   // collapsible sections
   document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
+    if (phone.matches && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
     if (phone.matches) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
@@ -791,7 +802,7 @@ function build() {
   $('#faceCustom').addEventListener('input', (e) => { state.face = e.target.value; state.lamSel = null; refresh(); });
   $('#lamBtn').addEventListener('click', () => ($('#lamPanel').hidden ? openPicker() : closePicker()));
   $('#lamClear').addEventListener('click', () => { state.lamSel = null; refresh(); });
-  $('#grain').addEventListener('change', (e) => { state.grain = e.target.checked; refresh(); });
+  $('#grainBtn').addEventListener('click', () => { state.grain = !state.grain; refresh(); });
   $('#edgeCustom').addEventListener('input', (e) => { state.edge = state.lastEdge = e.target.value; refresh(); });
   $('#cw').addEventListener('input', (e) => { state.customA = clamp(+e.target.value); refresh(true); });
   $('#ch').addEventListener('input', (e) => { state.customB = clamp(+e.target.value); refresh(true); });
@@ -976,6 +987,7 @@ function renderPicker() {
 
 // The picker is a side panel, not a pop-up: the board stays visible, so each pick shows on it right away.
 function openPicker() {
+  if (phone.matches) { closeOptSheet(true); setSheet(false); markActive('laminate'); }
   $('#lamPanel').hidden = false;
   $('#lamBtn').setAttribute('aria-expanded', 'true');
   if (!phone.matches) setInset($('#lamPanel').getBoundingClientRect().width);   // slide the board out from under the panel
@@ -987,12 +999,13 @@ function closePicker() {
   $('#lamPanel').hidden = true;
   $('#lamBtn').setAttribute('aria-expanded', 'false');
   if (inset.target) setInset(0);
+  if (!optOpen) markActive(null);
   updateStage(true);
   if (!phone.matches) $('#lamBtn').focus();
 }
 function selectLam(item) {
   state.lamSel = item;
-  state.grain = false; $('#grain').checked = false;
+  state.grain = false;
   refresh();
 }
 
