@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610282308';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610282308';
-import { wallTexture, wallSwatch } from './env.js?v=202610282308';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291255';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291255';
+import { wallTexture, wallSwatch } from './env.js?v=202610291255';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -26,7 +26,13 @@ function artDefaults(key) {
 
 // Which version of the page this is (set on <html data-layout> by index.html / v2 / v3; see tools/make-versions.js)
 //   v1: one panel of options   v2: size, then Standard or Custom, with simple rows   v3: size, then every option, priced
+//   v4: guided, photo first   v5: Auto-suggest (full-screen steps, live camera, our picks) + v3 pricing and v2's simple rows
 const LAYOUT = document.documentElement.dataset.layout || 'v1';
+const PRICED = LAYOUT === 'v3' || LAYOUT === 'v5';          // options priced with upcharges (else laminate/printing = quoted)
+const ROWS = LAYOUT === 'v2' || LAYOUT === 'v5';            // the simple rows (edge switch, eye icons)
+const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
+// an upcharge from UPCHARGES (config.js): one amount, or one per size
+const upAmt = (v) => (v && typeof v === 'object' ? (v[state.sizeId] ?? v.custom ?? 0) : (v || 0));
 
 /* ------------------------------------------------------------------ state */
 const state = {
@@ -741,7 +747,7 @@ const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the scree
 let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
-  if (!phone.matches || step() === 'styles') { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
+  if (!phone.matches || fullStage()) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
   if (!stageMax || stageW !== innerWidth) {
     stageW = innerWidth; stageMax = Math.round(innerHeight * STAGE.max);
@@ -765,13 +771,13 @@ function currentSpec() {
   const edgeName = state.edge === 'match' ? 'Match board' : (state.edge[0] === '#' ? `Custom ${state.edge}` : state.edge);
   const faceName = state.face[0] === '#' ? `Custom color ${state.face}` : state.face;
   const L = state.lamSel;
-  const printing = !(LAYOUT === 'v2' && state.path === 'standard');   // v2 Standard boards have no printing
+  const printing = !(LAYOUT === 'v2' && state.path === 'standard') && LAYOUT !== 'v5';   // v2 Standard boards and v5 have no printing
   const G = printing ? state.art.logo : {}, B = printing ? state.art.background : {};
   // v1/v2: custom size, laminate, logo or printed background = quoted, not priced online.
   // v3: options are priced with upcharges and go in the cart; only custom sizes are quoted.
-  const ups = LAYOUT === 'v3' ? upcharges(L, G, B) : [];
-  const custom = LAYOUT === 'v3' ? !std : (!std || L || G.img || B.img);
-  const baseFace = LAYOUT === 'v3' && (L || state.face[0] === '#') ? 'Black' : state.face;   // v3: options ride on a base board
+  const ups = PRICED ? upcharges(L, G, B) : [];
+  const custom = PRICED ? !std : (!std || L || G.img || B.img);
+  const baseFace = PRICED && (L || state.face[0] === '#') ? 'Black' : state.face;   // v3/v5: options ride on a base board
   const variantId = custom ? null : (SHOPIFY.variantIds[std.id]?.[baseFace] ?? null);
   return {
     size: std ? std.id : `custom ${fmt(w)}x${fmt(h)}`, widthIn: w, heightIn: h, orientation: state.orient,
@@ -794,13 +800,13 @@ function currentSpec() {
 // v3: the options on this board that cost extra (amounts in UPCHARGES, config.js)
 function upcharges(L, G, B) {
   const U = UPCHARGES, out = [];
-  if (L) out.push({ label: `Wilsonart laminate ${L.n}`, amount: U.laminate });
-  else if (state.face[0] === '#') out.push({ label: 'Custom board color', amount: U.customColor });
-  if (state.edge[0] === '#') out.push({ label: 'Custom edge color', amount: U.edgeCustom });
-  const cap = U.caps[state.fastener] || 0;
+  if (L) out.push({ label: `Wilsonart laminate ${L.n}`, amount: upAmt(U.laminate) });
+  else if (state.face[0] === '#') out.push({ label: 'Custom board color', amount: upAmt(U.customColor) });
+  if (state.edge[0] === '#') out.push({ label: 'Custom edge color', amount: upAmt(U.edgeCustom) });
+  const cap = upAmt(U.caps[state.fastener]);
   if (cap) out.push({ label: `${FASTENERS.find(f => f.id === state.fastener).name} caps`, amount: cap });
-  if (G?.img) out.push({ label: 'Printed logo', amount: U.logo });
-  if (B?.img) out.push({ label: 'Printed background image', amount: U.background });
+  if (G?.img) out.push({ label: 'Printed logo', amount: upAmt(U.logo) });
+  if (B?.img) out.push({ label: 'Printed background image', amount: upAmt(U.background) });
   return out;
 }
 function logoLine(lg) {
@@ -827,7 +833,7 @@ function updateUI() {
   const S0 = lastSheets;
   const v = {
     size: `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}" · ${state.orient}`,
-    color: state.lamSel ? 'Custom laminate' : (state.face[0] === '#' ? 'Custom color' : state.face),
+    color: state.lamSel ? (LAYOUT === 'v5' ? 'Texture chosen' : 'Custom laminate') : (state.face[0] === '#' ? 'Custom color' : state.face),
     laminate: state.lamSel ? `Wilsonart ${state.lamSel.n}` : 'None',
     edge: edgeTxt, caps: sp.fastenerFinish,
     bgimg: sp.background ? sp.background.layout : 'None',
@@ -835,6 +841,7 @@ function updateUI() {
     certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
     wall: `${envNow().name}${state.wallPhoto.img ? ' · your wall' : ''}`,
     certs: state.myCerts.length ? `${state.myCerts.length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
+    mywall: state.myCerts.length ? `${state.myCerts.length} document${state.myCerts.length === 1 ? '' : 's'}` : wallInfo ? 'Photo' : 'Snap it',
   };
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
 
@@ -987,7 +994,7 @@ function wireBoardClicks() {
   let down = null, hoverQueued = false, drag = null;
   el.addEventListener('pointerdown', (e) => {
     down = { x: e.clientX, y: e.clientY };
-    if (step() === 'styles') return;          // v4 style browsing: swipes change the look (see wireGuide)
+    if (fullStage()) return;                  // v4/v5 look browsing + tutorial screens: swipes change the look (see wireLooks)
     const hit = docAt(e);
     if (hit) {
       const o = hit.object;
@@ -1017,6 +1024,7 @@ function wireBoardClicks() {
       if (d.moved) { const doc = state.myCerts[d.i]; doc.px = d.o.position.x; doc.py = d.o.position.y; refresh(); return; }
     }
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
+    if (step() === 'intro' || step() === 'snap') return;
     const sec = partAt(e);
     if (sec && step() === 'styles') { setStep('custom'); setTimeout(() => openSection(sec), 60); }   // v4: tap a part to change it
     else if (sec) openSection(sec);
@@ -1064,11 +1072,12 @@ function wireArt(key, mount) {
   sync();
 }
 
-/* ------------------------------------------------------------------ v2 / v3 layouts */
+/* ------------------------------------------------------------------ v2 / v3 / v5 layouts */
 // Sections shown as main cards/squares in each version (the rest open from a row or link, in a side/bottom sheet).
 const MAIN = {
   v2: { none: ['size'], standard: ['size', 'color', 'caps'], custom: ['size', 'laminate', 'color', 'logo', 'bgimg'] },
   v3: ['size', 'color', 'laminate', 'edge', 'caps', 'logo', 'bgimg', 'certs', 'wall'],
+  v5: ['size', 'color', 'laminate', 'caps', 'mywall', 'wall'],     // phones: 3 per row, Size / Colors / Textures on top
 };
 function wireLayout() {
   document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });
@@ -1078,8 +1087,7 @@ function wireLayout() {
     const b = e.target.closest('[data-open]');
     if (b) { const sec = document.querySelector(`.sec[data-sec="${b.dataset.open}"]`); if (sec) openOptSheet(sec); }
   });
-  if (LAYOUT === 'v2') {
-    $('#fork').addEventListener('click', (e) => { const b = e.target.closest('[data-path]'); if (b) setPath(b.dataset.path); });
+  if (ROWS) {
     $('#lnMatch').addEventListener('change', (e) => { $('#edgeMatch').checked = e.target.checked; $('#edgeMatch').dispatchEvent(new Event('change')); });
     document.querySelectorAll('[data-eye]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.eye;
@@ -1087,9 +1095,24 @@ function wireLayout() {
       else state.art[k].hide = !state.art[k].hide;
       refresh();
     }));
+  }
+  if (LAYOUT === 'v2') {
+    $('#fork').addEventListener('click', (e) => { const b = e.target.closest('[data-path]'); if (b) setPath(b.dataset.path); });
     // a shared/restored design picks its own path
     if (state.lamSel || pendingLam || state.face[0] === '#' || state.art.logo.img) state.path = 'custom';
     else if (restoredDesign || new URLSearchParams(location.search).has('size')) state.path = 'standard';
+  }
+  if (LAYOUT === 'v5') {
+    $('.sec[data-sec="color"] .sec-t').textContent = 'Colors';
+    $('.sec[data-sec="laminate"] .sec-t').textContent = 'Textures';
+    $('#lamTitle').textContent = 'Textures';
+    // My wall holds the photo results, the certificate count and their own documents
+    $('#mwSlot').append($('.certcount'), $('#ownDocs'));
+    $('#ownDocs .opt span').textContent = 'Your documents';
+    $('#ownDocs .opt + .help').textContent = 'Each document we found, with its guessed size: change a size, turn one or remove extras. Or snap and upload your real permits and licenses to see them on the board.';
+    $('#lnTurn').addEventListener('click', () => { state.sheetTurn = !state.sheetTurn; $('#sheetTurn').checked = state.sheetTurn; refresh(); });
+    document.addEventListener('click', (e) => { if (e.target.closest('[data-snap]')) { closeOptSheet(); setStep('snap'); } });
+    $('#autoBtn').addEventListener('click', () => setStep('snap'));
   }
 }
 // v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted
@@ -1106,49 +1129,68 @@ function setPath(p) {
 }
 function paintLayout(sp) {
   if (LAYOUT === 'v1') return;
-  const main = LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN.v3;
+  const main = LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
   document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
   if (LAYOUT === 'v2') {
     document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
     $('#forkStd').textContent = `$${(SIZES.find(s => s.id === state.sizeId)?.price ?? SIZES[0].price).toFixed(2)}`;
     $('#lines').hidden = !state.path;
     document.querySelectorAll('#lines [data-path]').forEach(r => { r.hidden = r.dataset.path !== state.path; });
+    $('#faceCustom').closest('.opt').hidden = state.path === 'standard';   // Standard = stock colors only
+  }
+  if (ROWS) {
     $('#lnMatch').checked = state.edge === 'match';
     $('#lnEdge').hidden = state.edge === 'match';
-    $('#faceCustom').closest('.opt').hidden = state.path === 'standard';   // Standard = stock colors only
     for (const b of document.querySelectorAll('[data-eye]')) {
       const k = b.dataset.eye, on = k === 'sheets' ? state.sheets : !state.art[k].hide;
       b.setAttribute('aria-pressed', on);
       b.disabled = k !== 'sheets' && !state.art[k].img;          // nothing to show/hide until something's uploaded
     }
   }
-  if (LAYOUT === 'v3') paintPrices();
+  if (LAYOUT === 'v5') {
+    $('#lnTurn').setAttribute('aria-pressed', state.sheetTurn);
+    $('#mwEmpty').hidden = !!wallInfo; $('#mwGot').hidden = !wallInfo;
+    if (wallInfo) {
+      const n = state.myCerts.filter(d => d.sample).length;
+      $('#mwSw').style.background = wallInfo.hex;
+      $('#mwTxt').textContent = `${n ? `${n} document${n === 1 ? '' : 's'} on a` : 'A'} ${wallInfo.name} wall`;
+    }
+  }
+  if (PRICED) paintPrices();
 }
-// v3: "Included" / "+$X" on each option
+// v3: "Included" / "+$X" on each option. v5: only the extra costs ("+$X"), plus the board's price on Size.
 function paintPrices() {
-  const U = UPCHARGES, tag = (n) => (n ? `+$${n}` : 'Included');
-  const set = (sel, n) => { const el = typeof sel === 'string' ? $(sel) : sel; if (el) { el.textContent = tag(n); el.classList.toggle('inc', !n); } };
+  const U = UPCHARGES, v5 = LAYOUT === 'v5', tag = (n) => (n ? `+$${n}` : v5 ? '' : 'Included');
+  const set = (el, n) => { if (el) { el.textContent = tag(n); el.classList.toggle('inc', !n); el.hidden = !el.textContent; } };
+  const badge = (h) => {
+    let up = h.querySelector('.up');
+    if (!up) { up = document.createElement('em'); up.className = 'up'; h.insertBefore(up, h.querySelector('.chev')); }
+    return up;
+  };
   const head = {
-    color: state.face[0] === '#' && !state.lamSel ? U.customColor : 0,
-    laminate: U.laminate, edge: state.edge[0] === '#' ? U.edgeCustom : 0,
-    caps: U.caps[state.fastener] || 0, logo: U.logo, bgimg: U.background,
+    color: state.face[0] === '#' && !state.lamSel ? upAmt(U.customColor) : 0,
+    laminate: upAmt(U.laminate), edge: state.edge[0] === '#' ? upAmt(U.edgeCustom) : 0,
+    caps: upAmt(U.caps[state.fastener]), logo: upAmt(U.logo), bgimg: upAmt(U.background),
   };
   for (const [k, n] of Object.entries(head)) {
     const h = document.querySelector(`.sec[data-sec="${k}"] .sec-h`);
-    if (!h) continue;
-    let up = h.querySelector('.up');
-    if (!up) { up = document.createElement('em'); up.className = 'up'; h.insertBefore(up, h.querySelector('.chev')); }
-    set(up, n);
+    if (h) set(badge(h), n);
+  }
+  if (v5) {                                                    // Size: this board's own price
+    const up = badge($('.sec[data-sec="size"] .sec-h')), std = SIZES.find(s => s.id === state.sizeId);
+    up.classList.add('size'); up.hidden = false;
+    up.textContent = std ? `$${std.price.toFixed(2)}` : 'Quote';
   }
   document.querySelectorAll('#fastSw .fast').forEach(b => {
     let up = b.querySelector('.up');
     if (!up) { up = document.createElement('em'); up.className = 'up'; b.insertBefore(up, b.querySelector('span').nextSibling); }
-    set(up, U.caps[b.dataset.k] || 0);
+    set(up, upAmt(U.caps[b.dataset.k]));
   });
   const extra = (input, n) => { const row = $(input)?.closest('.opt'); if (!row) return; let up = row.querySelector('.up'); if (!up) { up = document.createElement('em'); up.className = 'up'; row.insertBefore(up, $(input)); } set(up, n); };
-  extra('#faceCustom', U.customColor); extra('#edgeCustom', U.edgeCustom);
-  // v3 prices these instead of quoting them
-  const words = { laminate: `Wilsonart laminate adds $${U.laminate} to the board price.`, background: `A printed background adds $${U.background} per board.`, logo: `A printed logo adds $${U.logo} per board.` };
+  extra('#faceCustom', upAmt(U.customColor)); extra('#edgeCustom', upAmt(U.edgeCustom));
+  // priced instead of quoted
+  const sz = state.sizeId === 'custom' ? 'custom-size' : state.sizeId.replace('x', '×');
+  const words = { laminate: `Wilsonart laminate adds $${upAmt(U.laminate)} to a ${sz} board.`, background: `A printed background adds $${upAmt(U.background)} per board.`, logo: `A printed logo adds $${upAmt(U.logo)} per board.` };
   document.querySelectorAll('[data-quote]').forEach(el => { el.textContent = words[el.dataset.quote]; });
 }
 
@@ -1245,7 +1287,7 @@ async function scanWall(file) {
   }
   const counts = {};
   for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
-  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}. Wrong? Change sizes or remove extras under Sample certificates.`;
+  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}. Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`;
   state.myCerts = found.map((f, i) => {
     const s = DOC_SIZES.find(x => x.id === f.size);
     const d = { sample: true, title: SHEETS.titles[i % SHEETS.titles.length], size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
@@ -1278,18 +1320,25 @@ async function scanExample() {
   return scanWall(new File([blob], 'example-wall.jpg', { type: 'image/jpeg' }));
 }
 
-/* ------------------------------------------------------------------ v4: guided, photo first */
-// 1 (intro): full screen, snap your wall.  2 (styles): swipe through looks picked for that wall; the board stays put.
-// 3 (custom): the usual options panel. The step is <html data-step="...">; index.html's CSS shows and hides the parts.
+/* ------------------------------------------------------------------ v4 + v5: guided, photo first */
+// v4: 1 (intro) full screen, snap your wall.  2 (styles) swipe through looks picked for that wall; the board stays put.
+//     3 (custom) the usual options panel.
+// v5: the same idea as a short tutorial over the live 3D board, one full screen at a time, with Back and Skip:
+//     intro (welcome; the board turns slowly on a real wall) -> snap (live camera on phones) -> styles ("Our picks")
+//     -> custom. The step is <html data-step="...">; index.html's CSS shows and hides the parts.
 function step() { return document.documentElement.dataset.step || ''; }
+const fullStage = () => ['styles', 'intro', 'snap'].includes(step()) && GUIDED;   // the board fills the screen
 let looks = [], lookAt = 0, wallInfo = null;
+let sway = null;            // v5 welcome/snap: the camera drifts slowly left and right around this framing
+let showcase = null;        // v5: the room the board was in before the welcome screen showed it on brick
 function setStep(s) {
   document.documentElement.dataset.step = s;
-  controls.enabled = s !== 'styles';                       // styles: swipes change the look instead of turning the board
+  controls.enabled = !['styles', 'intro', 'snap'].includes(s);   // swipes change the look / tutorial screens: no turning
   if (s !== 'custom') { closeOptSheet(); if (!$('#lamPanel').hidden) closePicker(); setSheet(false); }
+  if (LAYOUT === 'v5') tourStep(s);
   scrollTo(0, 0);
   updateStage();
-  requestAnimationFrame(() => { resize(); setView(s === 'styles' ? 'angle' : state.view); });
+  requestAnimationFrame(() => { resize(); if (!sway) setView(s === 'styles' ? 'angle' : state.view); });
 }
 const hexL = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
 const lookFace = (L) => (L.lam && findByNumber(L.lam)?.avg) || (L.lam ? '#808080' : colorHex(L.cfg.face));
@@ -1301,7 +1350,7 @@ function rankLooks(w) {
   })).sort((a, b) => b.score - a.score);
 }
 function lookWhy(L) {
-  if (!wallInfo) return 'Swipe to see more looks';
+  if (!wallInfo) return LAYOUT === 'v5' ? 'Swipe to see more of our picks' : 'Swipe to see more looks';
   const c = Math.abs(hexL(lookFace(L)) - (wallInfo.light + 1) / 2);
   return `${c > 0.4 ? 'Stands out on' : c < 0.18 ? 'Blends softly with' : 'Sits nicely on'} your ${wallInfo.name} wall`;
 }
@@ -1309,33 +1358,40 @@ function showLook(i, dir = 0) {
   lookAt = (i + looks.length) % looks.length;
   const L = looks[lookAt];
   applyDesign({ ...L.cfg, lam: L.lam || null, env: 'studio' }, false);   // keeps the size from the photo; camera stays put
-  $('#lookCount').textContent = `${wallInfo && lookAt === 0 ? 'Best match · ' : 'Look '}${lookAt + 1} of ${looks.length}`;
+  const best = wallInfo && lookAt === 0 ? 'Best match · ' : '';
+  $('#lookCount').textContent = LAYOUT === 'v5' ? `${best}${lookAt + 1} of ${looks.length}` : `${best || 'Look '}${lookAt + 1} of ${looks.length}`;
+  $('#lookKick').textContent = `Step 3 of 3 · ${wallInfo ? 'Picked for your wall' : 'Our picks'}`;
   $('#lookName').textContent = L.name;
   $('#lookSpec').textContent = L.blurb;
   $('#lookWhy').textContent = lookWhy(L);
   const sp = currentSpec();
-  $('#lookPrice').textContent = sp.price ? `${sp.price.toFixed(2)}` : 'Custom quote';
+  $('#lookPrice').textContent = sp.price ? `$${sp.price.toFixed(2)}` : 'Custom quote';
   $('#lookDots').innerHTML = looks.map((_, k) => `<i class="${k === lookAt ? 'on' : ''}"></i>`).join('');
   const c = $('#lookCard'); c.classList.remove('in-l', 'in-r'); void c.offsetWidth; if (dir) c.classList.add(dir > 0 ? 'in-r' : 'in-l');
 }
 function browseLooks() {
   looks = rankLooks(wallInfo);
   $('#lookWall').hidden = !wallInfo;
+  $('#lookRetake').textContent = wallInfo ? 'Retake photo' : 'Snap your wall';
   setStep('styles');
   showLook(0);
 }
 async function guideScan(file) {
-  const G = $('#guide');
-  G.classList.add('busy'); $('#guideMsg').textContent = '';
+  const busy = LAYOUT === 'v5' ? $('#tourSnap') : $('#guide'), msg = LAYOUT === 'v5' ? $('#tourMsg') : $('#guideMsg');
+  busy.classList.add('busy'); msg.textContent = '';
   let r = null;
   try { r = file ? await scanWall(file) : await scanExample(); } catch (e) { console.error(e); }
-  G.classList.remove('busy');
+  busy.classList.remove('busy');
   if (!r?.found?.length) {
-    $('#guideMsg').textContent = "We couldn't spot the certificates in that photo. Try again a little closer, with some wall showing around them, or browse the looks without a photo.";
+    msg.textContent = LAYOUT === 'v5'
+      ? "We couldn't spot the certificates in that photo. Try a little closer, with some wall showing around them, or tap Skip to see our picks."
+      : "We couldn't spot the certificates in that photo. Try again a little closer, with some wall showing around them, or browse the looks without a photo.";
+    if (camStream) $('#camFeed').play().catch(() => {});
     return;
   }
   wallInfo = wallLook(r.img, r.found.map(f => f.box));
   if (wallInfo) {                                          // show the board on a wall the color of theirs
+    showcase = null;                                       // (their wall replaces the room from before the welcome screen)
     Object.assign(state, { env: 'studio', wall: -1, wallCustom: wallInfo.hex });
     $('#wallCustom').value = wallInfo.hex;
     $('#lookSw').style.background = wallInfo.hex;
@@ -1345,21 +1401,13 @@ async function guideScan(file) {
   }
   browseLooks();
 }
-function wireGuide() {
-  const onFile = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) guideScan(f); };
-  $('#guideCam').addEventListener('change', onFile);
-  $('#guideFile').addEventListener('change', onFile);
-  $('#guideDemo').addEventListener('click', () => guideScan(null));
-  $('#guideBrowse').addEventListener('click', () => { wallInfo = null; browseLooks(); });
-  $('#guideScratch').addEventListener('click', () => setStep('custom'));
-  $('#guideResume').hidden = !restoredDesign;
-  $('#guideResume').addEventListener('click', () => setStep('custom'));
+// the look bar (shared by v4 and v5): arrows, swipes, keys and its buttons
+function wireLooks() {
   $('#lookPrev').addEventListener('click', () => showLook(lookAt - 1, -1));
   $('#lookNext').addEventListener('click', () => showLook(lookAt + 1, 1));
   $('#lookCustomize').addEventListener('click', () => { setStep('custom'); toast(`${looks[lookAt].name}: tap any option to change it.`); });
   $('#lookScratch').addEventListener('click', () => { applyDesign({ face: 'Black', edge: 'match', fastener: 'alum', lam: null }); setStep('custom'); });
-  $('#lookRetake').addEventListener('click', () => setStep('intro'));
-  $('#backLooks').addEventListener('click', () => { if (!looks.length) looks = rankLooks(wallInfo); setStep('styles'); showLook(lookAt); });
+  $('#lookRetake').addEventListener('click', () => setStep(LAYOUT === 'v5' ? 'snap' : 'intro'));
   // swipe the board or the card to change the look
   let sx = null;
   const down = (e) => { if (step() === 'styles' && !e.target.closest('button')) sx = { x: e.clientX, y: e.clientY }; };
@@ -1376,12 +1424,139 @@ function wireGuide() {
     if (e.key === 'ArrowRight') showLook(lookAt + 1, 1);
     if (e.key === 'ArrowLeft') showLook(lookAt - 1, -1);
   });
-  // where to start: shared links go straight to the options; ?scan=demo runs the example photo; ?step=styles browses
+}
+// where to start: shared links go straight to the options; ?scan=demo runs the example photo; ?step=styles browses
+function firstStep(photoStep) {
   const q = new URLSearchParams(location.search);
   if (q.has('size') || q.has('color')) setStep('custom');
-  else if (q.get('scan') === 'demo') { setStep('intro'); guideScan(null); }
+  else if (q.get('scan') === 'demo') { setStep(photoStep); guideScan(null); }
   else if (q.get('step') === 'styles') browseLooks();
+  else if (q.get('step') === 'snap' && LAYOUT === 'v5') setStep('snap');
   else setStep('intro');
+}
+function wireGuide() {
+  const onFile = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) guideScan(f); };
+  $('#guideCam').addEventListener('change', onFile);
+  $('#guideFile').addEventListener('change', onFile);
+  $('#guideDemo').addEventListener('click', () => guideScan(null));
+  $('#guideBrowse').addEventListener('click', () => { wallInfo = null; browseLooks(); });
+  $('#guideScratch').addEventListener('click', () => setStep('custom'));
+  $('#guideResume').hidden = !restoredDesign;
+  $('#guideResume').addEventListener('click', () => setStep('custom'));
+  $('#backLooks').addEventListener('click', () => { if (!looks.length) looks = rankLooks(wallInfo); setStep('styles'); showLook(lookAt); });
+  wireLooks();
+  firstStep('intro');
+}
+
+// ---- v5 tutorial screens ----
+const touch = matchMedia('(pointer: coarse)');
+const TOUR = ['intro', 'snap', 'styles'];
+function tourStep(s) {
+  const i = TOUR.indexOf(s);
+  document.querySelectorAll('.t-dots i').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('done', k < i); });
+  $('#tourBack').hidden = i <= 0;
+  $('#tourSkip').textContent = s === 'snap' ? 'Skip photo' : 'Skip';
+  $('#tourMsg').textContent = '';
+  // welcome + snap: the board turns slowly on a brick wall (their own room comes back afterwards)
+  if (s === 'intro' || s === 'snap') {
+    if (!showcase && !wallInfo) { showcase = { env: state.env }; state.env = 'bistro'; refresh(); }
+    sway = swayFrame();
+  } else {
+    sway = null;
+    if (showcase) { state.env = showcase.env; showcase = null; refresh(); }
+  }
+  if (s === 'snap') { if (touch.matches) startCam(); else camOff(); }
+  else stopCam();
+}
+// where the board sits while the tutorial cards cover part of the screen: right of the card (computers), above it (phones)
+function swayFrame() {
+  const { w, h } = dims(), fov = THREE.MathUtils.degToRad(camera.fov) / 2, r = stage.getBoundingClientRect();
+  const aspect = r.width / Math.max(1, r.height);
+  if (step() === 'snap') {                                   // snap: centered, between the tip and the shutter
+    const d = Math.max(h / 2 / 0.6, w / 2 / aspect / 0.8) / Math.tan(fov) + 2;
+    return { tgt: new THREE.Vector3(0, 0, 0.5), d };
+  }
+  if (phone.matches || aspect < 1) {
+    const room = 0.42;                                       // top 42% of the screen is free
+    const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * 1.35 + 2;
+    return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room), 0.5), d };
+  }
+  const room = 0.62;                                         // right 62% of the screen is free
+  const d = Math.max(h / 2, w / 2 / (aspect * room)) / Math.tan(fov) * 1.3 + 2;
+  return { tgt: new THREE.Vector3(-d * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };
+}
+// live camera (phones; computers can switch it on). If it's blocked or missing, the shutter opens the phone's camera app.
+let camStream = null;
+async function startCam() {
+  if (camStream) return;
+  if (!navigator.mediaDevices?.getUserMedia) return camOff();
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+    if (step() !== 'snap') return stopCam();               // they moved on while the permission question was up
+    const v = $('#camFeed'); v.srcObject = camStream;
+    await v.play().catch(() => {});
+    $('#tourSnap').classList.add('live');
+    $('#tourShutter').setAttribute('aria-label', 'Take the photo');
+    $('#tourLive').hidden = true;
+    $('#tourTip').textContent = 'Fit the certificates you have up now in the frame, with some wall showing around them.';
+  } catch { camStream = null; camOff(); }
+}
+function stopCam() {
+  camStream?.getTracks().forEach(t => t.stop());
+  camStream = null;
+  $('#camFeed').srcObject = null;
+  $('#tourSnap').classList.remove('live');
+}
+function camOff() {
+  const desk = !touch.matches;                             // computers: upload (or drag in) a photo; the laptop camera is optional
+  $('#tourSnap').classList.toggle('desk', desk);
+  $('#tourShutter').setAttribute('aria-label', desk ? 'Upload a photo' : 'Take the photo');
+  $('#tourTip').textContent = desk
+    ? 'Upload or drag in a photo of the certificates on your wall, with some wall showing around them. No photo handy? Try our example.'
+    : 'Tap the button and take a photo of the certificates you have up now, with some wall showing around them.';
+  $('#tourLive').hidden = !desk || !navigator.mediaDevices?.getUserMedia;
+}
+async function snapFrame() {
+  const v = $('#camFeed');
+  if (!v.videoWidth) return;
+  const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  v.pause();                                               // hold the picture while we look at it
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+  guideScan(new File([blob], 'wall.jpg', { type: 'image/jpeg' }));
+}
+function wireTour() {
+  const onFile = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) guideScan(f); };
+  $('#tourFile').addEventListener('change', onFile);
+  $('#tourCam').addEventListener('change', onFile);
+  $('#tourShutter').addEventListener('click', () => (camStream ? snapFrame() : $(touch.matches ? '#tourCam' : '#tourFile').click()));
+  // computers: drag a photo anywhere onto the snap screen
+  let drags = 0;
+  const hasFile = (e) => step() === 'snap' && [...(e.dataTransfer?.types || [])].includes('Files');
+  addEventListener('dragenter', (e) => { if (hasFile(e)) { drags++; $('#tourSnap').classList.add('drag'); } });
+  addEventListener('dragleave', () => { if (drags && !--drags) $('#tourSnap').classList.remove('drag'); });
+  addEventListener('dragover', (e) => { if (hasFile(e)) e.preventDefault(); });
+  addEventListener('drop', (e) => {
+    if (!hasFile(e)) return;
+    e.preventDefault(); drags = 0; $('#tourSnap').classList.remove('drag');
+    const f = [...e.dataTransfer.files].find(x => x.type.startsWith('image/'));
+    if (f) guideScan(f); else $('#tourMsg').textContent = 'That isn\'t a photo. Drop a JPG or PNG of your wall.';
+  });
+  $('#tourDemo').addEventListener('click', () => guideScan(null));
+  $('#tourLive').addEventListener('click', startCam);
+  $('#tourStart').addEventListener('click', () => setStep('snap'));
+  $('#tourResume').hidden = !restoredDesign;
+  $('#tourResume').addEventListener('click', () => setStep('custom'));
+  $('#tourBack').addEventListener('click', () => setStep(TOUR[Math.max(0, TOUR.indexOf(step()) - 1)]));
+  // Skip: the welcome skips the whole tour; the photo step goes on to our picks; our picks goes to the options
+  $('#tourSkip').addEventListener('click', () => {
+    const s = step();
+    if (s === 'snap') browseLooks();                     // (with the last photo's suggestions, if there was one)
+    else setStep('custom');
+  });
+  addEventListener('resize', () => { if (sway) sway = swayFrame(); });
+  wireLooks();
+  firstStep('snap');
 }
 
 // "Try it with examples" (also ?docs=demo): a labor-law poster plus two permits, drawn on the spot
@@ -2057,6 +2232,12 @@ function loop() {
     if (Math.abs(inset.target - inset.now) < 0.5) inset.now = inset.target;
     applyInset(); dirty = true;
   }
+  if (sway && !tween) {                  // v5 welcome: drift slowly left and right
+    const a = Math.sin(clock.elapsedTime * 0.35) * 0.3;
+    controls.target.copy(sway.tgt);
+    camera.position.set(sway.tgt.x + sway.d * Math.sin(a), sway.tgt.y + sway.d * 0.06, sway.tgt.z + sway.d * Math.cos(a));
+    dirty = true;
+  }
   if (controls.update()) dirty = true;   // true while the user is orbiting / damping
   if (tween) dirty = true;
   if (dirty) {                                    // draw only when something changed
@@ -2075,10 +2256,11 @@ setView('angle', true);
 window.__cobo = { state, refresh, setView, currentSpec, THREE, scene, camera, renderer, applyDesign };   // also tells index.html the builder started
 loop();
 renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + volume-discount hint
-if (restoredDesign && LAYOUT !== 'v4') toast('Welcome back! We restored your last design.');
+if (restoredDesign && !GUIDED) toast('Welcome back! We restored your last design.');
 if (LAYOUT === 'v4') wireGuide();
+if (LAYOUT === 'v5') wireTour();
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
-if (new URLSearchParams(location.search).get('scan') === 'demo' && LAYOUT !== 'v4') scanExample();
+if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED) scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)
 const peek = new URLSearchParams(location.search).get('peek');
 if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);

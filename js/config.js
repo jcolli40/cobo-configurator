@@ -70,11 +70,12 @@ export const STYLES = [
   { name: 'Bold red',       blurb: 'Red · black edge · black caps',      cfg: { face: 'Red', edge: 'Black', fastener: 'black' },            suits: { light: 1,    warm: -0.5, colorful: -0.6 }, base: -0.3 },
 ];
 
-// ---- Version 3 only: upcharges for options (PLACEHOLDER amounts in dollars; set the real ones here) ----
-// In v3 these boards are priced and go in the cart (only custom sizes are still quoted).
+// ---- Versions 3 and 5: upcharges for options (PLACEHOLDER amounts in dollars; set the real ones here) ----
+// In v3 and v5 these boards are priced and go in the cart (only custom sizes are still quoted).
+// Any amount can be one number for every size, or one per size like laminate below (custom = custom-size boards).
 export const UPCHARGES = {
   customColor: 25,                         // any color outside the stock list
-  laminate: 60,                            // Wilsonart laminate face
+  laminate: { '6x12': 20, '12x12': 30, '12x24': 45, '12x36': 60, '24x24': 75, '24x36': 95, custom: 95 },   // Wilsonart laminate face ("Textures")
   edgeCustom: 10,                          // edge banding in a non-stock color (stock colors are included)
   caps: { alum: 0, chrome: 8, black: 8 },  // per board (4 caps)
   logo: 45,                                // printed logo

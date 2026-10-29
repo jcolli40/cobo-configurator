@@ -54,7 +54,9 @@ You can also link straight to a preset, handy from product pages:
 - **v3** (`/v3/`): size first, then every option with its price ("Included" or "+$X"). Options are priced and go in the cart; only custom sizes are quoted. Upcharge amounts are placeholders in `UPCHARGES` in `js/config.js`.
 - **v4** (`/v4/`): guided, photo first. A full-screen start asks for a photo of the wall; we count the documents, size a board, read the wall color and suggest looks to swipe through (the board stays put). "Customize this look" (or tapping a part of the board) opens the v1 options panel. The looks and how they're ranked are `STYLES` in `js/config.js`. `?step=styles` skips the photo; `?scan=demo` runs the example photo.
 
-All four share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/`, `v3/` and `v4/index.html`. Before pushing, also run `node tools/stamp-version.js`.
+- **v5** (`/v5/`): Auto-suggest. Three full-screen steps over the live 3D board, with Back and Skip: welcome, snap your wall (a live camera on phones; the Shopify iframe needs `allow="camera"`), then our picks to swipe through. The options panel has an Auto-suggest button, every option as its own card with its upcharge (`UPCHARGES` in `js/config.js`, one amount or one per size), the edge and sample-certificate rows, and My wall (the photo, each document found and its guessed size, your own documents). No logo or background image. `?step=snap` opens the camera step.
+
+All five share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/` to `v5/index.html`. Before pushing, also run `node tools/stamp-version.js`.
 
 Rooms and lighting presets live in `ENVIRONMENTS` (config.js), with the wall textures drawn in `js/env.js`. Popular boards are in `PRESETS`, and volume discounts in `DISCOUNTS` (placeholders; set the same tiers as an automatic discount in Shopify).
 
