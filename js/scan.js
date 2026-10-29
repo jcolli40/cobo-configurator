@@ -2,9 +2,10 @@
 // Runs on the phone, no downloads. It looks for paper: areas brighter and less colorful than the wall that are
 // filled-in, roughly rectangular and not too thin. Good enough for a rough count + sizes; customers can fix the rest.
 
-// returns [{ x, y, w, h }] in the image's pixels
+// returns [{ x, y, w, h, dw, dh }] in the image's pixels: x/y/w/h = the box around it; dw/dh = the sheet's own width
+// and height (measured along its edges, so a tilted sheet isn't over-sized)
 export function findDocuments(img) {
-  const S = 360, k = S / Math.max(img.width, img.height);
+  const S = 640, k = S / Math.max(img.width, img.height);
   const W = Math.max(8, Math.round(img.width * k)), H = Math.max(8, Math.round(img.height * k));
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
@@ -16,18 +17,67 @@ export function findDocuments(img) {
     sat[i] = Math.max(r, gg, b) - Math.min(r, gg, b);
     hist[lum[i]]++;
   }
-  // Otsu's threshold splits "bright" (paper) from "dark" (wall)
-  let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
-  let sB = 0, wB = 0, best = 0, thr = 160;
-  for (let t = 0; t < 256; t++) {
-    wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break;
-    sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
-    if (v > best) { best = v; thr = t; }
+  // Otsu's threshold over part of the histogram: splits "bright" from "dark"
+  const otsu = (lo) => {
+    let n = 0, sum = 0; for (let t = lo; t < 256; t++) { n += hist[t]; sum += t * hist[t]; }
+    let sB = 0, wB = 0, best = 0, thr = lo;
+    for (let t = lo; t < 256; t++) {
+      wB += hist[t]; if (!wB) continue; const wF = n - wB; if (!wF) break;
+      sB += t * hist[t]; const v = wB * wF * (sB / wB - (sum - sB) / wF) ** 2;
+      if (v > best) { best = v; thr = t; }
+    }
+    return thr;
+  };
+  // A wall with light and dark parts (gray planks, brick and mortar) can land on the "bright" side of the first split,
+  // so a second split inside the bright part is tried too, and whichever finds the most sheets wins.
+  const t1 = otsu(0), t2 = otsu(t1 + 1);
+  let best = null;
+  for (const thr of new Set([t1, Math.round((t1 + t2) / 2), t2])) {
+    const found = sheetsAt(thr);
+    const score = found.length + found.reduce((s, f) => s + f.fill, 0) * 0.01;
+    if (!best || score > best.score) best = { found, score };
   }
-  let mask = new Uint8Array(N);
-  for (let i = 0; i < N; i++) mask[i] = lum[i] > thr && sat[i] < 70 ? 1 : 0;
-  // close small gaps (text, logos) so each sheet is one solid blob: grow 2px, then shrink 2px
-  const morph = (m, grow) => {
+  return best.found.map(f => ({ x: f.x / k, y: f.y / k, w: f.w / k, h: f.h / k, dw: f.dw / k, dh: f.dh / k }))
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+
+  function sheetsAt(thr) {
+    let mask = new Uint8Array(N);
+    for (let i = 0; i < N; i++) mask[i] = lum[i] > thr && sat[i] < 70 ? 1 : 0;
+    // close 1px gaps (keeps neighboring sheets apart), fill everything enclosed by paper (text, logos, colored
+    // headers), then trim 2px off and grow it back (cuts thin bridges between sheets and specks of wall)
+    mask = morph(morph(mask, true), false);
+    fillHoles(mask);
+    mask = morph(morph(mask, false), false); mask = morph(morph(mask, true), true);
+    // connected blobs -> sheets
+    const seen = new Uint8Array(N), out = [], stack = [];
+    for (let s = 0; s < N; s++) {
+      if (!mask[s] || seen[s]) continue;
+      let minX = W, minY = H, maxX = 0, maxY = 0, n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+      stack.push(s); seen[s] = 1;
+      while (stack.length) {
+        const p = stack.pop(), x = p % W, y = (p - x) / W; n++;
+        sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
+        if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+        for (const q of [p - 1, p + 1, p - W, p + W]) {
+          if (q < 0 || q >= N || seen[q] || !mask[q]) continue;
+          if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue;
+          seen[q] = 1; stack.push(q);
+        }
+      }
+      if (n < N * 0.004 || n > N * 0.5) continue;                 // specks, or the wall itself
+      // the blob's own long and short side (from how its pixels spread out), whatever angle it's at
+      const mx = sx / n, my = sy / n, vx = sxx / n - mx * mx, vy = syy / n - my * my, cxy = sxy / n - mx * my;
+      const mid = (vx + vy) / 2, dev = Math.sqrt(((vx - vy) / 2) ** 2 + cxy * cxy);
+      const L = Math.sqrt(12 * (mid + dev)), Sh = Math.sqrt(12 * Math.max(0, mid - dev));
+      const fill = n / (L * Sh);                                  // 1 = a perfect rectangle
+      if (fill < 0.8 || fill > 1.2 || L / Sh > 2.6) continue;     // not a sheet-shaped rectangle
+      const ang = 0.5 * Math.atan2(2 * cxy, vx - vy), flat = Math.abs(Math.cos(ang)) >= Math.abs(Math.sin(ang));
+      out.push({ x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, dw: flat ? L : Sh, dh: flat ? Sh : L, fill });
+    }
+    return out;
+  }
+  // grow (or shrink) the white parts of a mask by 1 pixel
+  function morph(m, grow) {
     const o = new Uint8Array(N);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
       let v = grow ? 0 : 1;
@@ -40,30 +90,22 @@ export function findDocuments(img) {
       o[y * W + x] = v;
     }
     return o;
-  };
-  mask = morph(morph(mask, true), true); mask = morph(morph(mask, false), false);
-  // connected blobs -> boxes
-  const seen = new Uint8Array(N), boxes = [], stack = [];
-  for (let s = 0; s < N; s++) {
-    if (!mask[s] || seen[s]) continue;
-    let minX = W, minY = H, maxX = 0, maxY = 0, n = 0;
-    stack.push(s); seen[s] = 1;
+  }
+  // dark areas that can't be reached from the photo's edge without crossing paper are inside a sheet: fill them
+  function fillHoles(m) {
+    const out = new Uint8Array(N), stack = [];
+    const seed = (p) => { if (!m[p] && !out[p]) { out[p] = 1; stack.push(p); } };
+    for (let x = 0; x < W; x++) { seed(x); seed((H - 1) * W + x); }
+    for (let y = 0; y < H; y++) { seed(y * W); seed(y * W + W - 1); }
     while (stack.length) {
-      const p = stack.pop(), x = p % W, y = (p - x) / W; n++;
-      if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
-      for (const q of [p - 1, p + 1, p - W, p + W]) {
-        if (q < 0 || q >= N || seen[q] || !mask[q]) continue;
-        if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue;
-        seen[q] = 1; stack.push(q);
+      const p = stack.pop(), x = p % W;
+      for (const q of [x > 0 ? p - 1 : -1, x < W - 1 ? p + 1 : -1, p - W, p + W]) {
+        if (q < 0 || q >= N || out[q] || m[q]) continue;
+        out[q] = 1; stack.push(q);
       }
     }
-    const bw = maxX - minX + 1, bh = maxY - minY + 1, area = bw * bh;
-    const ratio = Math.max(bw, bh) / Math.min(bw, bh);
-    if (area < N * 0.004 || area > N * 0.6) continue;          // specks, or the wall itself
-    if (n / area < 0.55 || ratio > 2.6) continue;              // not a filled rectangle
-    boxes.push({ x: minX / k, y: minY / k, w: bw / k, h: bh / k });
+    for (let i = 0; i < N; i++) if (!out[i]) m[i] = 1;
   }
-  return boxes.sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
 // The wall around the documents: its color, and how light, warm and colorful it is (each -1 to 1), plus a plain-English
@@ -114,13 +156,14 @@ export function wallLook(img, boxes) {
 // 8.5 x 11 and everything else is scaled from it, then snapped to the nearest standard size.
 export function sizeDocuments(boxes, sizes) {
   if (!boxes.length) return [];
-  const ratio = (b) => Math.max(b.w, b.h) / Math.min(b.w, b.h);
-  const areas = boxes.filter(b => ratio(b) > 1.18 && ratio(b) < 1.4).map(b => b.w * b.h).sort((a, b) => a - b);
-  const ref = areas.length ? areas[Math.floor(areas.length / 2)] : Math.min(...boxes.map(b => b.w * b.h));
+  const dims = (b) => [b.dw ?? b.w, b.dh ?? b.h];          // the sheet's own sides (tilt-proof) when known
+  const ratio = (b) => { const [w, h] = dims(b); return Math.max(w, h) / Math.min(w, h); };
+  const areas = boxes.filter(b => ratio(b) > 1.18 && ratio(b) < 1.4).map(b => dims(b)[0] * dims(b)[1]).sort((a, b) => a - b);
+  const ref = areas.length ? areas[Math.floor(areas.length / 2)] : Math.min(...boxes.map(b => dims(b)[0] * dims(b)[1]));
   const ppi = Math.sqrt(ref / (8.5 * 11));
   return boxes.map(b => {
-    const short = Math.min(b.w, b.h) / ppi, long = Math.max(b.w, b.h) / ppi;
+    const [w, h] = dims(b), short = Math.min(w, h) / ppi, long = Math.max(w, h) / ppi;
     const s = sizes.reduce((a, z) => (Math.abs(z.w - short) + Math.abs(z.h - long) < Math.abs(a.w - short) + Math.abs(a.h - long) ? z : a));
-    return { box: b, size: s.id, turn: b.w > b.h };
+    return { box: b, size: s.id, turn: w > h };
   });
 }

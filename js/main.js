@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291427';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291427';
-import { wallTexture, wallSwatch } from './env.js?v=202610291427';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291508';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291508';
+import { wallTexture, wallSwatch } from './env.js?v=202610291508';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1145,7 +1145,7 @@ function wireLayout() {
   }
   if (LAYOUT === 'v5') {
     // option titles in Title Case
-    const titles = { size: 'Size', color: 'Colors', laminate: 'Textures', edge: 'Edge Banding', caps: 'Caps & Studs', wall: 'Room & Lighting',
+    const titles = { size: 'Size', color: 'Colors', laminate: 'Textures', edge: 'Edge Banding', caps: 'Caps & Studs', wall: 'Environment',
                      mywall: 'My Wall', certs: 'Sample Certificates', presets: 'Popular Boards' };
     for (const [k, t] of Object.entries(titles)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); if (el) el.textContent = t; }
     $('#lnCerts .lt').firstChild.textContent = 'Sample Certificates ';
@@ -1155,6 +1155,10 @@ function wireLayout() {
     const orient = $('[data-orient]').closest('.opt');
     orient.previousElementSibling?.matches('hr') && orient.previousElementSibling.remove();
     $('#sizes').before(orient);
+    // Environment: "Your own wall" first, then the preset rooms
+    const envB = $('.sec[data-sec="wall"] .sec-b'), envHr = envB.querySelector(':scope > hr.div'), own = [];
+    for (let n = envHr.nextElementSibling; n && n.id !== 'wallColorWrap'; n = n.nextElementSibling) own.push(n);
+    envB.prepend(...own, envHr);
     // Popular boards: a strip across the very top of the panel
     $('#popStrip').append($('#presetList'));
     // My Wall (opened from the panel header) holds the photo results, the certificate count and their own documents
@@ -1171,6 +1175,11 @@ function wireLayout() {
     });
     document.addEventListener('click', (e) => { if (e.target.closest('[data-snap]')) { closeOptSheet(); setStep('snap'); } });
     $('#autoBtn').addEventListener('click', () => setStep('snap'));
+    // My Wall: upload a photo of the wall instead (scanned on the photo step, then on to our picks)
+    document.querySelectorAll('[data-wallup]').forEach(inp => inp.addEventListener('change', () => {
+      const f = inp.files[0]; inp.value = '';
+      if (f) { closeOptSheet(); setStep('snap'); guideScan(f); }
+    }));
   }
 }
 // v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted

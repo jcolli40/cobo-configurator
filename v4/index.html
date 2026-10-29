@@ -866,10 +866,12 @@
           <div class="sec-b" hidden>
             <div class="mw-empty" id="mwEmpty">
               <p class="help">Snap the certificates on your wall. We'll count them, guess each one's size, read your wall color and size a board to fit.</p>
-              <button class="primary snapbtn" type="button" data-snap><svg class="i"><use href="#i-camera"/></svg>Snap your wall</button>
+              <div class="row"><button class="primary snapbtn" type="button" data-snap><svg class="i"><use href="#i-camera"/></svg>Snap your wall</button>
+                <label class="upload"><input type="file" accept="image/*" data-wallup><svg class="i"><use href="#i-image"/></svg>Upload</label></div>
             </div>
             <div class="mw-got" id="mwGot" hidden>
-              <div class="mw-sum"><i id="mwSw"></i><span id="mwTxt"></span><button class="link" type="button" data-snap>Retake</button></div>
+              <div class="mw-sum"><i id="mwSw"></i><span id="mwTxt"></span><button class="link" type="button" data-snap>Retake</button>
+                <label class="link"><input type="file" accept="image/*" class="vh" data-wallup>Upload</label></div>
             </div>
             <div id="mwSlot"></div>
           </div>
@@ -1105,6 +1107,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610291427" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610291508" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

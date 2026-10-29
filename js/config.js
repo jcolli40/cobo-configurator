@@ -134,7 +134,7 @@ export const ENVIRONMENTS = [
   photoRoom('retro-diner',        'Retro Diner',        'Mint tile and chrome',     [0.60, 0.38], '#989b8f', 'bright'),
   photoRoom('steel-kitchen',      'Commercial Kitchen', 'Stainless steel',          [0.50, 0.42], '#a1988f', 'steel'),
   photoRoom('elegant-dining',     'Elegant Dining',     'Cream paneled walls',      [0.50, 0.37], '#7b5d40', 'warm'),
-  photoRoom('walnut-steakhouse',  'Walnut Steakhouse',  'Dark walnut paneling',     [0.49, 0.35], '#3d2314', 'moody'),
+  photoRoom('walnut-steakhouse',  'Walnut Steakhouse',  'Dark walnut paneling',     [0.516, 0.30], '#3d2314', 'moody'),   // centered on the middle panel
   photoRoom('moody-dining',       'Moody Dining',       'Charcoal panels, candlelight', [0.50, 0.35], '#3a2617', 'moody'),
   photoRoom('green-lounge',       'Green Lounge',       'Deep green, brass accents', [0.55, 0.40], '#373a2b', 'moody'),
 ];
