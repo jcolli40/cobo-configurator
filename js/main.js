@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610282228';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments } from './scan.js?v=202610282228';
-import { wallTexture, wallSwatch } from './env.js?v=202610282228';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610282308';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610282308';
+import { wallTexture, wallSwatch } from './env.js?v=202610282308';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -96,8 +96,21 @@ const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.minPolarAngle = 0.15;
-controls.maxPolarAngle = Math.PI - 0.15;
+controls.rotateSpeed = 0.45;                 // slower, calmer turning (1 = three.js default)
+// The board turns at most 60 degrees from straight-on in every direction: from the front, or from the back in the Back view.
+const TURN = Math.PI / 3;
+function lockAngles(view) {
+  const back = view === 'back';
+  controls.minAzimuthAngle = back ? Math.PI - TURN : -TURN;   // left / right
+  controls.maxAzimuthAngle = back ? Math.PI + TURN : TURN;
+  controls.minPolarAngle = Math.PI / 2 - TURN;                 // up / down
+  controls.maxPolarAngle = Math.PI / 2 + TURN;
+}
+function unlockAngles() {                      // while the camera glides between Front and Back
+  controls.minAzimuthAngle = -Infinity; controls.maxAzimuthAngle = Infinity;
+  controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI;
+}
+lockAngles('angle');
 
 const key = new THREE.DirectionalLight(0xffffff, 2.3);
 key.castShadow = true;
@@ -589,8 +602,8 @@ function setView(view, instant = false) {
   if (wall) wall.visible = view !== 'back';
   scene.background = new THREE.Color(view === 'back' ? '#d7d7d9' : wallHex());
   needBgSample = true;
-  if (instant) { camera.position.copy(pos); controls.target.copy(tgt); controls.update(); }
-  else tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: tgt };
+  if (instant) { camera.position.copy(pos); controls.target.copy(tgt); lockAngles(view); controls.update(); }
+  else { unlockAngles(); tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: tgt }; }
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
 }
 
@@ -728,7 +741,7 @@ const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the scree
 let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
-  if (!phone.matches) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
+  if (!phone.matches || step() === 'styles') { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
   if (!stageMax || stageW !== innerWidth) {
     stageW = innerWidth; stageMax = Math.round(innerHeight * STAGE.max);
@@ -974,6 +987,7 @@ function wireBoardClicks() {
   let down = null, hoverQueued = false, drag = null;
   el.addEventListener('pointerdown', (e) => {
     down = { x: e.clientX, y: e.clientY };
+    if (step() === 'styles') return;          // v4 style browsing: swipes change the look (see wireGuide)
     const hit = docAt(e);
     if (hit) {
       const o = hit.object;
@@ -1004,7 +1018,8 @@ function wireBoardClicks() {
     }
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
     const sec = partAt(e);
-    if (sec) openSection(sec);
+    if (sec && step() === 'styles') { setStep('custom'); setTimeout(() => openSection(sec), 60); }   // v4: tap a part to change it
+    else if (sec) openSection(sec);
   });
 }
 
@@ -1226,7 +1241,7 @@ async function scanWall(file) {
   $('#scanResult').hidden = false;
   if (!found.length) {
     $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
-    return;
+    return { found, img: tmp.img };
   }
   const counts = {};
   for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
@@ -1240,7 +1255,8 @@ async function scanWall(file) {
   state.sheets = true; $('#sheets').checked = true;
   docsKey = '';
   useBestFit();
-  toast(`Found ${found.length} document${found.length === 1 ? '' : 's'}. Here's a board that fits them.`);
+  if (LAYOUT !== 'v4') toast(`Found ${found.length} document${found.length === 1 ? '' : 's'}. Here's a board that fits them.`);
+  return { found, img: tmp.img };
 }
 
 // "See an example" (also ?scan=demo): a drawn photo of a wall with 6 certificates, run through the same scan
@@ -1259,7 +1275,113 @@ async function scanExample() {
     g.fillStyle = '#9a9a9a'; for (let yy = y + ph * 0.22; yy < y + ph * 0.9; yy += ph * 0.045) g.fillRect(x + pw * 0.1, yy, pw * 0.8 * (0.6 + rnd() * 0.4), ph * 0.012);
   }
   const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
-  await scanWall(new File([blob], 'example-wall.jpg', { type: 'image/jpeg' }));
+  return scanWall(new File([blob], 'example-wall.jpg', { type: 'image/jpeg' }));
+}
+
+/* ------------------------------------------------------------------ v4: guided, photo first */
+// 1 (intro): full screen, snap your wall.  2 (styles): swipe through looks picked for that wall; the board stays put.
+// 3 (custom): the usual options panel. The step is <html data-step="...">; index.html's CSS shows and hides the parts.
+function step() { return document.documentElement.dataset.step || ''; }
+let looks = [], lookAt = 0, wallInfo = null;
+function setStep(s) {
+  document.documentElement.dataset.step = s;
+  controls.enabled = s !== 'styles';                       // styles: swipes change the look instead of turning the board
+  if (s !== 'custom') { closeOptSheet(); if (!$('#lamPanel').hidden) closePicker(); setSheet(false); }
+  scrollTo(0, 0);
+  updateStage();
+  requestAnimationFrame(() => { resize(); setView(s === 'styles' ? 'angle' : state.view); });
+}
+const hexL = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+const lookFace = (L) => (L.lam && findByNumber(L.lam)?.avg) || (L.lam ? '#808080' : colorHex(L.cfg.face));
+// best looks for the wall first; boards that stand out from the wall get a boost
+function rankLooks(w) {
+  return STYLES.map((s, i) => ({
+    ...s,
+    score: !w ? -i : (s.base || 0) + s.suits.light * w.light + s.suits.warm * w.warm + s.suits.colorful * w.colorful + 2 * Math.abs(hexL(lookFace(s)) - (w.light + 1) / 2),
+  })).sort((a, b) => b.score - a.score);
+}
+function lookWhy(L) {
+  if (!wallInfo) return 'Swipe to see more looks';
+  const c = Math.abs(hexL(lookFace(L)) - (wallInfo.light + 1) / 2);
+  return `${c > 0.4 ? 'Stands out on' : c < 0.18 ? 'Blends softly with' : 'Sits nicely on'} your ${wallInfo.name} wall`;
+}
+function showLook(i, dir = 0) {
+  lookAt = (i + looks.length) % looks.length;
+  const L = looks[lookAt];
+  applyDesign({ ...L.cfg, lam: L.lam || null, env: 'studio' }, false);   // keeps the size from the photo; camera stays put
+  $('#lookCount').textContent = `${wallInfo && lookAt === 0 ? 'Best match · ' : 'Look '}${lookAt + 1} of ${looks.length}`;
+  $('#lookName').textContent = L.name;
+  $('#lookSpec').textContent = L.blurb;
+  $('#lookWhy').textContent = lookWhy(L);
+  const sp = currentSpec();
+  $('#lookPrice').textContent = sp.price ? `${sp.price.toFixed(2)}` : 'Custom quote';
+  $('#lookDots').innerHTML = looks.map((_, k) => `<i class="${k === lookAt ? 'on' : ''}"></i>`).join('');
+  const c = $('#lookCard'); c.classList.remove('in-l', 'in-r'); void c.offsetWidth; if (dir) c.classList.add(dir > 0 ? 'in-r' : 'in-l');
+}
+function browseLooks() {
+  looks = rankLooks(wallInfo);
+  $('#lookWall').hidden = !wallInfo;
+  setStep('styles');
+  showLook(0);
+}
+async function guideScan(file) {
+  const G = $('#guide');
+  G.classList.add('busy'); $('#guideMsg').textContent = '';
+  let r = null;
+  try { r = file ? await scanWall(file) : await scanExample(); } catch (e) { console.error(e); }
+  G.classList.remove('busy');
+  if (!r?.found?.length) {
+    $('#guideMsg').textContent = "We couldn't spot the certificates in that photo. Try again a little closer, with some wall showing around them, or browse the looks without a photo.";
+    return;
+  }
+  wallInfo = wallLook(r.img, r.found.map(f => f.box));
+  if (wallInfo) {                                          // show the board on a wall the color of theirs
+    Object.assign(state, { env: 'studio', wall: -1, wallCustom: wallInfo.hex });
+    $('#wallCustom').value = wallInfo.hex;
+    $('#lookSw').style.background = wallInfo.hex;
+    const n = r.found.length;
+    $('#lookWallTxt').textContent = `${n} document${n === 1 ? '' : 's'} on a ${wallInfo.name} wall`;
+    $('#lookShot').src = $('#scanCanvas').toDataURL('image/jpeg', 0.7);
+  }
+  browseLooks();
+}
+function wireGuide() {
+  const onFile = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) guideScan(f); };
+  $('#guideCam').addEventListener('change', onFile);
+  $('#guideFile').addEventListener('change', onFile);
+  $('#guideDemo').addEventListener('click', () => guideScan(null));
+  $('#guideBrowse').addEventListener('click', () => { wallInfo = null; browseLooks(); });
+  $('#guideScratch').addEventListener('click', () => setStep('custom'));
+  $('#guideResume').hidden = !restoredDesign;
+  $('#guideResume').addEventListener('click', () => setStep('custom'));
+  $('#lookPrev').addEventListener('click', () => showLook(lookAt - 1, -1));
+  $('#lookNext').addEventListener('click', () => showLook(lookAt + 1, 1));
+  $('#lookCustomize').addEventListener('click', () => { setStep('custom'); toast(`${looks[lookAt].name}: tap any option to change it.`); });
+  $('#lookScratch').addEventListener('click', () => { applyDesign({ face: 'Black', edge: 'match', fastener: 'alum', lam: null }); setStep('custom'); });
+  $('#lookRetake').addEventListener('click', () => setStep('intro'));
+  $('#backLooks').addEventListener('click', () => { if (!looks.length) looks = rankLooks(wallInfo); setStep('styles'); showLook(lookAt); });
+  // swipe the board or the card to change the look
+  let sx = null;
+  const down = (e) => { if (step() === 'styles' && !e.target.closest('button')) sx = { x: e.clientX, y: e.clientY }; };
+  stage.addEventListener('pointerdown', down);
+  $('#lookBar').addEventListener('pointerdown', down);
+  addEventListener('pointerup', (e) => {
+    if (!sx) return;
+    const dx = e.clientX - sx.x, dy = e.clientY - sx.y; sx = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) showLook(lookAt + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+  });
+  addEventListener('pointercancel', () => { sx = null; });
+  addEventListener('keydown', (e) => {
+    if (step() !== 'styles' || e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') showLook(lookAt + 1, 1);
+    if (e.key === 'ArrowLeft') showLook(lookAt - 1, -1);
+  });
+  // where to start: shared links go straight to the options; ?scan=demo runs the example photo; ?step=styles browses
+  const q = new URLSearchParams(location.search);
+  if (q.has('size') || q.has('color')) setStep('custom');
+  else if (q.get('scan') === 'demo') { setStep('intro'); guideScan(null); }
+  else if (q.get('step') === 'styles') browseLooks();
+  else setStep('intro');
 }
 
 // "Try it with examples" (also ?docs=demo): a labor-law poster plus two permits, drawn on the spot
@@ -1328,13 +1450,13 @@ function useBestFit() {
 }
 
 // Apply a whole design at once (popular boards, shared links, restored last design)
-function applyDesign(d) {
+function applyDesign(d, refit = true) {
   for (const k of ['sizeId', 'orient', 'face', 'edge', 'fastener', 'customA', 'customB', 'sheets', 'sheetTurn', 'env', 'certNeed']) if (d[k] !== undefined) state[k] = d[k];
   $('#sheets').checked = state.sheets; $('#sheetTurn').checked = state.sheetTurn;
   $('#cw').value = state.customA; $('#ch').value = state.customB;
   if (d.lam) { pendingLam = d.lam; if (libraryReady) { const it = findByNumber(d.lam) || unknownLam(d.lam, '#bdbdbd'); state.lamSel = it; pendingLam = null; } }
-  else state.lamSel = null;
-  refresh(true);
+  else { state.lamSel = null; pendingLam = null; }
+  refresh(refit);
 }
 let pendingLam = null;
 
@@ -1928,7 +2050,7 @@ function loop() {
     const k = tween.t < 0.5 ? 4 * tween.t ** 3 : 1 - Math.pow(-2 * tween.t + 2, 3) / 2;
     camera.position.lerpVectors(tween.p0, tween.p1, k);
     controls.target.lerpVectors(tween.t0, tween.t1, k);
-    if (tween.t >= 1) tween = null;
+    if (tween.t >= 1) { tween = null; lockAngles(state.view); }
   }
   if (inset.now !== inset.target) {      // slide the view while the laminate panel opens/closes
     inset.now += (inset.target - inset.now) * Math.min(1, dt * 9);
@@ -1953,9 +2075,10 @@ setView('angle', true);
 window.__cobo = { state, refresh, setView, currentSpec, THREE, scene, camera, renderer, applyDesign };   // also tells index.html the builder started
 loop();
 renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + volume-discount hint
-if (restoredDesign) toast('Welcome back! We restored your last design.');
+if (restoredDesign && LAYOUT !== 'v4') toast('Welcome back! We restored your last design.');
+if (LAYOUT === 'v4') wireGuide();
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
-if (new URLSearchParams(location.search).get('scan') === 'demo') scanExample();
+if (new URLSearchParams(location.search).get('scan') === 'demo' && LAYOUT !== 'v4') scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)
 const peek = new URLSearchParams(location.search).get('peek');
 if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);

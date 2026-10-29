@@ -52,8 +52,9 @@ You can also link straight to a preset, handy from product pages:
 - **v1** (main link): one panel with every option.
 - **v2** (`/v2/`): size first, then **Standard board** (stock colors, priced) or **Custom board** (laminate, any color, printing; quoted). Fewer big cards; small choices are rows with toggles and eye icons (show/hide in the preview).
 - **v3** (`/v3/`): size first, then every option with its price ("Included" or "+$X"). Options are priced and go in the cart; only custom sizes are quoted. Upcharge amounts are placeholders in `UPCHARGES` in `js/config.js`.
+- **v4** (`/v4/`): guided, photo first. A full-screen start asks for a photo of the wall; we count the documents, size a board, read the wall color and suggest looks to swipe through (the board stays put). "Customize this look" (or tapping a part of the board) opens the v1 options panel. The looks and how they're ranked are `STYLES` in `js/config.js`. `?step=styles` skips the photo; `?scan=demo` runs the example photo.
 
-All three share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/index.html` and `v3/index.html`. Before pushing, also run `node tools/stamp-version.js`.
+All four share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/`, `v3/` and `v4/index.html`. Before pushing, also run `node tools/stamp-version.js`.
 
 Rooms and lighting presets live in `ENVIRONMENTS` (config.js), with the wall textures drawn in `js/env.js`. Popular boards are in `PRESETS`, and volume discounts in `DISCOUNTS` (placeholders; set the same tiers as an automatic discount in Shopify).
 

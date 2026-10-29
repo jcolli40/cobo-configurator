@@ -404,6 +404,84 @@
     .modal { padding: 0; }
     .mpanel { height: 100%; border-radius: 0; }
   }
+
+  /* ---------- v4: guided steps (<html data-step="intro | styles | custom">, set by js/main.js) ---------- */
+  .guide { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; display: grid; place-items: center; padding: 32px 20px; }
+  :root:not([data-step="intro"]) .guide { display: none; }
+  html[data-step="intro"], html[data-step="intro"] body { overflow: hidden; }
+  .g-in { width: min(520px, 100%); display: grid; gap: 18px; text-align: center; }
+  .g-kick { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .guide h1 { margin: 0; font-size: clamp(26px, 5vw, 34px); line-height: 1.15; letter-spacing: -.01em; text-transform: none; }
+  .g-steps { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 10px; text-align: left; }
+  .g-steps li { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .g-steps .i { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: var(--tint); color: var(--accent); }
+  .g-steps b { font-size: 15px; }
+  .g-steps span { font-size: 13px; color: var(--muted); }
+  .g-cam { position: relative; display: inline-flex; justify-content: center; align-items: center; gap: 10px; justify-self: center; background: var(--accent); color: #fff; border-radius: 999px; padding: 16px 30px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(27, 58, 107, .3); }
+  .g-cam .i { width: 22px; height: 22px; }
+  .g-cam:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .g-cam input, .vh { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .g-alt { font-size: 13px; color: var(--muted); }
+  .g-alt label.link { position: relative; }
+  .g-msg { margin: 0; color: #b3261e; font-size: 13.5px; }
+  .g-msg:empty { display: none; }
+  .g-or { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12px; }
+  .g-or::before, .g-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+  .g-alt2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ghostbtn { border: 1px solid var(--line-2); background: #fff; border-radius: 12px; padding: 12px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--accent); }
+  .ghostbtn:hover { border-color: var(--accent); }
+  .g-busy { display: none; margin: 0; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: var(--accent); }
+  .guide.busy .g-busy { display: flex; }
+  .guide.busy .g-cam, .guide.busy .g-alt, .guide.busy .g-alt2, .guide.busy .g-or { opacity: .35; pointer-events: none; }
+  .spin { width: 18px; height: 18px; border: 2.5px solid var(--tint-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* styles step: the board fills the screen, the look card sits under it; swipe or use the arrows */
+  .lookbar, .lookwall, .lookhint, .back-looks { display: none; }
+  [data-step="styles"] .app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; height: 100vh; height: 100dvh; padding: 0; }
+  [data-step="styles"] .panel, [data-step="styles"] .hint, [data-step="styles"] .viewbar { display: none; }
+  [data-step="styles"] .lookbar { display: grid; }
+  [data-step="styles"] .lookwall { display: flex; }
+  [data-step="styles"] .lookhint { display: block; }
+  [data-step="custom"] .back-looks { display: inline-flex; }
+  .lookbar { justify-items: center; gap: 10px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); touch-action: pan-y; user-select: none; }
+  .lookrow { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 10px; align-items: center; width: min(560px, 100%); }
+  .lk-arrow { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-2); background: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); color: var(--accent); padding: 0; }
+  .lk-arrow:hover { border-color: var(--accent); }
+  .lk-arrow .i { width: 22px; height: 22px; }
+  .lookcard { display: grid; gap: 2px; text-align: center; min-width: 0; }
+  .lk-top { display: flex; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  #lookPrice { font-weight: 700; color: var(--ink); }
+  #lookPrice::before { content: "·"; margin-right: 8px; color: var(--muted); font-weight: 400; }
+  .lookcard b { font-size: 20px; }
+  #lookSpec { font-size: 13px; color: var(--muted); }
+  #lookWhy { font-style: normal; font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .dots { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
+  .dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .2s; }
+  .dots i.on { background: var(--accent); width: 16px; }
+  .lookcard.in-r { animation: lkR .28s ease; }
+  .lookcard.in-l { animation: lkL .28s ease; }
+  @keyframes lkR { from { opacity: 0; transform: translateX(28px); } }
+  @keyframes lkL { from { opacity: 0; transform: translateX(-28px); } }
+  #lookCustomize { padding: 13px 30px; border-radius: 999px; font-size: 15px; box-shadow: 0 6px 18px rgba(27, 58, 107, .28); }
+  .lookmore { font-size: 13px; color: var(--faint); }
+  .lookwall { position: absolute; left: 16px; top: 14px; align-items: center; gap: 9px; padding: 4px 14px 4px 4px; font-size: 12.5px; z-index: 5; max-width: calc(100% - 32px); }
+  .lookwall img { width: 46px; height: 34px; object-fit: cover; border-radius: 999px; flex: none; }
+  .lookwall i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
+  .lookwall span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lookhint { position: absolute; right: 16px; top: 14px; font-size: 12px; color: var(--muted); padding: 6px 12px; z-index: 5; }
+  .back-looks { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); align-items: center; gap: 3px; border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 6px 11px 6px 6px; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .back-looks .i { width: 15px; height: 15px; }
+  @media (max-width: 860px) {
+    [data-step="styles"] #stageWrap { position: relative; height: auto; clip-path: none !important; }
+    [data-step="styles"] #stage { position: absolute; inset: 0; transform: none !important; }
+    [data-step="styles"] .lookbar { padding-top: 12px; gap: 8px; }
+    [data-step="styles"] .lookhint { display: none; }
+    .lookwall { left: 10px; top: 10px; max-width: calc(100% - 20px); font-size: 12px; }
+    .lookcard b { font-size: 18px; }
+    .lookrow { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; }
+    .lk-arrow { width: 44px; height: 44px; }
+  }
 </style>
 </head>
 <body>
@@ -446,10 +524,31 @@
       <button data-view="back">Back</button>
       <button id="arBtn" class="ar-btn" type="button" hidden><svg class="i"><use href="#i-ar"/></svg>View on your wall</button>
     </div>
+    <!-- v4: what we found in their photo (top left) while they browse looks -->
+    <div class="lookwall pill" id="lookWall" hidden><img id="lookShot" alt="Your wall photo"><i id="lookSw"></i><span id="lookWallTxt"></span></div>
+    <div class="lookhint pill">Swipe or use ← → · tap the board to change a part</div>
+  </div>
+
+  <!-- v4 step 2: swipe through looks suggested for their wall; the board stays in place -->
+  <div class="lookbar lay-v4" id="lookBar" hidden>
+    <div class="lookrow">
+      <button class="lk-arrow" type="button" id="lookPrev" aria-label="Previous look"><svg class="i"><use href="#i-left"/></svg></button>
+      <div class="lookcard" id="lookCard" aria-live="polite">
+        <span class="lk-top"><span id="lookCount"></span><span id="lookPrice"></span></span>
+        <b id="lookName"></b>
+        <span id="lookSpec"></span>
+        <em id="lookWhy"></em>
+        <div class="dots" id="lookDots" aria-hidden="true"></div>
+      </div>
+      <button class="lk-arrow" type="button" id="lookNext" aria-label="Next look"><svg class="i"><use href="#i-right"/></svg></button>
+    </div>
+    <button class="primary" type="button" id="lookCustomize">Customize this look</button>
+    <div class="lookmore"><button class="link" type="button" id="lookScratch">Start from scratch</button> · <button class="link" type="button" id="lookRetake">Retake photo</button></div>
   </div>
 
   <div class="panel">
     <div class="p-head">
+      <button class="back-looks lay-v4" id="backLooks" type="button" hidden><svg class="i"><use href="#i-left"/></svg>Looks</button>
       <h1>Design Options</h1>
       <button class="share-btn" id="shareBtn" type="button" aria-label="Share this design"><svg class="i"><use href="#i-share"/></svg><span>Share</span></button>
     </div>
@@ -652,6 +751,29 @@
 </div>
 <div class="sheet-dim" id="sheetDim" hidden></div>
 
+<!-- v4 step 1: full screen. Snap the wall (or upload, see an example, browse without a photo, start from scratch). -->
+<section class="guide lay-v4" id="guide" hidden aria-labelledby="guideTitle">
+  <div class="g-in">
+    <p class="g-kick">Compliance board designer</p>
+    <h1 id="guideTitle">See your new board in under a minute</h1>
+    <ol class="g-steps">
+      <li><svg class="i"><use href="#i-camera"/></svg><b>Snap your wall</b><span>Take a photo of the certificates and permits you have up now.</span></li>
+      <li><svg class="i"><use href="#i-spark"/></svg><b>Swipe through looks</b><span>We count your documents, size a board to fit, and suggest styles that suit your room.</span></li>
+      <li><svg class="i"><use href="#i-design"/></svg><b>Make it yours</b><span>Change any part you like, then add it to your cart.</span></li>
+    </ol>
+    <label class="g-cam"><input type="file" accept="image/*" capture="environment" id="guideCam"><svg class="i"><use href="#i-camera"/></svg>Snap your wall</label>
+    <div class="g-alt"><label class="link"><input type="file" accept="image/*" id="guideFile" class="vh">Upload a photo</label> · <button class="link" type="button" id="guideDemo">See an example</button></div>
+    <p class="g-msg" id="guideMsg" role="status"></p>
+    <p class="g-busy"><span class="spin"></span>Looking at your wall…</p>
+    <div class="g-or">or</div>
+    <div class="g-alt2">
+      <button class="ghostbtn" type="button" id="guideBrowse">Browse looks without a photo</button>
+      <button class="ghostbtn" type="button" id="guideScratch">Start from scratch</button>
+    </div>
+    <button class="link" type="button" id="guideResume" hidden>Continue your last design</button>
+  </div>
+</section>
+
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
 <!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
 <aside id="optSheet" class="side" role="dialog" aria-labelledby="optTitle" hidden>
@@ -758,6 +880,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610282228" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610282308" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

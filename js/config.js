@@ -52,6 +52,24 @@ export const PRESETS = [
   { name: 'Fine dining',        blurb: '24×36 · woodgrain laminate',  cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'Black', fastener: 'black' }, lam: 'Y0822', room: 'dining' },
 ];
 
+// ---- Version 4 only: the looks customers swipe through after snapping their wall ----
+// The size comes from their photo; a look sets everything else. They're ranked for the wall in the photo:
+// suits = how much the look likes a light (+) or dark (-) wall, a warm (+) or cool (-) wall, and a colorful (+) or plain (-) one.
+// base = a head start (or handicap) on every wall. Boards that contrast with the wall also get a boost (see rankLooks
+// in main.js). Add, remove or reorder freely; the order here is used when there's no photo.
+export const STYLES = [
+  { name: 'Classic black',  blurb: 'Black · chrome caps',               cfg: { face: 'Black', edge: 'match', fastener: 'chrome' },        suits: { light: 1,    warm: 0,    colorful: 0.5 }, base: 0.5 },
+  { name: 'Warm walnut',    blurb: 'Java Cane woodgrain · black caps',   cfg: { face: 'Black', edge: 'Black', fastener: 'black' }, lam: 'Y0822', suits: { light: 0.5, warm: 1.5, colorful: -0.5 }, base: 0.3 },
+  { name: 'Gallery white',  blurb: 'White · black edge · aluminum',      cfg: { face: 'White', edge: 'Black', fastener: 'alum' },          suits: { light: -1,   warm: 0,    colorful: 0.5 } },
+  { name: 'Iron stone',     blurb: 'Iron Strata stone · black caps',     cfg: { face: 'Black', edge: 'Black', fastener: 'black' }, lam: '5084',  suits: { light: 0.5, warm: -1.5, colorful: -0.5 } },
+  { name: 'Forest green',   blurb: 'Forest Green · aluminum caps',       cfg: { face: 'Forest Green', edge: 'match', fastener: 'alum' },   suits: { light: 0.5,  warm: 1,    colorful: -1 } },
+  { name: 'Deep navy',      blurb: 'Ceramic Blue · chrome caps',         cfg: { face: 'Black', edge: 'Black', fastener: 'chrome' }, lam: 'Y0745', suits: { light: 1, warm: 1,  colorful: -0.5 } },
+  { name: 'Ivory stone',    blurb: 'Ivory Terrene · aluminum caps',      cfg: { face: 'White', edge: 'White', fastener: 'alum' }, lam: '5075',  suits: { light: -1,  warm: -0.5, colorful: 0 } },
+  { name: 'Natural raffia', blurb: 'Natural Raffia texture · black edge', cfg: { face: 'White', edge: 'Black', fastener: 'black' }, lam: 'Y0823', suits: { light: -0.5, warm: 1, colorful: -0.5 } },
+  { name: 'Industrial raw', blurb: 'Raw wood · black edge · black caps', cfg: { face: 'Raw (unfinished)', edge: 'Black', fastener: 'black' }, suits: { light: 0, warm: -1,   colorful: -1 } },
+  { name: 'Bold red',       blurb: 'Red · black edge · black caps',      cfg: { face: 'Red', edge: 'Black', fastener: 'black' },            suits: { light: 1,    warm: -0.5, colorful: -0.6 }, base: -0.3 },
+];
+
 // ---- Version 3 only: upcharges for options (PLACEHOLDER amounts in dollars; set the real ones here) ----
 // In v3 these boards are priced and go in the cart (only custom sizes are still quoted).
 export const UPCHARGES = {

@@ -66,6 +66,50 @@ export function findDocuments(img) {
   return boxes.sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
+// The wall around the documents: its color, and how light, warm and colorful it is (each -1 to 1), plus a plain-English
+// name ("light warm beige"). Used to suggest board looks that go with the room.
+export function wallLook(img, boxes) {
+  const S = 120, k = S / Math.max(img.width, img.height);
+  const W = Math.max(4, Math.round(img.width * k)), H = Math.max(4, Math.round(img.height * k));
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+  const px = g.getImageData(0, 0, W, H).data, pad = 0.04 * Math.max(img.width, img.height);
+  const inDoc = (x, y) => boxes.some(b => x > b.x - pad && x < b.x + b.w + pad && y > b.y - pad && y < b.y + b.h + pad);
+  const R = [], G = [], B = [], L = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (inDoc(x / k, y / k)) continue;
+    const i = (y * W + x) * 4; R.push(px[i]); G.push(px[i + 1]); B.push(px[i + 2]); L.push(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]);
+  }
+  if (!R.length) return null;
+  const med = (a) => a.sort((p, q) => p - q)[a.length >> 1];
+  const mean = L.reduce((s, v) => s + v, 0) / L.length, sd = Math.sqrt(L.reduce((s, v) => s + (v - mean) ** 2, 0) / L.length);
+  const r = med(R), gg = med(G), b = med(B);
+  // hue / saturation / lightness
+  const mx = Math.max(r, gg, b) / 255, mn = Math.min(r, gg, b) / 255, l = (mx + mn) / 2, d = mx - mn;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) { h = mx === r / 255 ? ((gg - b) / 255 / d) % 6 : mx === gg / 255 ? (b - r) / 255 / d + 2 : (r - gg) / 255 / d + 4; h = (h * 60 + 360) % 360; }
+  const cl = (v) => Math.max(-1, Math.min(1, v));
+  const look = {
+    hex: '#' + [r, gg, b].map(v => v.toString(16).padStart(2, '0')).join(''),
+    light: cl((l - 0.5) * 2.2),
+    warm: cl(Math.cos((h - 30) * Math.PI / 180) * Math.min(1, s * 3)),   // orange = warmest, blue = coolest
+    colorful: cl(s * 3 - 1),
+    textured: sd / 255 > 0.13,                                          // brick, wood, tile...
+  };
+  let name;
+  if (s < 0.07) name = l > 0.85 ? 'white' : l > 0.6 ? 'light gray' : l > 0.3 ? 'gray' : 'charcoal';
+  else if (h < 45 || h >= 345) name = l < 0.4 ? (h < 20 || h >= 345 ? 'brick' : 'wood brown') : l > 0.7 ? 'beige' : s > 0.45 ? 'terracotta' : 'tan';
+  else if (h < 70) name = l > 0.7 ? 'cream' : 'mustard';
+  else if (h < 170) name = s < 0.3 ? 'sage green' : 'green';
+  else if (h < 260) name = s < 0.3 ? 'slate blue' : 'blue';
+  else name = 'purple';
+  const tone = l > 0.66 ? 'light' : l < 0.33 ? 'dark' : '';
+  const temp = look.warm > 0.25 ? 'warm' : look.warm < -0.25 ? 'cool' : '';
+  look.name = [tone, temp, name].filter(Boolean).join(' ').replace(/^light white$/, 'white').replace(/^dark charcoal$/, 'charcoal');
+  return look;
+}
+
 // Guess each document's paper size. A photo has no inches, so: the typical letter-shaped sheet is taken to be
 // 8.5 x 11 and everything else is scaled from it, then snapped to the nearest standard size.
 export function sizeDocuments(boxes, sizes) {
