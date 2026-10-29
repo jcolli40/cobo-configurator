@@ -647,11 +647,9 @@ function closeOptSheet(switching) {
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); }
 }
-// phones: highlight the option button whose sheet is open, and scroll it into view in the side-scrolling row
+// phones: highlight the option button whose sheet is open
 function markActive(name) {
   document.querySelectorAll('.p-body .sec').forEach(s => s.classList.toggle('active', s.dataset.sec === name));
-  const a = name && document.querySelector(`.p-body .sec[data-sec="${name}"]`);
-  if (a && phone.matches) a.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
 }
 // Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
 // it fits the space above the sheet, so the whole board is always visible while you make changes.

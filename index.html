@@ -14,12 +14,12 @@
 </script>
 <style>
   :root {
-    /* Colors. Panel is warm white (always light, even in dark mode); accent is COBO navy. */
-    --ink: #1f1d1a; --muted: #77716a; --faint: #a19b93; --line: #e9e4dc; --line-2: #dcd6cc;
-    --panel: #f7f4ef; --card: #ffffff; --bg: #f2efe9; --hover: #f4f1ec;
+    /* Colors. White panel with neutral greys (always light, even in dark mode); accent is COBO navy. */
+    --ink: #1c1c1e; --muted: #6e6e73; --faint: #9a9aa0; --line: #e6e6e9; --line-2: #d6d6db;
+    --panel: #ffffff; --card: #ffffff; --bg: #ffffff; --hover: #f5f5f7;
     --accent: #1b3a6b; --accent-ink: #ffffff; --tint: #e8edf5; --tint-2: #c9d4e6;
     --radius: 14px; --r-sm: 10px; --sw: 5px;              /* --sw = swatch corner radius */
-    --shadow: 0 1px 2px rgba(40, 32, 20, .05), 0 4px 14px rgba(40, 32, 20, .05);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 4px 14px rgba(0, 0, 0, .05);
     --pw: 400px;                                            /* width of the options panel */
     color-scheme: light;
     font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -49,7 +49,7 @@
   /* ---------- options panel ---------- */
   .panel { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   .p-head { padding: 16px 16px 12px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
-  h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
   .p-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; display: grid; gap: 12px; align-content: start; }
   .tabpane { display: grid; gap: 12px; }
 
@@ -77,12 +77,12 @@
   .opt .i { color: var(--muted); }
 
   /* segmented control */
-  .seg { display: inline-flex; background: #efebe5; padding: 3px; border-radius: 10px; gap: 2px; }
+  .seg { display: inline-flex; background: #f0f0f2; padding: 3px; border-radius: 10px; gap: 2px; }
   .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); }
   .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 
   /* switch (checkbox) */
-  input.switch { appearance: none; width: 38px; height: 22px; border-radius: 11px; background: #ddd7ce; position: relative; cursor: pointer; transition: background .2s; flex: none; margin: 0; }
+  input.switch { appearance: none; width: 38px; height: 22px; border-radius: 11px; background: #d6d6db; position: relative; cursor: pointer; transition: background .2s; flex: none; margin: 0; }
   input.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s; }
   input.switch:checked { background: var(--accent); }
   input.switch:checked::after { transform: translateX(16px); }
@@ -90,12 +90,12 @@
 
   /* size tiles */
   #sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .tile { border: 1.5px solid transparent; background: #f3f0ea; border-radius: 12px; padding: 8px 4px 7px; cursor: pointer; display: grid; justify-items: center; gap: 3px; }
-  .tile:hover { background: #ede9e2; }
+  .tile { border: 1.5px solid transparent; background: #f4f4f6; border-radius: 12px; padding: 8px 4px 7px; cursor: pointer; display: grid; justify-items: center; gap: 3px; }
+  .tile:hover { background: #ececef; }
   .tile svg { width: 58px; height: 58px; }
   .tile .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
-  .tile .sh { fill: #ece8e1; }
-  .tile .cap { fill: #c3bdb4; }
+  .tile .sh { fill: #e9e9ec; }
+  .tile .cap { fill: #bdbdc2; }
   .tile b { font-size: 13px; font-weight: 600; }
   .tile small { font-size: 11px; color: var(--muted); }
   .tile.on { border-color: var(--accent); background: var(--tint); }
@@ -123,7 +123,7 @@
 
   /* Wilsonart call-out */
   /* arrow on the left, pointing left: the laminate panel slides out to the left */
-  .wa { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #faf8f5); border-radius: 12px; padding: 14px 14px 13px 12px; cursor: pointer; }
+  .wa { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #fafafa); border-radius: 12px; padding: 14px 14px 13px 12px; cursor: pointer; }
   .wa:hover { border-color: var(--accent); }
   .wa:hover .go { transform: translateX(-3px); }
   .wa .go svg { transition: transform .25s; }
@@ -165,9 +165,9 @@
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
   /* ---------- cart: the bottom panel (handle, cart lines, bar) ---------- */
-  .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(40,32,20,.08); display: flex; flex-direction: column; }
+  .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(0,0,0,.08); display: flex; flex-direction: column; }
   .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
-  .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d6d0c6; }
+  .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d4d4d8; }
   .grab .gtxt b { color: var(--accent); }
   .grab .chev { position: absolute; right: 16px; top: 12px; transform: rotate(180deg); transition: transform .25s; }
   .buysheet.open .grab .chev { transform: none; }
@@ -208,7 +208,7 @@
   #cta:hover { filter: brightness(1.12); }
 
   /* ---------- Wilsonart side panel (slides out to the left of the options panel) ---------- */
-  .side { position: fixed; top: 0; bottom: 0; right: var(--pw); width: min(440px, calc(100vw - var(--pw))); background: var(--panel); border-left: 1px solid var(--line); box-shadow: -12px 0 32px rgba(40,32,20,.12); z-index: 15; display: flex; flex-direction: column; animation: slidein .22s ease; }
+  .side { position: fixed; top: 0; bottom: 0; right: var(--pw); width: min(440px, calc(100vw - var(--pw))); background: var(--panel); border-left: 1px solid var(--line); box-shadow: -12px 0 32px rgba(0,0,0,.12); z-index: 15; display: flex; flex-direction: column; animation: slidein .22s ease; }
   @keyframes slidein { from { transform: translateX(24px); opacity: 0; } }
   .side-h { display: flex; align-items: center; gap: 12px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--line); }
   .side-h img { height: 22px; width: auto; }
@@ -278,26 +278,25 @@
     .app { display: block; height: auto; padding-top: var(--stageMax, 56vh); padding-bottom: 150px; }   /* bottom: room to scroll the last option clear of the cart bar */
     html, body { height: auto; }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
-    /* phones: the options are a side-scrolling row of square buttons; tapping one opens its sheet */
-    .p-body { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 12px 16px 18px; scrollbar-width: none; }
-    .p-body::-webkit-scrollbar { display: none; }
+    /* phones: the options are a grid of square buttons, 3 per row, scrolling up and down; tapping one opens its sheet */
+    .p-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; overflow: visible; padding: 12px 14px 18px; }
     .tabpane { display: contents; }
-    .p-body .sec { flex: 0 0 104px; height: 108px; scroll-snap-align: start; scroll-margin-left: 16px; }
-    .p-body .sec-h { height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 5px; padding: 10px 8px; text-align: center; }
-    .p-body .sec-h > .i:first-child { width: 26px; height: 26px; color: var(--accent); }
-    .p-body .sec-t { font-size: 12.5px; line-height: 1.2; font-weight: 600; }
-    .p-body .sec-v { flex: none; max-width: 100%; text-align: center; font-size: 11px; }
+    .p-body .sec { aspect-ratio: 1; min-width: 0; scroll-margin-top: 40vh; }
+    .p-body .sec-h { height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 4px; padding: 8px 6px; text-align: center; }
+    .p-body .sec-h > .i:first-child { width: 24px; height: 24px; color: var(--accent); }
+    .p-body .sec-t { font-size: 12px; line-height: 1.2; font-weight: 600; }
+    .p-body .sec-v { flex: none; max-width: 100%; text-align: center; font-size: 10.5px; }
     .p-body .sec-h .chev { display: none; }
     .p-body .sec.active { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset, var(--shadow); background: var(--tint); }
     .p-head { padding-bottom: 4px; border-bottom: 0; }
     /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
     input[type=search], input[type=number], input[type=text], select { font-size: 16px !important; }
     html, body { overflow-x: clip; }
-    .side { overflow-x: hidden; top: 44vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(40,32,20,.18); }   /* board stays visible above */
+    .side { overflow-x: hidden; top: 44vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }   /* board stays visible above */
     .side-body { padding-left: 12px; padding-right: 12px; }
     .grid { gap: 8px; }
     /* phones: the cart panel is fixed to the bottom of the screen */
-    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(40,32,20,.16); max-height: 90vh; }
+    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(0,0,0,.16); max-height: 90vh; }
     .buysheet.open .sheet-body { max-height: 66vh; }
     .buybar { padding: 6px 12px 12px; gap: 6px; }
     .tot b { font-size: 19px; }
@@ -366,7 +365,7 @@
 
   <div class="panel">
     <div class="p-head">
-      <h1>Design your compliance board</h1>
+      <h1>Design Options</h1>
     </div>
 
     <div class="p-body">
@@ -433,7 +432,7 @@
       <!-- ====== DESIGN ====== -->
       <div class="tabpane" data-pane="design">
         <section class="sec" data-sec="bgimg">
-          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Board background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
             <p class="help">Printed across the board face, behind your logo and certificates. Printed boards are made to order and quoted.</p>
             <div id="bgArt"></div>

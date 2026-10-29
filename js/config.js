@@ -38,7 +38,7 @@ export const FASTENERS = [
 
 // Viewer background (the wall behind the board in the 3D preview; not part of the product)
 export const WALLS = [
-  { name: 'Warm White', hex: '#ebe7e0' },
+  { name: 'White',      hex: '#ffffff' },
   { name: 'Greige',     hex: '#b9b2a6' },
   { name: 'Charcoal',   hex: '#3a3c40' },
 ];
