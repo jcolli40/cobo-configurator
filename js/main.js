@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291508';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291508';
-import { wallTexture, wallSwatch } from './env.js?v=202610291508';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291608';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291608';
+import { wallTexture, wallSwatch } from './env.js?v=202610291608';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -50,7 +50,7 @@ const state = {
   certNeed: 0,              // "How many certificates?" (0 = not answered)
   path: null,               // v2 only: 'standard' or 'custom' (null = not chosen yet)
   myCerts: [],              // the customer's own certificate photos, shown in place of the samples (in order)
-  wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offY: 0 },   // photo of the customer's own wall
+  wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offX: 0, offY: 0 },   // photo of the customer's own wall
   view: 'angle',
   art: {                    // uploaded images: { img (canvas), name, aspect, imgId, ...layout settings }
     logo: { img: null, name: '', ...artDefaults('logo') },
@@ -116,6 +116,7 @@ controls.minDistance = 8;
 const FLAT = LAYOUT === 'v5';
 const TURN = FLAT ? Math.PI * 35 / 180 : Math.PI / 3;
 const PITCH = 0.08;                          // v5: radians the camera looks down at the board
+if (FLAT) controls.enablePan = false;        // v5: no sliding the view sideways (it would show the room photo's edge)
 function lockAngles(view) {
   const back = view === 'back';
   controls.minAzimuthAngle = back ? Math.PI - TURN : -TURN;   // left / right
@@ -384,14 +385,43 @@ function artMesh(key, sw, sh, rough) {
   return m;
 }
 // photo of the customer's wall (see "Room & lighting"): one texture, rebuilt only when a new photo is loaded
+// v5: the photo's edges are softened so it blends into the blurred copy around it (see photoBlurTexture)
 let photoTex = null, photoTexId = 0;
 function photoTexture(P) {
   if (photoTex && photoTexId === P.imgId) return photoTex;
   photoTex?.dispose();
-  photoTex = new THREE.CanvasTexture(P.img);
+  let src = P.img;
+  if (FLAT) {
+    const W = P.img.width, H = P.img.height, f = Math.round(Math.max(W, H) * 0.03);
+    src = document.createElement('canvas'); src.width = W; src.height = H;
+    const g = src.getContext('2d'); g.drawImage(P.img, 0, 0);
+    const m = document.createElement('canvas'); m.width = W; m.height = H;
+    const mg = m.getContext('2d');                       // a blurred rectangle (drawn as a shadow, which every browser blurs)
+    mg.shadowColor = '#000'; mg.shadowBlur = f; mg.shadowOffsetX = W + 100;
+    mg.fillRect(f - W - 100, f, W - 2 * f, H - 2 * f);
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(m, 0, 0);
+  }
+  photoTex = new THREE.CanvasTexture(src);
   photoTex.colorSpace = THREE.SRGBColorSpace; photoTex.anisotropy = 8; photoTex.userData.keep = true;
   photoTexId = P.imgId;
   return photoTex;
+}
+// v5: a blurred copy of the wall photo fills the space around a close-up: the photo shrunk to a few dozen pixels
+// (smoothed back up, that's a strong blur) with its edge colors stretched outward
+const BLUR_SPREAD = 8;     // the blurred fill is this many times the photo's size
+let blurTex = null, blurTexId = 0;
+function photoBlurTexture(P) {
+  if (blurTex && blurTexId === P.imgId) return blurTex;
+  blurTex?.dispose();
+  const s = 40 / Math.max(P.img.width, P.img.height), c = document.createElement('canvas');
+  c.width = Math.max(2, Math.round(P.img.width * s)); c.height = Math.max(2, Math.round(P.img.height * s));
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(P.img, 0, 0, c.width, c.height);
+  blurTex = new THREE.CanvasTexture(c);
+  blurTex.colorSpace = THREE.SRGBColorSpace; blurTex.userData.keep = true;
+  blurTex.wrapS = blurTex.wrapT = THREE.ClampToEdgeWrapping;       // past the photo's edges: its edge colors, stretched
+  blurTex.repeat.set(BLUR_SPREAD, BLUR_SPREAD); blurTex.offset.set(-(BLUR_SPREAD - 1) / 2, -(BLUR_SPREAD - 1) / 2);
+  blurTexId = P.imgId;
+  return blurTex;
 }
 // v5 room photos (img/rooms/), loaded once each; the board is rebuilt when one arrives so its size is right
 const SITE_ROOT = new URL('../', import.meta.url);
@@ -566,17 +596,28 @@ function buildBoard() {
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), wallMat);
   wall.receiveShadow = true; wallG.add(wall);
   // a photo shows as-is (unlit), with the board's shadow laid over it
-  const addPhoto = (tex, pw, ph, x, y) => {
-    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+  const addPhoto = (tex, pw, ph, x, y, spread = 1) => {     // spread: the shadow-catcher covers the blurred fill too
+    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: spread > 1 }));
     photo.position.set(x, y, 0.03); wallG.add(photo);
-    const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.ShadowMaterial({ opacity: 0.32 }));
+    const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw * spread, ph * spread), new THREE.ShadowMaterial({ opacity: 0.32 }));
     shade.position.set(x, y, 0.05); shade.receiveShadow = true; wallG.add(shade);
   };
   const P = state.wallPhoto;
-  if (P.img) addPhoto(photoTexture(P), P.widthIn, P.widthIn / P.aspect, 0, P.offY);
+  photoRect = null;
+  const setRect = (pw, ph, x, y) => { photoRect = { x0: x - pw / 2, x1: x + pw / 2, y0: y - ph / 2, y1: y + ph / 2, z: wallG.position.z + 0.03 }; };
+  if (P.img) {
+    const pw = P.widthIn, ph = pw / P.aspect, x = P.offX || 0, y = P.offY;
+    if (FLAT) {                                  // v5: a blurred, stretched copy fills the space around a close-up photo
+      const fill = new THREE.Mesh(new THREE.PlaneGeometry(pw * BLUR_SPREAD, ph * BLUR_SPREAD), new THREE.MeshBasicMaterial({ map: photoBlurTexture(P), toneMapped: false }));
+      fill.position.set(x, y, 0.01); wallG.add(fill);
+    }
+    addPhoto(photoTexture(P), pw, ph, x, y, FLAT ? BLUR_SPREAD : 1);
+    setRect(FLAT ? pw * 2.5 : pw, FLAT ? ph * 2.5 : ph, x, y);   // zooming out can go a little past the photo itself
+  }
   else if (E.wall.photo) {                       // v5 photo room: the photo's hang point sits behind the board's center
     const tex = roomTexture(E.wall.photo), pw = E.wall.widthIn, ph = pw / (tex.userData.aspect || 4 / 3);
-    addPhoto(tex, pw, ph, (0.5 - E.wall.hang[0]) * pw, (E.wall.hang[1] - 0.5) * ph);
+    const x = (0.5 - E.wall.hang[0]) * pw, y = (E.wall.hang[1] - 0.5) * ph;
+    addPhoto(tex, pw, ph, x, y); setRect(pw, ph, x, y);
   }
   root.add(wallG);
 
@@ -602,6 +643,7 @@ function buildBoard() {
   scene.background = new THREE.Color(state.view === 'back' ? '#d7d7d9' : wallHex());
   needBgSample = true;
   dirty = true;
+  limitZoom();
   updateUI();
 }
 
@@ -617,14 +659,46 @@ function applyInset() {
 }
 function setInset(px) {
   inset.target = px;
+  limitZoom();
   setView(state.view);   // re-frame for the visible width (animated)
 }
 
-function viewTarget(view) {
+// distance that shows the whole board with a margin, in the part of the view the side panel doesn't cover
+function fitDist() {
   const { w, h } = dims();
   const aspect = camera.aspect * (1 - inset.target / Math.max(1, stage.clientWidth));
-  const fov = THREE.MathUtils.degToRad(camera.fov);
-  const dist = Math.max(h / 2, w / 2 / aspect) / Math.tan(fov / 2) * 1.35 + 2;
+  return Math.max(h / 2, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
+}
+// v5: zooming out stops before the edge of the room photo comes into view, at any left/right turn
+// (never closer than the distance that shows the whole board, so a very big custom board can still be seen)
+let photoRect = null;              // the room photo behind the board: { x0, x1, y0, y1, z } (set by buildBoard)
+const probe = new THREE.PerspectiveCamera(), corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+function limitZoom() {
+  if (!FLAT) return;
+  if (!photoRect || sway) { controls.maxDistance = Infinity; return; }
+  const R = photoRect, tgt = new THREE.Vector3(0, 0, 0.5), p = new THREE.Vector3(), W = stage.clientWidth, H = stage.clientHeight;
+  probe.copy(camera);
+  if (inset.target > 0.5 && W && H) probe.setViewOffset(W, H, inset.target / 2, 0, W, H); else probe.clearViewOffset();
+  const fills = (d) => [-1, -0.5, 0, 0.5, 1].every(k => {   // turned all the way left, part way, straight on, ... right
+    const a = k * TURN;
+    probe.position.set(Math.sin(a) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(a) * Math.cos(PITCH)).multiplyScalar(d).add(tgt);
+    probe.lookAt(tgt); probe.updateMatrixWorld();
+    return corners.every(([x, y]) => {
+      const dir = p.set(x, y, 0.5).unproject(probe).sub(probe.position).normalize();
+      const t = (R.z - probe.position.z) / dir.z;
+      if (!(t > 0)) return false;
+      const hx = probe.position.x + dir.x * t, hy = probe.position.y + dir.y * t;
+      return hx >= R.x0 && hx <= R.x1 && hy >= R.y0 && hy <= R.y1;
+    });
+  });
+  let lo = controls.minDistance, hi = 2000;
+  if (!fills(lo)) hi = lo;
+  for (let i = 0; i < 30 && hi - lo > 0.25; i++) { const m = (lo + hi) / 2; if (fills(m)) lo = m; else hi = m; }
+  controls.maxDistance = Math.max(lo, fitDist());
+}
+
+function viewTarget(view) {
+  const dist = fitDist();
   const tgt = new THREE.Vector3(0, 0, 0.5);
   let pos;
   if (FLAT && view !== 'back') {                 // v5: always the same slight downward look; Angle = 15 degrees to the side
@@ -674,6 +748,7 @@ function paintActive() {
   document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
   $('#edgeMatch').checked = state.edge === 'match';
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
+  $('#edgeCustom').closest('.opt').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
   document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === envNow().id));
@@ -953,14 +1028,14 @@ function build() {
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     try { await loadArt(P, f); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
-    P.offY = 0; syncPhoto();
+    P.offX = P.offY = 0; syncPhoto();
     refresh(); setView('front');
     toast('Your wall is now the background. Adjust "Width of the wall" until the board looks right.');
   });
   $('#wallPhotoClear').addEventListener('click', () => { P.img = null; syncPhoto(); refresh(); });
   $('#wallPhotoW').addEventListener('input', (e) => { P.widthIn = +e.target.value; syncPhoto(); refresh(); });
   $('#wallPhotoY').addEventListener('input', (e) => { P.offY = +e.target.value; syncPhoto(); refresh(); });
-  syncPhoto();
+  syncPhoto(); syncWallPhoto = syncPhoto;
   wireArt('logo', $('#logoArt'));
   wireArt('background', $('#bgArt'));
 
@@ -1004,6 +1079,7 @@ function build() {
   wireLayout();
 }
 let restoredDesign = false;
+let syncWallPhoto = () => {};   // refreshes the "Your own wall" controls (set in build)
 function clamp(v) { return Math.max(1, Math.min(96, isFinite(v) ? v : 12)); }
 
 // Click a part of the board (a click, not a drag) to open its section in the panel; the cursor shows what's clickable.
@@ -1248,6 +1324,14 @@ function paintPrices() {
     const h = document.querySelector(`.sec[data-sec="${k}"] .sec-h`);
     if (h) set(badge(h), n);
   }
+  if (v5) {                                                    // Textures: the upcharge is for this size, so say which
+    const h = $('.sec[data-sec="laminate"] .sec-h'), up = h.querySelector('.up'), { w, h: bh } = dims();
+    const std = SIZES.find(s => s.id === state.sizeId);
+    let f = h.querySelector('.up-for');
+    if (!f) { f = document.createElement('span'); f.className = 'up-for'; h.insertBefore(f, up); }
+    f.textContent = up.dataset.for = std ? `${std.a} × ${std.b}` : `${fmt(w)} × ${fmt(bh)}`;
+    f.hidden = up.hidden;
+  }
   if (v5) {                                                    // Size: this board's own price
     const up = badge($('.sec[data-sec="size"] .sec-h')), std = SIZES.find(s => s.id === state.sizeId);
     up.classList.add('size');
@@ -1480,6 +1564,7 @@ function setStep(s) {
   controls.enabled = !['styles', 'intro', 'snap'].includes(s);   // swipes change the look / tutorial screens: no turning
   if (s !== 'custom') { closeOptSheet(); if (!$('#lamPanel').hidden) closePicker(); setSheet(false); }
   if (LAYOUT === 'v5') tourStep(s);
+  limitZoom();                                             // (no limit while the tutorial frames the board itself)
   scrollTo(0, 0);
   updateStage();
   requestAnimationFrame(() => {
@@ -1548,6 +1633,17 @@ async function guideScan(file) {
     const n = r.found.length;
     $('#lookWallTxt').textContent = `${n} document${n === 1 ? '' : 's'} on a ${wallInfo.name} wall`;
     $('#lookShot').src = $('#scanCanvas').toDataURL('image/jpeg', 0.7);
+    // v5: their actual wall goes behind the board, at real size (worked out from the letter-size sheets), with the
+    // board hung where their certificates are now and those papers painted out of the photo
+    const ppi = r.found.ppi, P = state.wallPhoto;
+    if (LAYOUT === 'v5' && ppi) {
+      const bx = r.found.map(f => f.box), img = eraseDocuments(r.img, bx);
+      const cx = (Math.min(...bx.map(b => b.x)) + Math.max(...bx.map(b => b.x + b.w))) / 2;
+      const cy = (Math.min(...bx.map(b => b.y)) + Math.max(...bx.map(b => b.y + b.h))) / 2;
+      Object.assign(P, { img, aspect: img.width / img.height, name: 'Your wall photo', imgId: (P.imgId || 0) + 1,
+        widthIn: img.width / ppi, offX: (img.width / 2 - cx) / ppi, offY: (cy - img.height / 2) / ppi });
+      syncWallPhoto(); refresh();
+    }
   }
   browseLooks();
 }
@@ -1580,6 +1676,10 @@ function firstStep(photoStep) {
   const q = new URLSearchParams(location.search);
   if (q.has('size') || q.has('color')) setStep('custom');
   else if (q.get('scan') === 'demo') { setStep(photoStep); guideScan(null); }
+  else if (/^\/screenshots\/[\w.-]+\.(jpe?g|png)$/i.test(q.get('scan') || '')) {   // testing: ?scan=/screenshots/<photo> (local only)
+    setStep(photoStep);
+    fetch(q.get('scan')).then(r => r.blob()).then(b => guideScan(new File([b], 'wall.jpg', { type: b.type }))).catch(() => {});
+  }
   else if (q.get('step') === 'styles') browseLooks();
   else if (q.get('step') === 'snap' && LAYOUT === 'v5') setStep('snap');
   else setStep('intro');
@@ -1654,7 +1754,16 @@ async function startCam() {
     $('#tourShutter').setAttribute('aria-label', 'Take the photo');
     $('#tourLive').hidden = true;
     $('#tourTip').textContent = 'Fit the certificates you have up now in the frame, with some wall showing around them.';
+    placeFrame();
   } catch { camStream = null; camOff(); }
+}
+// the camera frame's corners sit between the instructions (top) and the buttons (bottom), whatever their sizes
+function placeFrame() {
+  if (!camStream) return;
+  const s = $('#tourSnap').getBoundingClientRect(), tip = $('.t-tip').getBoundingClientRect(), low = $('.t-shoot').getBoundingClientRect();
+  const fr = $('.t-frame').style;
+  fr.top = `${Math.round(tip.bottom - s.top + 18)}px`;
+  fr.bottom = `${Math.round(s.bottom - low.top + 18)}px`;
 }
 function stopCam() {
   camStream?.getTracks().forEach(t => t.stop());
@@ -1700,6 +1809,7 @@ function wireTour() {
   $('#tourDemo').addEventListener('click', () => guideScan(null));
   $('#tourLive').addEventListener('click', startCam);
   $('#tourStart').addEventListener('click', () => setStep('snap'));
+  $('#tourSkipCard').addEventListener('click', () => setStep('custom'));   // computers: the welcome's Skip
   $('#tourResume').hidden = !restoredDesign;
   $('#tourResume').addEventListener('click', () => setStep('custom'));
   $('#tourBack').addEventListener('click', () => setStep(TOUR[Math.max(0, TOUR.indexOf(step()) - 1)]));
@@ -1710,6 +1820,7 @@ function wireTour() {
     else setStep('custom');
   });
   addEventListener('resize', () => {
+    placeFrame();
     if (!sway) return;
     sway = swayFrame(); const p = swayPose(sway);
     tween = null; camera.position.copy(p.pos); controls.target.copy(p.tgt); dirty = true;
@@ -2369,6 +2480,7 @@ function resize() {
   camera.aspect = r.width / Math.max(r.height, 1);
   camera.updateProjectionMatrix();
   applyInset();
+  limitZoom();
   dirty = true;
 }
 const clock = new THREE.Clock();
@@ -2423,3 +2535,6 @@ if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED) scan
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)
 const peek = new URLSearchParams(location.search).get('peek');
 if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);
+// ?open=edge opens that option (its card on computers, its pop-up sheet on phones; also used for screenshots)
+const openQ = new URLSearchParams(location.search).get('open');
+if (openQ) setTimeout(() => openSection(openQ), 400);

@@ -29,11 +29,14 @@ export function findDocuments(img) {
     return thr;
   };
   // A wall with light and dark parts (gray planks, brick and mortar) can land on the "bright" side of the first split,
-  // so a second split inside the bright part is tried too, and whichever finds the most sheets wins.
+  // so a second split inside the bright part is tried too, and whichever finds the most sheets wins. Paper is the
+  // whitest thing on the wall, so anything much duller than the brightest sheet (a light gray plank) doesn't count.
   const t1 = otsu(0), t2 = otsu(t1 + 1);
   let best = null;
   for (const thr of new Set([t1, Math.round((t1 + t2) / 2), t2])) {
-    const found = sheetsAt(thr);
+    let found = sheetsAt(thr);
+    const top = Math.max(0, ...found.map(f => f.bright));
+    found = found.filter(f => f.bright >= top - 35);
     const score = found.length + found.reduce((s, f) => s + f.fill, 0) * 0.01;
     if (!best || score > best.score) best = { found, score };
   }
@@ -49,30 +52,40 @@ export function findDocuments(img) {
     fillHoles(mask);
     mask = morph(morph(mask, false), false); mask = morph(morph(mask, true), true);
     // connected blobs -> sheets
-    const seen = new Uint8Array(N), out = [], stack = [];
+    const seen = new Uint8Array(N), pix = new Int32Array(N), out = [], lh = new Uint32Array(256);
     for (let s = 0; s < N; s++) {
       if (!mask[s] || seen[s]) continue;
-      let minX = W, minY = H, maxX = 0, maxY = 0, n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
-      stack.push(s); seen[s] = 1;
-      while (stack.length) {
-        const p = stack.pop(), x = p % W, y = (p - x) / W; n++;
+      // flood the blob; its pixels are listed in pix[0..n)
+      let n = 0, top = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+      pix[top++] = s; seen[s] = 1;
+      while (n < top) {
+        const p = pix[n++], x = p % W, y = (p - x) / W;
         sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
-        if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
-        for (const q of [p - 1, p + 1, p - W, p + W]) {
-          if (q < 0 || q >= N || seen[q] || !mask[q]) continue;
-          if ((q === p - 1 && x === 0) || (q === p + 1 && x === W - 1)) continue;
-          seen[q] = 1; stack.push(q);
-        }
+        if (x > 0 && !seen[p - 1] && mask[p - 1]) { seen[p - 1] = 1; pix[top++] = p - 1; }
+        if (x < W - 1 && !seen[p + 1] && mask[p + 1]) { seen[p + 1] = 1; pix[top++] = p + 1; }
+        if (p >= W && !seen[p - W] && mask[p - W]) { seen[p - W] = 1; pix[top++] = p - W; }
+        if (p + W < N && !seen[p + W] && mask[p + W]) { seen[p + W] = 1; pix[top++] = p + W; }
       }
       if (n < N * 0.004 || n > N * 0.5) continue;                 // specks, or the wall itself
-      // the blob's own long and short side (from how its pixels spread out), whatever angle it's at
+      // the blob's tilt (from how its pixels spread out), then its outer edges measured along that tilt, so a sheet
+      // with a notch in it (a logo at its edge) still measures full size
       const mx = sx / n, my = sy / n, vx = sxx / n - mx * mx, vy = syy / n - my * my, cxy = sxy / n - mx * my;
-      const mid = (vx + vy) / 2, dev = Math.sqrt(((vx - vy) / 2) ** 2 + cxy * cxy);
-      const L = Math.sqrt(12 * (mid + dev)), Sh = Math.sqrt(12 * Math.max(0, mid - dev));
-      const fill = n / (L * Sh);                                  // 1 = a perfect rectangle
-      if (fill < 0.8 || fill > 1.2 || L / Sh > 2.6) continue;     // not a sheet-shaped rectangle
-      const ang = 0.5 * Math.atan2(2 * cxy, vx - vy), flat = Math.abs(Math.cos(ang)) >= Math.abs(Math.sin(ang));
-      out.push({ x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, dw: flat ? L : Sh, dh: flat ? Sh : L, fill });
+      const ang = 0.5 * Math.atan2(2 * cxy, vx - vy), c = Math.cos(ang), sn = Math.sin(ang);
+      let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity, minX = W, minY = H, maxX = 0, maxY = 0;
+      lh.fill(0);
+      for (let i = 0; i < n; i++) {
+        const p = pix[i], x = p % W, y = (p - x) / W, dx = x - mx, dy = y - my, u = dx * c + dy * sn, v = dy * c - dx * sn;
+        if (u < u0) u0 = u; if (u > u1) u1 = u; if (v < v0) v0 = v; if (v > v1) v1 = v;
+        if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+        lh[lum[p]]++;
+      }
+      const A = u1 - u0 + 1, B = v1 - v0 + 1, L = Math.max(A, B), Sh = Math.min(A, B);
+      const fill = n / (A * B);                                   // 1 = a perfect rectangle
+      if (fill < 0.5 || L / Sh > 2.6) continue;                   // not sheet-shaped (a big logo at the edge can take a bite)
+      const flat = (Math.abs(c) >= Math.abs(sn)) === (A >= B);    // is the long side across?
+      // brightness of the paper itself: the level 3/4 of its pixels are darker than (print and logos are the darker part)
+      let bright = 0; for (let acc = 0; bright < 255 && (acc += lh[bright]) < n * 0.75; bright++);
+      out.push({ x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, dw: flat ? L : Sh, dh: flat ? Sh : L, fill, bright });
     }
     return out;
   }
@@ -106,6 +119,89 @@ export function findDocuments(img) {
     }
     for (let i = 0; i < N; i++) if (!out[i]) m[i] = 1;
   }
+}
+
+// A copy of the photo with the documents erased ("painted out"), so the new board shows on a clear wall.
+// Documents close together are erased as one patch. Each patch is filled with mirrored copies of the wall beside it
+// (left half from the left, right half from the right, which keeps plank and brick rows lined up; from above/below if
+// there's no room at the sides), and its edges are softened into the wall. Returns a canvas.
+export function eraseDocuments(img, boxes) {
+  const W = img.width, H = img.height, out = document.createElement('canvas'); out.width = W; out.height = H;
+  const g = out.getContext('2d'); g.drawImage(img, 0, 0);
+  if (!boxes.length) return out;
+  const f = Math.max(4, Math.round(Math.max(W, H) * 0.012));          // soft edge width
+  // pad each box (shadows, tape), then merge boxes that touch into patches
+  let rects = boxes.map(b => { const p = 0.04 * Math.max(b.w, b.h) + f; return { x: b.x - p, y: b.y - p, w: b.w + 2 * p, h: b.h + 2 * p }; });
+  const hit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  for (let merged = true; merged;) {
+    merged = false;
+    for (let i = 0; i < rects.length && !merged; i++) for (let j = i + 1; j < rects.length && !merged; j++) {
+      if (!hit(rects[i], rects[j])) continue;
+      const a = rects[i], b = rects[j], x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+      rects[i] = { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
+      rects.splice(j, 1); merged = true;
+    }
+  }
+  rects = rects.map(r => {                                             // whole pixels, inside the photo
+    const x = Math.max(0, Math.floor(r.x)), y = Math.max(0, Math.floor(r.y));
+    return { x, y, w: Math.min(W, Math.ceil(r.x + r.w)) - x, h: Math.min(H, Math.ceil(r.y + r.h)) - y };
+  });
+  // the patches copy from the untouched photo
+  const clean = document.createElement('canvas'); clean.width = W; clean.height = H; clean.getContext('2d').drawImage(img, 0, 0);
+  for (const r of rects) {
+    // clear wall on each side: up to the photo's edge or the next patch
+    const others = rects.filter(o => o !== r);
+    const room = {
+      left: r.x - Math.max(0, ...others.filter(o => o.x + o.w <= r.x && o.y < r.y + r.h && r.y < o.y + o.h).map(o => o.x + o.w)),
+      right: Math.min(W, ...others.filter(o => o.x >= r.x + r.w && o.y < r.y + r.h && r.y < o.y + o.h).map(o => o.x)) - (r.x + r.w),
+      up: r.y - Math.max(0, ...others.filter(o => o.y + o.h <= r.y && o.x < r.x + r.w && r.x < o.x + o.w).map(o => o.y + o.h)),
+      down: Math.min(H, ...others.filter(o => o.y >= r.y + r.h && o.x < r.x + r.w && r.x < o.x + o.w).map(o => o.y)) - (r.y + r.h),
+    };
+    const patch = document.createElement('canvas'); patch.width = r.w; patch.height = r.h;
+    const p = patch.getContext('2d');
+    // tile mirrored strips of wall into part of the patch, starting at the side the wall is copied from
+    const tile = (side, from, to) => {                                  // from/to: the part of the patch to fill (along the tiling axis)
+      const across = side === 'left' || side === 'right', len = to - from;
+      const s = Math.max(1, Math.floor(Math.min(room[side], len)));
+      const sx = side === 'left' ? r.x - s : side === 'right' ? r.x + r.w : r.x;
+      const sy = side === 'up' ? r.y - s : side === 'down' ? r.y + r.h : r.y;
+      const sw = across ? s : r.w, sh = across ? r.h : s;
+      for (let k = 0, at = 0; at < len; k++, at += s) {
+        const mirror = k % 2 === 0;                                     // first copy mirrored: continues the wall at the seam
+        p.save();
+        if (across) {
+          const x = side === 'left' ? from + at : to - at - s;
+          p.translate(mirror ? x + s : x, 0); p.scale(mirror ? -1 : 1, 1);
+          p.drawImage(clean, sx, sy, sw, sh, 0, 0, sw, sh);
+        } else {
+          const y = side === 'up' ? from + at : to - at - s;
+          p.translate(0, mirror ? y + s : y); p.scale(1, mirror ? -1 : 1);
+          p.drawImage(clean, sx, sy, sw, sh, 0, 0, sw, sh);
+        }
+        p.restore();
+      }
+    };
+    // copy across (from the sides) or down (from above/below): whichever has more wall to copy for the size of the
+    // patch, so a thin strip isn't repeated over and over. Sides win a tie (keeps plank and brick rows straight).
+    const enough = (n, size) => n >= Math.min(size * 0.15, 24);
+    const across = (room.left + room.right) / r.w * 1.25 >= (room.up + room.down) / r.h;
+    const fillAlong = (a, b, size) => {
+      if (enough(room[a], size) && enough(room[b], size)) { tile(a, 0, Math.ceil(size / 2)); tile(b, Math.floor(size / 2), size); }
+      else if (Math.max(room[a], room[b]) > 0) tile(room[a] >= room[b] ? a : b, 0, size);
+      else return false;
+      return true;
+    };
+    if (!(across ? fillAlong('left', 'right', r.w) || fillAlong('up', 'down', r.h)
+                 : fillAlong('up', 'down', r.h) || fillAlong('left', 'right', r.w))) continue;   // nothing to copy from
+    // soft edges: keep the patch through a blurred rectangle (drawn as a shadow, which every browser blurs)
+    const m = document.createElement('canvas'); m.width = r.w; m.height = r.h;
+    const mg = m.getContext('2d');
+    mg.shadowColor = '#000'; mg.shadowBlur = f; mg.shadowOffsetX = r.w + 100;
+    mg.fillRect(f / 2 - r.w - 100, f / 2, r.w - f, r.h - f);
+    p.globalCompositeOperation = 'destination-in'; p.drawImage(m, 0, 0);
+    g.drawImage(patch, r.x, r.y);
+  }
+  return out;
 }
 
 // The wall around the documents: its color, and how light, warm and colorful it is (each -1 to 1), plus a plain-English
@@ -161,9 +257,9 @@ export function sizeDocuments(boxes, sizes) {
   const areas = boxes.filter(b => ratio(b) > 1.18 && ratio(b) < 1.4).map(b => dims(b)[0] * dims(b)[1]).sort((a, b) => a - b);
   const ref = areas.length ? areas[Math.floor(areas.length / 2)] : Math.min(...boxes.map(b => dims(b)[0] * dims(b)[1]));
   const ppi = Math.sqrt(ref / (8.5 * 11));
-  return boxes.map(b => {
+  return Object.assign(boxes.map(b => {
     const [w, h] = dims(b), short = Math.min(w, h) / ppi, long = Math.max(w, h) / ppi;
     const s = sizes.reduce((a, z) => (Math.abs(z.w - short) + Math.abs(z.h - long) < Math.abs(a.w - short) + Math.abs(a.h - long) ? z : a));
     return { box: b, size: s.id, turn: w > h };
-  });
+  }), { ppi });                                               // + the photo's pixels per inch (used to scale it as a wall)
 }

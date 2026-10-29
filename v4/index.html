@@ -116,6 +116,7 @@
   .sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
   .swgrid.dim .sw { opacity: .4; }                       /* edge swatches while "Match board color" is on */
   .swgrid.dim .sw:hover { opacity: 1; }
+  .opt.dim { opacity: .4; } .opt.dim:hover { opacity: 1; }   /* custom edge color, likewise (picking one turns Match off) */
   input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--sw); background: none; cursor: pointer; flex: none; }
   input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
   input[type=color]::-webkit-color-swatch { border: 0; border-radius: 3px; }
@@ -144,7 +145,7 @@
   .fast span { flex: 1; }
   .fast::after { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-2); }
   .fast.on { border-color: var(--accent); background: var(--tint); }
-  .fast.on::after { border: 5px solid var(--accent); }
+  .fast.on::after { background: var(--accent); border-color: var(--accent); }
 
   .link { border: 0; background: none; color: var(--accent); font-size: 13px; cursor: pointer; padding: 4px 2px; text-decoration: underline; }
   .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
@@ -422,7 +423,7 @@
   .guide h1 { margin: 0; font-size: clamp(26px, 5vw, 34px); line-height: 1.15; letter-spacing: -.01em; text-transform: none; }
   .g-steps { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 10px; text-align: left; }
   .g-steps li { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
-  .g-steps .i { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: var(--tint); color: var(--accent); }
+  .g-steps .i { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: rgba(255, 255, 255, .14); color: #fff; }
   .g-steps b { font-size: 15px; }
   .g-steps span { font-size: 13px; color: var(--muted); }
   .g-cam { position: relative; display: inline-flex; justify-content: center; align-items: center; gap: 10px; justify-self: center; background: var(--accent); color: #fff; border-radius: 999px; padding: 16px 30px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(27, 58, 107, .3); }
@@ -511,7 +512,7 @@
   .popstrip .presets { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; scrollbar-width: thin; }
   .popstrip .preset { flex: 0 0 168px; scroll-snap-align: start; }
   /* size: custom size as a full-width card, like the Wilsonart one */
-  #sizes .tile.wide { grid-column: 1 / -1; grid-template-columns: auto 1fr; justify-items: start; align-items: center; text-align: left; gap: 1px 12px; padding: 10px 14px; background: #fff; border: 1.5px solid var(--line-2); }
+  #sizes .tile.wide { grid-column: 1 / -1; grid-template-columns: auto 1fr; justify-items: start; align-items: center; text-align: left; gap: 1px 12px; padding: 10px 14px; }
   #sizes .tile.wide svg { grid-row: 1 / span 2; width: 44px; height: 44px; }
   #sizes .tile.wide b { font-size: 14.5px; }
   #sizes .tile.wide small { font-size: 12px; }
@@ -538,6 +539,8 @@
   #mwSlot .owndocs { display: grid; gap: 14px; }
   .eye.turn[aria-pressed="true"] { background: var(--tint); }
   .up.size { color: var(--ink); background: #f0f0f2; }
+  /* Textures: the board size the upcharge is for, left of it (phones: inside the corner bubble) */
+  .up-for { font-size: 11.5px; color: var(--muted); white-space: nowrap; margin-right: 6px; }
 
   /* full-screen steps over the live 3D board (intro, snap) and the swipe bar (styles) */
   .tour { position: fixed; inset: 0; z-index: 40; pointer-events: none; display: none; }
@@ -561,13 +564,22 @@
   .g-kick { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
   /* 1 welcome: a card bottom-left, the board turning gently on a real wall behind it */
   .t-intro { background: linear-gradient(90deg, rgba(12, 18, 30, .35), transparent 55%); }
-  .t-card { position: absolute; left: clamp(16px, 5vw, 64px); bottom: clamp(16px, 7vh, 72px); width: min(430px, calc(100% - 32px)); display: grid; gap: 16px; justify-items: start; background: #fff; border-radius: 20px; padding: 26px 26px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .28); animation: tIn .45s ease both; }
-  .t-card h1 { margin: 0; font-size: clamp(26px, 3.2vw, 34px); line-height: 1.12; letter-spacing: -.01em; text-transform: none; text-align: left; }
+  .t-card { position: absolute; left: clamp(16px, 5vw, 64px); bottom: clamp(16px, 7vh, 72px); width: min(430px, calc(100% - 32px)); display: grid; gap: 16px; justify-items: start; background: rgba(14, 22, 38, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; border-radius: 20px; padding: 26px 26px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .28); animation: tIn .45s ease both; }   /* the same see-through navy as the Step 2 tip */
+  .t-card .g-kick { color: #c9d4e6; }
+  .t-card #tourResume { color: #fff; }
+  .t-card h1 { margin: 0; font-size: clamp(26px, 3.2vw, 34px); line-height: 1.12; letter-spacing: -.01em; text-transform: none; text-align: left; color: #fff; }
   .t-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-  .t-list li { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); line-height: 1.35; }
+  .t-list li { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: center; font-size: 13px; color: rgba(255, 255, 255, .75); line-height: 1.35; }
   .t-list .i { width: 38px; height: 38px; padding: 9px; border-radius: 50%; background: var(--tint); color: var(--accent); }
-  .t-list b { display: block; font-size: 15px; color: var(--ink); }
-  .t-go { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 999px; font-size: 16px; box-shadow: 0 8px 24px rgba(27, 58, 107, .3); }
+  .t-list b { display: block; font-size: 15px; color: #fff; }
+  .t-go { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 999px; font-size: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
+  .t-card .t-go { background: #fff; color: var(--accent); }   /* white on the dark card */
+  .t-card .t-go:hover { background: var(--tint); }
+  /* computers: the welcome's Skip sits beside Get started (phones keep it top right) */
+  .t-acts { display: flex; align-items: center; gap: 10px; }
+  .t-skip { padding: 13px 24px; border-radius: 999px; border: 1.5px solid rgba(255, 255, 255, .55); background: transparent; color: #fff; font-size: 16px; font-weight: 650; cursor: pointer; }
+  .t-skip:hover { border-color: #fff; background: rgba(255, 255, 255, .1); }
+  @media (min-width: 861px) { [data-step="intro"] #tourSkip { visibility: hidden; } }
   @keyframes tIn { from { opacity: 0; transform: translateY(16px); } }
   /* 2 snap: live camera full screen (phones), instructions on top, shutter at the bottom */
   #camFeed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; display: none; }
@@ -624,13 +636,17 @@
     .t-card { left: 10px; right: 10px; bottom: 10px; width: auto; padding: 20px 18px 16px; gap: 12px; border-radius: 18px; }
     .t-card h1 { font-size: 25px; }
     .t-list { gap: 9px; }
-    .t-go { justify-self: stretch; justify-content: center; }
+    .t-acts { justify-self: stretch; }
+    .t-go { flex: 1; justify-content: center; }
+    .t-skip { display: none; }
     .t-tip { top: 62px; }
     .t-tip b { font-size: 18px; }
     [data-layout="v5"] .lookwall { top: 58px; }
     /* phones: 3 squares per row (Size, Colors, Textures, then Caps, My wall, Room); price bubble in the corner */
     [data-layout="v5"] .p-body .sec { position: relative; }
     [data-layout="v5"] .p-body .sec-h .up { position: absolute; top: 5px; right: 5px; font-size: 10px; padding: 1px 6px; margin: 0; }
+    [data-layout="v5"] .p-body .up-for { display: none; }
+    [data-layout="v5"] .p-body .sec-h .up[data-for]::before { content: attr(data-for) " · "; font-weight: 500; }
     [data-layout="v5"] .popstrip { grid-column: 1 / -1; }
 
   }
@@ -791,7 +807,7 @@
             <!-- the arrow points left (panel opens to the left) and flips to point right while the panel is open -->
             <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel" aria-expanded="false">
               <span class="go"><svg class="i"><use href="#i-left"/></svg></span>
-              <img class="logo" src="../img/wilsonart-logo.png" alt="Wilsonart">
+              <img class="logo" src="../img/wilsonart-logo.svg" alt="Wilsonart">
               <b id="lamBtnTitle">Browse Wilsonart designs</b>
               <small id="lamBtnLabel">Woodgrains, stones, solids and more</small>
               <img class="thumb" id="lamThumb" alt="" hidden>
@@ -813,7 +829,7 @@
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-cap"/></svg><span class="sec-t">Caps &amp; studs</span><span class="sec-v" data-v="caps"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
             <div id="fastSw"></div>
-            <p class="help">1" diameter aluminum caps on M6 studs, one in each corner.</p>
+            <p class="help">1" diameter caps with threaded studs</p>
           </div>
         </section>
       </div>
@@ -975,7 +991,8 @@
         <li><svg class="i"><use href="#i-spark"/></svg><span><b>See our picks</b>Swipe through looks that suit your room.</span></li>
         <li><svg class="i"><use href="#i-design"/></svg><span><b>Make it yours</b>Change any part, then add it to your cart.</span></li>
       </ol>
-      <button class="primary t-go" type="button" id="tourStart">Get started<svg class="i"><use href="#i-right"/></svg></button>
+      <div class="t-acts"><button class="primary t-go" type="button" id="tourStart">Get started<svg class="i"><use href="#i-right"/></svg></button>
+        <button class="t-skip" type="button" id="tourSkipCard">Skip</button></div>
       <button class="link" type="button" id="tourResume" hidden>Continue your last design</button>
     </div>
   </div>
@@ -997,7 +1014,7 @@
         <button class="t-shutter" type="button" id="tourShutter" aria-label="Take the photo"><svg class="i"><use href="#i-camera"/></svg><svg class="i ic-up"><use href="#i-image"/></svg><span>Upload a photo</span></button>
         <button class="t-side" type="button" id="tourDemo"><svg class="i"><use href="#i-spark"/></svg>Example</button>
       </div>
-      <button class="link t-camlink" type="button" id="tourLive" hidden>Use my laptop camera</button>
+      <button class="link t-camlink" type="button" id="tourLive" hidden>Use my webcam</button>
       <input type="file" accept="image/*" capture="environment" id="tourCam" class="vh" tabindex="-1" aria-hidden="true">
     </div>
   </div>
@@ -1012,7 +1029,7 @@
 
 <aside id="lamPanel" class="side" role="dialog" aria-labelledby="lamTitle" hidden>
   <header class="side-h">
-    <img src="../img/wilsonart-logo.png" alt="Wilsonart">
+    <img src="../img/wilsonart-logo.svg" alt="Wilsonart">
     <h2 id="lamTitle">Custom laminate</h2>
     <button class="x" data-close aria-label="Close laminate picker">×</button>
   </header>
@@ -1107,6 +1124,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610291508" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610291608" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
