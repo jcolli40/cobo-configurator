@@ -576,6 +576,27 @@
   </div>
 </template>
 <div id="toast" role="status"></div>
-<script type="module" src="./js/main.js"></script>
+<!-- If the builder doesn't start (e.g. a phone mixed a fresh page with an old cached script right after an update),
+     show a Reload prompt instead of a blank board. -->
+<script>
+  (function () {
+    function fail(msg) {
+      if (window.__cobo || document.getElementById('bootFail')) return;
+      var d = document.createElement('div');
+      d.id = 'bootFail';
+      d.setAttribute('role', 'alert');
+      d.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99;background:#1b3a6b;color:#fff;padding:14px 16px;border-radius:12px;font:14px system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center';
+      d.innerHTML = '<span style="flex:1">The board builder didn’t load completely. Please reload the page.</span><button style="border:0;border-radius:8px;padding:8px 14px;font:600 14px system-ui;background:#fff;color:#1b3a6b">Reload</button>';
+      d.querySelector('button').onclick = function () { location.reload(); };
+      document.body.appendChild(d);
+      if (msg && window.console) console.error('COBO builder failed to start:', msg);
+    }
+    window.addEventListener('error', function (e) { if (!window.__cobo) fail(e.message); });
+    window.addEventListener('unhandledrejection', function (e) { if (!window.__cobo) fail(e.reason && e.reason.message); });
+    window.addEventListener('load', function () { setTimeout(function () { if (!window.__cobo) fail('did not start'); }, 4000); });
+  })();
+</script>
+<!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
+<script type="module" src="./js/main.js?v=202610282045" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

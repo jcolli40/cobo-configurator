@@ -35,6 +35,8 @@ This is already done: the repo is https://github.com/jcolli40/cobo-configurator 
 
 Updating later: edit `js/config.js` on GitHub (pencil icon) and commit. The live page updates in about a minute.
 
+Before pushing changes to `js/main.js` or `js/config.js`, run `node tools/stamp-version.js`. It gives those files a new `?v=` in their links so phones can't mix a fresh page with an old cached script (GitHub Pages caches each file for about 10 minutes, which can leave the board blank right after an update). If the builder ever fails to start, the page shows a Reload message instead of a blank board.
+
 ## Put it on Shopify
 
 1. In Shopify: Online Store → Pages → Add page (e.g. "Design Your Board").
