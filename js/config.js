@@ -98,19 +98,45 @@ export const DOC_SIZES = [
 // ---- Rooms: preset wall + lighting for the 3D preview (preview only; "Studio" shows true colors) ----
 // wall: 'color' = use the wall color picker; otherwise a drawn texture (wood, brick, subway, steel, paint) in that color.
 // light: key = main light strength/color, hemi = soft fill, env = reflections, spot = overhead spotlight strength (0 = off).
+// twin: the photo room v5 shows in its place (v5 has photo rooms only, plus Studio).
+const LIGHT = {
+  warm:   { key: 1.9, keyColor: '#fff0d8', hemi: 0.45, sky: '#ffe9c8', ground: '#6b4a35', env: 0.3, exposure: 1.0, spot: 0 },
+  bright: { key: 1.7, keyColor: '#fff8f0', hemi: 0.7, sky: '#ffffff', ground: '#b0a89c', env: 0.35, exposure: 1.0, spot: 0 },
+  moody:  { key: 0.45, keyColor: '#ffc890', hemi: 0.15, sky: '#ffd9a8', ground: '#2a1a10', env: 0.12, exposure: 1.0, spot: 1.3, spotColor: '#ffc283', spotAngle: 0.6 },
+  steel:  { key: 1.3, keyColor: '#f2f7ff', hemi: 0.55, sky: '#eef4ff', ground: '#9aa3ab', env: 0.45, exposure: 1.0, spot: 0.8, spotColor: '#f4f8ff', spotAngle: 0.75 },
+};
+// Photo rooms (v5): a photo of a real room behind the board. widthIn = how many inches of wall the photo's full
+// width covers (sets the scale); hang = where the board's center sits in the photo (0-1 across, 0-1 down);
+// bg = the photo's average color (fills the space around it). Photos: img/rooms/<id>.jpg (+ <id>-t.jpg thumbnail).
+const photoRoom = (id, name, blurb, hang, bg, light) =>
+  ({ id, name, blurb, wall: { photo: `img/rooms/${id}.jpg`, thumb: `img/rooms/${id}-t.jpg`, widthIn: 220, hang, bg }, light: LIGHT[light] });
 export const ENVIRONMENTS = [
   { id: 'studio',  name: 'Studio',             blurb: 'True color',                      wall: 'color',
     light: { key: 2.3, keyColor: '#ffffff', hemi: 0.5, sky: '#ffffff', ground: '#8a8a8a', env: 0.35, exposure: 1.0, spot: 0 } },
-  { id: 'dining',  name: 'Fine dining',        blurb: 'Candlelit, warm spotlight',        wall: { tex: 'wood', color: '#5a3a26' },
+  { id: 'dining',  name: 'Fine dining',        blurb: 'Candlelit, warm spotlight',        wall: { tex: 'wood', color: '#5a3a26' }, twin: 'walnut-steakhouse',
     light: { key: 0.25, keyColor: '#ffb070', hemi: 0.1, sky: '#ffcf9a', ground: '#2a1a10', env: 0.1, exposure: 1.0, spot: 1.6, spotColor: '#ffc283', spotAngle: 0.55 } },
-  { id: 'bistro',  name: 'Bistro café',        blurb: 'Warm daylight on brick',           wall: { tex: 'brick', color: '#a0573a' },
+  { id: 'bistro',  name: 'Bistro café',        blurb: 'Warm daylight on brick',           wall: { tex: 'brick', color: '#a0573a' }, twin: 'brick-cafe',
     light: { key: 2.0, keyColor: '#fff0d8', hemi: 0.45, sky: '#ffe9c8', ground: '#6b4a35', env: 0.3, exposure: 1.0, spot: 0 } },
-  { id: 'casual',  name: 'Fast casual',        blurb: 'Bright fluorescent, white tile',   wall: { tex: 'subway', color: '#f3f5f6' },
+  { id: 'casual',  name: 'Fast casual',        blurb: 'Bright fluorescent, white tile',   wall: { tex: 'subway', color: '#f3f5f6' }, twin: 'white-tile-cafe',
     light: { key: 1.5, keyColor: '#eef4ff', hemi: 0.95, sky: '#f2f7ff', ground: '#c9d1d9', env: 0.45, exposure: 1.02, spot: 0 } },
-  { id: 'kitchen', name: 'Commercial kitchen', blurb: 'Stainless steel, hard overhead light', wall: { tex: 'steel', color: '#c3c8ce' },
+  { id: 'kitchen', name: 'Commercial kitchen', blurb: 'Stainless steel, hard overhead light', wall: { tex: 'steel', color: '#c3c8ce' }, twin: 'steel-kitchen',
     light: { key: 1.2, keyColor: '#f2f7ff', hemi: 0.5, sky: '#eef4ff', ground: '#9aa3ab', env: 0.45, exposure: 1.0, spot: 1.1, spotColor: '#f4f8ff', spotAngle: 0.75 } },
-  { id: 'office',  name: 'Office lobby',       blurb: 'Soft, neutral painted wall',       wall: { tex: 'paint', color: '#d8d4cc' },
+  { id: 'office',  name: 'Office lobby',       blurb: 'Soft, neutral painted wall',       wall: { tex: 'paint', color: '#d8d4cc' }, twin: 'modern-cafe',
     light: { key: 1.9, keyColor: '#fff7ec', hemi: 0.55, sky: '#ffffff', ground: '#9a958c', env: 0.3, exposure: 1.0, spot: 0 } },
+  photoRoom('brick-cafe',         'Brick Café',         'Exposed brick, warm light', [0.53, 0.40], '#835d46', 'warm'),
+  photoRoom('modern-cafe',        'Modern Café',        'Plaster over wood paneling', [0.50, 0.30], '#a78c75', 'bright'),
+  photoRoom('white-tile-cafe',    'White Tile Café',    'Bright subway tile',       [0.60, 0.40], '#c1a995', 'bright'),
+  photoRoom('concrete-loft',      'Concrete Loft',      'Raw concrete wall',        [0.50, 0.40], '#8f8378', 'warm'),
+  photoRoom('coastal-cafe',       'Coastal Café',       'Sunlit textured plaster',  [0.50, 0.40], '#cab2a1', 'bright'),
+  photoRoom('mediterranean-cafe', 'Mediterranean Café', 'Warm limewash',            [0.50, 0.40], '#bba189', 'bright'),
+  photoRoom('slat-wood-cafe',     'Slat Wood Café',     'Oak slats, soft glow',     [0.55, 0.40], '#986f49', 'warm'),
+  photoRoom('rustic-wood',        'Rustic Wood',        'Reclaimed wood planks',    [0.55, 0.38], '#926649', 'warm'),
+  photoRoom('retro-diner',        'Retro Diner',        'Mint tile and chrome',     [0.60, 0.38], '#989b8f', 'bright'),
+  photoRoom('steel-kitchen',      'Commercial Kitchen', 'Stainless steel',          [0.50, 0.42], '#a1988f', 'steel'),
+  photoRoom('elegant-dining',     'Elegant Dining',     'Cream paneled walls',      [0.50, 0.37], '#7b5d40', 'warm'),
+  photoRoom('walnut-steakhouse',  'Walnut Steakhouse',  'Dark walnut paneling',     [0.49, 0.35], '#3d2314', 'moody'),
+  photoRoom('moody-dining',       'Moody Dining',       'Charcoal panels, candlelight', [0.50, 0.35], '#3a2617', 'moody'),
+  photoRoom('green-lounge',       'Green Lounge',       'Deep green, brass accents', [0.55, 0.40], '#373a2b', 'moody'),
 ];
 
 // ---- Sample certificates shown under the acrylic (preview only) ----

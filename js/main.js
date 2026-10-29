@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291255';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291255';
-import { wallTexture, wallSwatch } from './env.js?v=202610291255';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291427';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook } from './scan.js?v=202610291427';
+import { wallTexture, wallSwatch } from './env.js?v=202610291427';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -64,10 +64,16 @@ const state = {
 /* ------------------------------------------------------------------ helpers */
 const $ = (s) => document.querySelector(s);
 const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? '#888888');
-const envNow = () => ENVIRONMENTS.find(e => e.id === state.env) || ENVIRONMENTS[0];
+// v5 shows photo rooms (plus Studio); a drawn room asked for by a link or popular board shows its photo twin
+const PHOTO_ROOMS = LAYOUT === 'v5';
+const ROOMS = ENVIRONMENTS.filter(e => e.wall === 'color' || !!e.wall.photo === PHOTO_ROOMS);
+const envNow = () => {
+  const E = ENVIRONMENTS.find(e => e.id === state.env) || ENVIRONMENTS[0];
+  return (PHOTO_ROOMS && E.twin && ENVIRONMENTS.find(e => e.id === E.twin)) || E;
+};
 const wallHex = () => {
   const E = envNow();
-  if (E.wall !== 'color') return E.wall.color;
+  if (E.wall !== 'color') return E.wall.color || E.wall.bg;
   return state.wall < 0 ? state.wallCustom : WALLS[state.wall].hex;
 };
 
@@ -98,19 +104,24 @@ scene.environment = envTex;
 scene.environmentIntensity = 0.35;   // studio-room reflections on laminate/paint; higher = hazier boards
 // Metals and acrylic get the room at their own strength (envMap + envMapIntensity) so they still shine.
 
-const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 1000);
+// near = 1": plenty of depth precision at a distance, so the certificates don't flicker against the board face
+const camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.rotateSpeed = 0.45;                 // slower, calmer turning (1 = three.js default)
+controls.minDistance = 8;
 // The board turns at most 60 degrees from straight-on in every direction: from the front, or from the back in the Back view.
-const TURN = Math.PI / 3;
+// v5: left / right only (35 degrees, so the room photo behind it stays believable), at a fixed slight downward look.
+const FLAT = LAYOUT === 'v5';
+const TURN = FLAT ? Math.PI * 35 / 180 : Math.PI / 3;
+const PITCH = 0.08;                          // v5: radians the camera looks down at the board
 function lockAngles(view) {
   const back = view === 'back';
   controls.minAzimuthAngle = back ? Math.PI - TURN : -TURN;   // left / right
   controls.maxAzimuthAngle = back ? Math.PI + TURN : TURN;
-  controls.minPolarAngle = Math.PI / 2 - TURN;                 // up / down
-  controls.maxPolarAngle = Math.PI / 2 + TURN;
+  controls.minPolarAngle = FLAT ? Math.PI / 2 - PITCH : Math.PI / 2 - TURN;   // up / down
+  controls.maxPolarAngle = FLAT ? Math.PI / 2 - PITCH : Math.PI / 2 + TURN;
 }
 function unlockAngles() {                      // while the camera glides between Front and Back
   controls.minAzimuthAngle = -Infinity; controls.maxAzimuthAngle = Infinity;
@@ -382,6 +393,19 @@ function photoTexture(P) {
   photoTexId = P.imgId;
   return photoTex;
 }
+// v5 room photos (img/rooms/), loaded once each; the board is rebuilt when one arrives so its size is right
+const SITE_ROOT = new URL('../', import.meta.url);
+const roomTex = new Map();
+function roomTexture(path) {
+  if (roomTex.has(path)) return roomTex.get(path);
+  const t = new THREE.TextureLoader().load(new URL(path, SITE_ROOT).href, () => {
+    t.userData.aspect = t.image.width / t.image.height;
+    if (envNow().wall.photo === path) buildBoard();
+  });
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.keep = true;
+  roomTex.set(path, t);
+  return t;
+}
 async function loadArt(L, file) {
   const url = URL.createObjectURL(file);
   try {
@@ -484,16 +508,18 @@ function buildBoard() {
   // documents between board face and acrylic: the customer's own (any sizes, packed or dragged), or the samples
   lastSheets = sheetLayout(w, h, state.sheetTurn);
   lastDocs = state.myCerts.length ? packDocs(w, h, state.myCerts) : null;
+  // (pulled toward the camera in the depth test, so they never flicker against the board face)
+  const sheetMat = (map) => new THREE.MeshStandardMaterial({ map, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   if (state.sheets && lastDocs) {
     for (const r of lastDocs.places) {
       const d = state.myCerts[r.i];   // a photo of their own document, or a sample sized from their wall photo
-      const mat = new THREE.MeshStandardMaterial({ map: d.sample ? certificateTexture(r.w, r.h, d.title) : ownCertTexture(d, r.w, r.h), roughness: 0.8 });
+      const mat = sheetMat(d.sample ? certificateTexture(r.w, r.h, d.title) : ownCertTexture(d, r.w, r.h));
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
       p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; p.userData.doc = r.i; root.add(p);
     }
   } else if (state.sheets && lastSheets) {
     lastSheets.rects.forEach((r, i) => {
-      const mat = new THREE.MeshStandardMaterial({ map: certificateTexture(r.w, r.h, SHEETS.titles[i % SHEETS.titles.length]), roughness: 0.8 });
+      const mat = sheetMat(certificateTexture(r.w, r.h, SHEETS.titles[i % SHEETS.titles.length]));
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
       p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; root.add(p);
     });
@@ -534,18 +560,23 @@ function buildBoard() {
   const wallG = new THREE.Group();
   wallG.name = 'wall'; wallG.position.z = -(D + 2 * t); wallG.visible = state.view !== 'back';
   const E = envNow();
-  const wallMat = E.wall === 'color'
+  const wallMat = E.wall === 'color' || E.wall.photo
     ? new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 })
     : new THREE.MeshStandardMaterial({ map: wallTexture(E.wall.tex, E.wall.color, 400), roughness: E.wall.tex === 'steel' ? 0.45 : E.wall.tex === 'subway' ? 0.35 : 0.9, metalness: E.wall.tex === 'steel' ? 0.6 : 0 });
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), wallMat);
   wall.receiveShadow = true; wallG.add(wall);
+  // a photo shows as-is (unlit), with the board's shadow laid over it
+  const addPhoto = (tex, pw, ph, x, y) => {
+    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+    photo.position.set(x, y, 0.03); wallG.add(photo);
+    const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.ShadowMaterial({ opacity: 0.32 }));
+    shade.position.set(x, y, 0.05); shade.receiveShadow = true; wallG.add(shade);
+  };
   const P = state.wallPhoto;
-  if (P.img) {                                   // the photo shows as-is (unlit), with the board's shadow laid over it
-    const pw = P.widthIn, ph = P.widthIn / P.aspect;
-    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: photoTexture(P), toneMapped: false }));
-    photo.position.set(0, P.offY, 0.03); wallG.add(photo);
-    const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.ShadowMaterial({ opacity: 0.3 }));
-    shade.position.set(0, P.offY, 0.05); shade.receiveShadow = true; wallG.add(shade);
+  if (P.img) addPhoto(photoTexture(P), P.widthIn, P.widthIn / P.aspect, 0, P.offY);
+  else if (E.wall.photo) {                       // v5 photo room: the photo's hang point sits behind the board's center
+    const tex = roomTexture(E.wall.photo), pw = E.wall.widthIn, ph = pw / (tex.userData.aspect || 4 / 3);
+    addPhoto(tex, pw, ph, (0.5 - E.wall.hang[0]) * pw, (E.wall.hang[1] - 0.5) * ph);
   }
   root.add(wallG);
 
@@ -596,7 +627,10 @@ function viewTarget(view) {
   const dist = Math.max(h / 2, w / 2 / aspect) / Math.tan(fov / 2) * 1.35 + 2;
   const tgt = new THREE.Vector3(0, 0, 0.5);
   let pos;
-  if (view === 'front') pos = new THREE.Vector3(0, 0, dist);
+  if (FLAT && view !== 'back') {                 // v5: always the same slight downward look; Angle = 15 degrees to the side
+    const yaw = view === 'front' ? 0 : 0.26;
+    pos = new THREE.Vector3(Math.sin(yaw) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(yaw) * Math.cos(PITCH)).multiplyScalar(dist);
+  } else if (view === 'front') pos = new THREE.Vector3(0, 0, dist);
   else if (view === 'back') pos = new THREE.Vector3(0, 0, -dist);
   else pos = new THREE.Vector3(dist * 0.42, dist * 0.18, dist * 0.9);
   return { pos, tgt };
@@ -642,7 +676,7 @@ function paintActive() {
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
-  document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === state.env));
+  document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === envNow().id));
   $('#wallColorWrap').hidden = envNow().wall !== 'color' || !!state.wallPhoto.img;
   renderSizes();
   document.querySelectorAll('#sizes .tile').forEach(b => b.classList.toggle('on', b.dataset.k === state.sizeId));
@@ -669,8 +703,11 @@ function renderSizes() {
   if (renderSizes.key === key) return;
   renderSizes.key = key;
   const el = $('#sizes');
+  const plus = `<svg viewBox="0 0 60 60" aria-hidden="true"><rect class="bd" x="14" y="8" width="32" height="44" rx="1.5"/><path d="M30 23v14M23 30h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   el.innerHTML = SIZES.map(s => `<button class="tile" type="button" data-k="${s.id}">${tileSVG(s.a, s.b)}<b>${s.a} × ${s.b}</b><small>$${s.price.toFixed(2)}</small></button>`).join('') +
-    `<button class="tile custom" type="button" data-k="custom"><svg viewBox="0 0 60 60" aria-hidden="true"><rect class="bd" x="14" y="8" width="32" height="44" rx="1.5"/><path d="M30 23v14M23 30h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><b>Custom</b><small>up to ${CUSTOM.maxShort}×${CUSTOM.maxLong}</small></button>`;
+    (LAYOUT === 'v5'   // v5: a full-width card under the standard sizes
+      ? `<button class="tile custom wide" type="button" data-k="custom">${plus}<b>Custom Size</b><small>Up to ${CUSTOM.maxShort} × ${CUSTOM.maxLong} in · custom sizes require a custom quote</small></button>`
+      : `<button class="tile custom" type="button" data-k="custom">${plus}<b>Custom</b><small>up to ${CUSTOM.maxShort}×${CUSTOM.maxLong}</small></button>`);
 }
 
 // Collapsible sections (all in one panel)
@@ -896,10 +933,13 @@ function build() {
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
 
-  // rooms (wall + lighting presets)
+  // rooms (wall + lighting presets; photo rooms in v5)
   const eg = $('#envGrid');
-  eg.innerHTML = ENVIRONMENTS.map(e => `<button type="button" class="envt" data-env="${e.id}"><i></i><b>${e.name}</b><small>${e.blurb}</small></button>`).join('');
-  eg.querySelectorAll('.envt').forEach(b => b.querySelector('i').style.setProperty('--swatch', wallSwatch(ENVIRONMENTS.find(x => x.id === b.dataset.env))));
+  eg.innerHTML = ROOMS.map(e => `<button type="button" class="envt" data-env="${e.id}"><i></i><b>${e.name}</b><small>${e.blurb}</small></button>`).join('');
+  eg.querySelectorAll('.envt').forEach(b => {
+    const E = ENVIRONMENTS.find(x => x.id === b.dataset.env);
+    b.querySelector('i').style.setProperty('--swatch', E.wall.photo ? `url(${new URL(E.wall.thumb, SITE_ROOT).href}) center/cover` : wallSwatch(E));
+  });
   eg.addEventListener('click', (e) => { const b = e.target.closest('.envt'); if (b) { state.env = b.dataset.env; refresh(); } });
 
   // a photo of the customer's own wall as the background (camera on phones, or upload)
@@ -992,9 +1032,10 @@ function wireBoardClicks() {
     return null;
   };
   let down = null, hoverQueued = false, drag = null;
+  const DRAG = LAYOUT !== 'v5';               // v5: documents are always auto-arranged (dragging is fiddly on phones)
   el.addEventListener('pointerdown', (e) => {
     down = { x: e.clientX, y: e.clientY };
-    if (fullStage()) return;                  // v4/v5 look browsing + tutorial screens: swipes change the look (see wireLooks)
+    if (fullStage() || !DRAG) return;         // v4/v5 look browsing + tutorial screens: swipes change the look (see wireLooks)
     const hit = docAt(e);
     if (hit) {
       const o = hit.object;
@@ -1015,7 +1056,7 @@ function wireBoardClicks() {
     }
     if (e.buttons || hoverQueued) return;
     hoverQueued = true;
-    requestAnimationFrame(() => { hoverQueued = false; el.style.cursor = docAt(e) ? 'grab' : partAt(e) ? 'pointer' : ''; });
+    requestAnimationFrame(() => { hoverQueued = false; el.style.cursor = DRAG && docAt(e) ? 'grab' : partAt(e) ? 'pointer' : ''; });
   });
   el.addEventListener('pointerup', (e) => {
     if (drag) {
@@ -1077,7 +1118,7 @@ function wireArt(key, mount) {
 const MAIN = {
   v2: { none: ['size'], standard: ['size', 'color', 'caps'], custom: ['size', 'laminate', 'color', 'logo', 'bgimg'] },
   v3: ['size', 'color', 'laminate', 'edge', 'caps', 'logo', 'bgimg', 'certs', 'wall'],
-  v5: ['size', 'color', 'laminate', 'caps', 'mywall', 'wall'],     // phones: 3 per row, Size / Colors / Textures on top
+  v5: ['size', 'color', 'laminate', 'edge', 'caps', 'wall'],       // phones: 3 per row, Size / Colors / Textures on top
 };
 function wireLayout() {
   document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });
@@ -1103,14 +1144,31 @@ function wireLayout() {
     else if (restoredDesign || new URLSearchParams(location.search).has('size')) state.path = 'standard';
   }
   if (LAYOUT === 'v5') {
-    $('.sec[data-sec="color"] .sec-t').textContent = 'Colors';
-    $('.sec[data-sec="laminate"] .sec-t').textContent = 'Textures';
+    // option titles in Title Case
+    const titles = { size: 'Size', color: 'Colors', laminate: 'Textures', edge: 'Edge Banding', caps: 'Caps & Studs', wall: 'Room & Lighting',
+                     mywall: 'My Wall', certs: 'Sample Certificates', presets: 'Popular Boards' };
+    for (const [k, t] of Object.entries(titles)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); if (el) el.textContent = t; }
+    $('#lnCerts .lt').firstChild.textContent = 'Sample Certificates ';
+    $('.sec[data-sec="laminate"] .sec-h .i use').setAttribute('href', '#i-weave');
     $('#lamTitle').textContent = 'Textures';
-    // My wall holds the photo results, the certificate count and their own documents
+    // Size: Auto-suggest line, then Orientation, then the sizes (the custom size is a full-width card under them)
+    const orient = $('[data-orient]').closest('.opt');
+    orient.previousElementSibling?.matches('hr') && orient.previousElementSibling.remove();
+    $('#sizes').before(orient);
+    // Popular boards: a strip across the very top of the panel
+    $('#popStrip').append($('#presetList'));
+    // My Wall (opened from the panel header) holds the photo results, the certificate count and their own documents
     $('#mwSlot').append($('.certcount'), $('#ownDocs'));
-    $('#ownDocs .opt span').textContent = 'Your documents';
+    $('#ownDocs .opt span').textContent = 'Your Documents';
     $('#ownDocs .opt + .help').textContent = 'Each document we found, with its guessed size: change a size, turn one or remove extras. Or snap and upload your real permits and licenses to see them on the board.';
-    $('#lnTurn').addEventListener('click', () => { state.sheetTurn = !state.sheetTurn; $('#sheetTurn').checked = state.sheetTurn; refresh(); });
+    $('#docTools .lbl').hidden = true;                         // (no dragging in v5)
+    $('#myWallBtn').addEventListener('click', () => openOptSheet($('.sec[data-sec="mywall"]')));
+    // rotate the certificates: the samples, or the documents found in their wall photo
+    $('#lnTurn').addEventListener('click', () => {
+      state.sheetTurn = !state.sheetTurn; $('#sheetTurn').checked = state.sheetTurn;
+      if (state.myCerts.length) { state.myCerts.forEach(d => { d.turn = !d.turn; d.px = d.py = null; }); docsKey = ''; }
+      refresh();
+    });
     document.addEventListener('click', (e) => { if (e.target.closest('[data-snap]')) { closeOptSheet(); setStep('snap'); } });
     $('#autoBtn').addEventListener('click', () => setStep('snap'));
   }
@@ -1148,7 +1206,12 @@ function paintLayout(sp) {
     }
   }
   if (LAYOUT === 'v5') {
+    // their own uploaded documents replace the samples: the samples row is greyed out
+    const own = state.myCerts.some(d => !d.sample);
+    $('#lnCerts').classList.toggle('off', own);
+    $('#lnCerts').querySelectorAll('button').forEach(b => { b.disabled = own; });
     $('#lnTurn').setAttribute('aria-pressed', state.sheetTurn);
+    $('#myWallBtn .v').textContent = state.myCerts.length ? ` · ${state.myCerts.length}` : '';
     $('#mwEmpty').hidden = !!wallInfo; $('#mwGot').hidden = !wallInfo;
     if (wallInfo) {
       const n = state.myCerts.filter(d => d.sample).length;
@@ -1178,8 +1241,9 @@ function paintPrices() {
   }
   if (v5) {                                                    // Size: this board's own price
     const up = badge($('.sec[data-sec="size"] .sec-h')), std = SIZES.find(s => s.id === state.sizeId);
-    up.classList.add('size'); up.hidden = false;
-    up.textContent = std ? `$${std.price.toFixed(2)}` : 'Quote';
+    up.classList.add('size');
+    up.textContent = std ? `$${std.price.toFixed(2)}` : '';
+    up.hidden = !std;
   }
   document.querySelectorAll('#fastSw .fast').forEach(b => {
     let up = b.querySelector('.up');
@@ -1234,13 +1298,27 @@ function capHit(W, H) {
     return dx * dx + dy * dy < clear * clear;
   });
 }
-// Pack mixed-size documents in centered rows (largest first). If anything would touch a cap, pack again inside the
-// caps. Documents the customer dragged keep their spot. Returns what's placed and what doesn't fit.
+// Pack mixed-size documents in centered rows (largest first). If that leaves some out, try a tighter packing that
+// also stacks small documents beside big ones (and, for samples from a wall photo, may turn one sideways).
+// Anything touching a cap is packed again inside the caps. Dragged documents keep their spot.
+// Returns what's placed and what doesn't fit.
+const packMemo = new Map();
 function packDocs(W, H, docs) {
+  const key = `${W}x${H}|${docs.map(d => [...docDims(d), d.sample ? 1 : 0].join(',')).join(';')}`;
+  if (!packMemo.has(key)) { if (packMemo.size > 400) packMemo.clear(); packMemo.set(key, packFresh(W, H, docs)); }
+  const P = packMemo.get(key);
+  // dragged documents stay where they were put (kept on the board)
+  return { missing: P.missing, places: P.places.map(p => {
+    const d = docs[p.i];
+    return d.px == null ? { ...p } : { ...p, x: Math.max(-W / 2 + p.w / 2, Math.min(W / 2 - p.w / 2, d.px)), y: Math.max(-H / 2 + p.h / 2, Math.min(H / 2 - p.h / 2, d.py)) };
+  }) };
+}
+function packFresh(W, H, docs) {
   const hits = capHit(W, H), g = 0.75;
-  const pack = (m) => {
+  const items = () => docs.map((d, i) => { const [w, h] = docDims(d); return { i, w, h, turn: !!d.sample }; });
+  const rowPack = (m) => {
     const AW = W - 2 * m, AH = H - 2 * m, missing = [], rows = [];
-    const order = docs.map((d, i) => { const [w, h] = docDims(d); return { i, w, h }; }).sort((a, b) => b.h - a.h || b.w - a.w);
+    const order = items().sort((a, b) => b.h - a.h || b.w - a.w);
     let row = null;
     for (const it of order) {
       if (it.w > AW || it.h > AH) { missing.push(it.i); continue; }
@@ -1257,11 +1335,68 @@ function packDocs(W, H, docs) {
     }
     return { places, missing };
   };
-  let P = pack(SHEETS.edgeMargin);
-  if (P.places.some(hits)) P = pack(HW.inset + HW.capDia / 2 + SHEETS.capClearance);
-  for (const p of P.places) {                 // dragged documents stay where they were put (kept on the board)
-    const d = docs[p.i];
-    if (d.px != null) { p.x = Math.max(-W / 2 + p.w / 2, Math.min(W / 2 - p.w / 2, d.px)); p.y = Math.max(-H / 2 + p.h / 2, Math.min(H / 2 - p.h / 2, d.py)); }
+  // free-space packing (MaxRects, best short side fit) with the 4 caps blocked off; the group is then centered
+  const ORDERS = [(a, b) => b.w * b.h - a.w * a.h, (a, b) => b.h - a.h || b.w - a.w, (a, b) => b.w - a.w || b.h - a.h, (a, b) => Math.max(b.w, b.h) - Math.max(a.w, a.h)];
+  const tightPack = (gap, list, rule, flip) => {
+    const m = SHEETS.edgeMargin, AW = W - 2 * m + gap, AH = H - 2 * m + gap;   // each document carries a gap right and below
+    let free = [{ x: 0, y: 0, w: AW, h: AH }];
+    const cut = (R) => {                                   // take rectangle R out of the free space
+      const next = [];
+      for (const f of free) {
+        if (R.x >= f.x + f.w || R.x + R.w <= f.x || R.y >= f.y + f.h || R.y + R.h <= f.y) { next.push(f); continue; }
+        if (R.x > f.x) next.push({ x: f.x, y: f.y, w: R.x - f.x, h: f.h });
+        if (R.x + R.w < f.x + f.w) next.push({ x: R.x + R.w, y: f.y, w: f.x + f.w - R.x - R.w, h: f.h });
+        if (R.y > f.y) next.push({ x: f.x, y: f.y, w: f.w, h: R.y - f.y });
+        if (R.y + R.h < f.y + f.h) next.push({ x: f.x, y: R.y + R.h, w: f.w, h: f.y + f.h - R.y - R.h });
+      }
+      free = next.filter((a, k) => !next.some((b, j) => j !== k && a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h
+        && (j < k || a.w !== b.w || a.h !== b.h || a.x !== b.x || a.y !== b.y)));
+    };
+    const rc = HW.capDia / 2 + SHEETS.capClearance, c = HW.inset - m;   // cap keep-out square, in packing coordinates
+    for (const [cx, cy] of [[c, c], [W - 2 * m - c, c], [c, H - 2 * m - c], [W - 2 * m - c, H - 2 * m - c]]) cut({ x: cx - rc + gap, y: cy - rc + gap, w: 2 * rc - gap, h: 2 * rc - gap });
+    const placed = [], missing = [];
+    for (const [k, it] of list.entries()) {
+      let best = null;
+      const ways = it.turn ? [[it.w, it.h], [it.h, it.w]] : [[it.w, it.h]];   // samples may be turned; flip(k): try that first
+      for (const [w, h] of flip(k) ? ways.reverse() : ways) {
+        for (const f of free) {
+          if (w + gap > f.w + 1e-6 || h + gap > f.h + 1e-6) continue;
+          // rule 0: best short side fit; 1: highest spot first (fills rows); 2: leftmost spot first (fills columns)
+          const s = rule === 1 ? f.y * 1000 + f.x : rule === 2 ? f.x * 1000 + f.y : Math.min(f.w - w - gap, f.h - h - gap);
+          if (!best || s < best.s - 1e-6 || (Math.abs(s - best.s) < 1e-6 && f.y * 100 + f.x < best.y * 100 + best.x)) best = { s, x: f.x, y: f.y, w, h };
+        }
+      }
+      if (!best) { missing.push(it.i); continue; }
+      placed.push({ i: it.i, ...best });
+      cut({ x: best.x, y: best.y, w: best.w + gap, h: best.h + gap });
+    }
+    // center the group, as long as that keeps it clear of the caps
+    const x0 = Math.min(...placed.map(p => p.x)), x1 = Math.max(...placed.map(p => p.x + p.w));
+    const y0 = Math.min(...placed.map(p => p.y)), y1 = Math.max(...placed.map(p => p.y + p.h));
+    const at = (dx, dy) => placed.map(p => ({ i: p.i, x: -W / 2 + m + p.x + p.w / 2 + dx, y: H / 2 - m - p.y - p.h / 2 - dy, w: p.w, h: p.h }));
+    let places = at(0, 0);
+    if (placed.length) {
+      const centered = at((W - 2 * m - x1 - x0) / 2, (H - 2 * m - y1 - y0) / 2);
+      if (!centered.some(hits)) places = centered;
+    }
+    return { places, missing };
+  };
+  // rows first (tidiest); the tighter packing only when rows leave documents out
+  let P = rowPack(SHEETS.edgeMargin);
+  if (P.places.some(hits)) P = rowPack(HW.inset + HW.capDia / 2 + SHEETS.capClearance);
+  const FLIPS = [() => false, () => true, (k) => k > 0];          // as they are / turned first / all but the biggest
+  for (const gap of [g, 0.5]) for (const flip of FLIPS) for (const order of ORDERS) for (const rule of [0, 1, 2]) {
+    if (!P.missing.length) break;
+    const t = tightPack(gap, items().sort(order), rule, flip);
+    if (t.missing.length < P.missing.length) P = t;
+  }
+  // still short: a few hundred random orders and turns (the same ones every time, so the layout doesn't jump)
+  const rand = rng(11);
+  for (let n = 0; n < 250 && P.missing.length; n++) {
+    const list = items().map(it => ({ it, r: rand() })).sort((a, b) => a.r - b.r).map(x => x.it);
+    const turns = list.map(() => rand() < 0.5), gap = rand() < 0.5 ? g : 0.5;
+    const t = tightPack(gap, list, Math.floor(rand() * 3), (k) => turns[k]);
+    if (t.missing.length < P.missing.length) P = t;
   }
   return P;
 }
@@ -1307,7 +1442,7 @@ async function scanExample() {
   const g = c.getContext('2d'), rnd = rng(3);
   g.fillStyle = '#8c9a86'; g.fillRect(0, 0, W, H);
   for (let i = 0; i < 30000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * 0.06})`; g.fillRect(rnd() * W, rnd() * H, 3, 3); }
-  const docs = [[90, 110, 8.5, 11, '#1b3a6b'], [330, 110, 8.5, 11, '#b3261e'], [590, 130, 8.5, 11, '#2c6e49', 1], [90, 420, 8.5, 11, '#6b4a33'], [860, 100, 11, 17, '#1b3a6b'], [1150, 380, 18, 24, '#c27c0e']];
+  const docs = [[90, 110, 8.5, 11, '#1b3a6b'], [330, 110, 8.5, 11, '#b3261e'], [590, 130, 8.5, 11, '#2c6e49', 1], [90, 420, 8.5, 11, '#6b4a33'], [860, 100, 11, 17, '#1b3a6b'], [1180, 140, 8.5, 11, '#c27c0e']];
   for (const [x, y, w, h, head, frame] of docs) {
     const pw = w * ppi, ph = h * ppi;
     if (frame) { g.fillStyle = '#2a2420'; g.fillRect(x - 18, y - 18, pw + 36, ph + 36); }
@@ -1329,7 +1464,7 @@ async function scanExample() {
 function step() { return document.documentElement.dataset.step || ''; }
 const fullStage = () => ['styles', 'intro', 'snap'].includes(step()) && GUIDED;   // the board fills the screen
 let looks = [], lookAt = 0, wallInfo = null;
-let sway = null;            // v5 welcome/snap: the camera drifts slowly left and right around this framing
+let sway = null;            // v5 welcome/snap: the camera holds still at this framing (board beside the card)
 let showcase = null;        // v5: the room the board was in before the welcome screen showed it on brick
 function setStep(s) {
   document.documentElement.dataset.step = s;
@@ -1338,7 +1473,13 @@ function setStep(s) {
   if (LAYOUT === 'v5') tourStep(s);
   scrollTo(0, 0);
   updateStage();
-  requestAnimationFrame(() => { resize(); if (!sway) setView(s === 'styles' ? 'angle' : state.view); });
+  requestAnimationFrame(() => {
+    resize();
+    if (!sway) return setView(s === 'styles' ? 'angle' : state.view);
+    sway = swayFrame();                                      // (sized for the full-screen view, after the resize)
+    const p = swayPose(sway);
+    unlockAngles(); tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.pos, t1: p.tgt };
+  });
 }
 const hexL = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
 const lookFace = (L) => (L.lam && findByNumber(L.lam)?.avg) || (L.lam ? '#808080' : colorHex(L.cfg.face));
@@ -1457,10 +1598,10 @@ function tourStep(s) {
   $('#tourBack').hidden = i <= 0;
   $('#tourSkip').textContent = s === 'snap' ? 'Skip photo' : 'Skip';
   $('#tourMsg').textContent = '';
-  // welcome + snap: the board turns slowly on a brick wall (their own room comes back afterwards)
+  // welcome + snap: the board on a brick café wall (their own room comes back afterwards)
   if (s === 'intro' || s === 'snap') {
     if (!showcase && !wallInfo) { showcase = { env: state.env }; state.env = 'bistro'; refresh(); }
-    sway = swayFrame();
+    sway = true;                                             // framed by setStep once the view has its full size
   } else {
     sway = null;
     if (showcase) { state.env = showcase.env; showcase = null; refresh(); }
@@ -1484,6 +1625,11 @@ function swayFrame() {
   const room = 0.62;                                         // right 62% of the screen is free
   const d = Math.max(h / 2, w / 2 / (aspect * room)) / Math.tan(fov) * 1.3 + 2;
   return { tgt: new THREE.Vector3(-d * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };
+}
+// the camera for a sway framing: a little to the side, at the same slight downward look as the options view
+function swayPose(f) {
+  const a = 0.2, c = Math.cos(PITCH);
+  return { tgt: f.tgt.clone(), pos: new THREE.Vector3(f.tgt.x + f.d * Math.sin(a) * c, f.tgt.y + f.d * Math.sin(PITCH), f.tgt.z + f.d * Math.cos(a) * c) };
 }
 // live camera (phones; computers can switch it on). If it's blocked or missing, the shutter opens the phone's camera app.
 let camStream = null;
@@ -1554,7 +1700,11 @@ function wireTour() {
     if (s === 'snap') browseLooks();                     // (with the last photo's suggestions, if there was one)
     else setStep('custom');
   });
-  addEventListener('resize', () => { if (sway) sway = swayFrame(); });
+  addEventListener('resize', () => {
+    if (!sway) return;
+    sway = swayFrame(); const p = swayPose(sway);
+    tween = null; camera.position.copy(p.pos); controls.target.copy(p.tgt); dirty = true;
+  });
   wireLooks();
   firstStep('snap');
 }
@@ -1868,7 +2018,7 @@ function renderPicker() {
     const box = document.createElement('details'); box.className = 'fgroup'; box.dataset.g = g.key;
     box.open = pick.open.has(g.key);
     const n = pick[g.key].size;
-    box.innerHTML = `<summary><span>${g.label}</span><em>${n ? `${n} selected` : ''}</em><svg class="i chev"><use href="#i-chev"/></svg></summary>`;
+    box.innerHTML = `<summary><span>${g.label}</span><em>${n || ''}</em><svg class="i chev"><use href="#i-chev"/></svg></summary>`;
     const row = document.createElement('div'); row.className = 'chips';
     for (const o of g.opts) {
       const count = library.filter(it => passes(it, g.key) && it[FIELD[g.key]] === o.name).length;
@@ -1942,10 +2092,16 @@ function wirePicker() {
   try { cols = +localStorage.getItem('cobo.lamCols') || 3; } catch { /* storage blocked */ }
   setCols(cols);
   $('#lamCols').addEventListener('click', (e) => { const b = e.target.closest('[data-cols]'); if (b) setCols(+b.dataset.cols); });
-  m.addEventListener('toggle', (e) => {                     // remember which categories are open across re-renders
+  // the filter dropdowns: one open at a time (remembered across re-renders); a click elsewhere closes it
+  m.addEventListener('toggle', (e) => {
     const d = e.target.closest?.('details.fgroup');
-    if (d) d.open ? pick.open.add(d.dataset.g) : pick.open.delete(d.dataset.g);
+    if (!d) return;
+    if (d.open) { pick.open = new Set([d.dataset.g]); m.querySelectorAll('details.fgroup[open]').forEach(o => { if (o !== d) o.open = false; }); }
+    else pick.open.delete(d.dataset.g);
   }, true);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#lamFilters')) m.querySelectorAll('details.fgroup[open]').forEach(o => { o.open = false; });
+  });
   m.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) return closePicker();
     const chip = e.target.closest('.chip');
@@ -1980,7 +2136,7 @@ function wirePicker() {
 
 function refresh(refit = false) {
   buildBoard();
-  if (refit) setView(state.view);
+  if (refit && !sway) setView(state.view);   // (v5 tutorial screens keep their own framing)
 }
 
 function toast(msg) {
@@ -2231,12 +2387,6 @@ function loop() {
     inset.now += (inset.target - inset.now) * Math.min(1, dt * 9);
     if (Math.abs(inset.target - inset.now) < 0.5) inset.now = inset.target;
     applyInset(); dirty = true;
-  }
-  if (sway && !tween) {                  // v5 welcome: drift slowly left and right
-    const a = Math.sin(clock.elapsedTime * 0.35) * 0.3;
-    controls.target.copy(sway.tgt);
-    camera.position.set(sway.tgt.x + sway.d * Math.sin(a), sway.tgt.y + sway.d * 0.06, sway.tgt.z + sway.d * Math.cos(a));
-    dirty = true;
   }
   if (controls.update()) dirty = true;   // true while the user is orbiting / damping
   if (tween) dirty = true;

@@ -301,17 +301,24 @@
   .lam-sel .chipbtn .i { width: 16px; height: 16px; }
   .lam-sel .chipbtn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
   .lam-sel .link { font-size: 12.5px; }
-  .side-search { padding: 12px 16px 0; position: relative; }
-  .side-search .i { position: absolute; left: 28px; top: 23px; color: var(--faint); }
-  .side-search input { width: 100%; padding: 11px 12px 11px 38px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
+  /* search box + swatches-per-row buttons on one line */
+  .side-search { padding: 12px 16px 0; display: flex; align-items: center; gap: 8px; }
+  .side-search .sbox { position: relative; flex: 1; min-width: 0; }
+  .side-search .sbox .i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+  .side-search input { width: 100%; padding: 10px 10px 10px 36px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
   .side-body { flex: 1; overflow-y: auto; padding: 12px 16px 20px; display: grid; gap: 12px; align-content: start; }
-  details.fgroup { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
-  details.fgroup summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; font-size: 14px; font-weight: 550; }
+  /* filters: one line of dropdowns (Design type, Color, Shade; + Cut, Match for woodgrains); the chips drop down below */
+  .ffilters { display: flex; flex-wrap: wrap; gap: 6px; position: relative; }
+  details.fgroup { flex: 1 1 0; min-width: 0; position: static; }
+  details.fgroup summary { list-style: none; display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 11px; cursor: pointer; font-size: 13px; font-weight: 550; background: var(--card); border: 1px solid var(--line-2); border-radius: 10px; white-space: nowrap; }
+  details.fgroup summary span { overflow: hidden; text-overflow: ellipsis; }
   details.fgroup summary::-webkit-details-marker { display: none; }
-  details.fgroup summary em { flex: 1; text-align: right; font-style: normal; font-size: 12px; color: var(--accent); font-weight: 600; }
-  details.fgroup summary .chev { color: var(--faint); transition: transform .2s; }
+  details.fgroup summary em { font-style: normal; font-size: 11px; color: #fff; background: var(--accent); border-radius: 999px; padding: 0 6px; font-weight: 700; }
+  details.fgroup summary em:empty { display: none; }
+  details.fgroup summary .chev { margin-left: auto; width: 15px; height: 15px; color: var(--faint); transition: transform .2s; }
+  details.fgroup[open] summary { border-color: var(--accent); }
   details.fgroup[open] summary .chev { transform: rotate(180deg); }
-  details.fgroup .chips { padding: 0 14px 14px; }
+  details.fgroup .chips { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; padding: 12px; background: #fff; border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, .14); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
   .chip em { font-style: normal; color: var(--muted); font-size: 11px; }
@@ -489,10 +496,32 @@
   [data-layout="v5"] .p-head h1 { display: none; }
   [data-layout="v5"] .tabpane { display: contents; }
   [data-layout="v5"] .lines [data-only="v2"] { display: none; }
-  .auto-btn { justify-self: start; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--accent); background: var(--tint); color: var(--accent); border-radius: 999px; padding: 7px 14px 7px 11px; font-size: 13px; font-weight: 650; cursor: pointer; }
-  .auto-btn:hover { background: var(--tint-2); }
-  .auto-btn .i { width: 16px; height: 16px; }
+  /* header: My Wall on the left, styled like Share */
+  .share-btn.mw-btn { position: static; transform: none; justify-self: start; }
+  .mw-btn .v { font-weight: 500; color: var(--muted); }
+  [data-layout="v5"] .p-head { min-height: 58px; align-content: center; }
+  /* viewer: Auto-Suggest in place of Front / Angle / Back */
+  [data-layout="v5"] .viewbar [data-view] { display: none; }
+  .viewbar .vb-auto { display: inline-flex; align-items: center; gap: 7px; background: var(--accent); color: #fff; font-weight: 650; }
+  .viewbar .vb-auto .i { width: 16px; height: 16px; }
+  .viewbar .vb-auto:hover { background: #142d54; }
+  /* popular boards: a strip that scrolls sideways */
+  .popstrip { order: -1; display: grid; gap: 8px; min-width: 0; }
+  .pop-h { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .popstrip .presets { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; scrollbar-width: thin; }
+  .popstrip .preset { flex: 0 0 168px; scroll-snap-align: start; }
+  /* size: custom size as a full-width card, like the Wilsonart one */
+  #sizes .tile.wide { grid-column: 1 / -1; grid-template-columns: auto 1fr; justify-items: start; align-items: center; text-align: left; gap: 1px 12px; padding: 10px 14px; background: #fff; border: 1.5px solid var(--line-2); }
+  #sizes .tile.wide svg { grid-row: 1 / span 2; width: 44px; height: 44px; }
+  #sizes .tile.wide b { font-size: 14.5px; }
+  #sizes .tile.wide small { font-size: 12px; }
+  #sizes .tile.wide.on { border-color: var(--accent); background: var(--tint); }
+  /* sample certificates row, greyed out while their own documents are shown */
+  .line.off > .i, .line.off .lt { opacity: .45; }
+  .line.off .eye { visibility: hidden; }
   .autorow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; background: var(--tint); border-radius: 12px; padding: 10px 10px 10px 12px; }
+  .camgo { width: 42px; height: 42px; border-radius: 50%; padding: 0; display: grid; place-items: center; }
+  .camgo .i { width: 20px; height: 20px; }
   .autorow > .i { color: var(--accent); }
   .autorow b { display: block; font-size: 14px; color: var(--accent); }
   .autorow small { display: block; font-size: 12px; color: var(--muted); }
@@ -508,7 +537,6 @@
   #mwSlot { display: grid; gap: 12px; }
   #mwSlot .owndocs { display: grid; gap: 14px; }
   .eye.turn[aria-pressed="true"] { background: var(--tint); }
-  .wa-mini { height: 13px; width: auto; display: none; }
   .up.size { color: var(--ink); background: #f0f0f2; }
 
   /* full-screen steps over the live 3D board (intro, snap) and the swipe bar (styles) */
@@ -603,9 +631,8 @@
     /* phones: 3 squares per row (Size, Colors, Textures, then Caps, My wall, Room); price bubble in the corner */
     [data-layout="v5"] .p-body .sec { position: relative; }
     [data-layout="v5"] .p-body .sec-h .up { position: absolute; top: 5px; right: 5px; font-size: 10px; padding: 1px 6px; margin: 0; }
-    [data-layout="v5"] .wa-mini { display: block; }
-    [data-layout="v5"] .autorow { grid-template-columns: auto minmax(0, 1fr); }
-    [data-layout="v5"] .autorow .snapbtn { grid-column: 1 / -1; justify-content: center; }
+    [data-layout="v5"] .popstrip { grid-column: 1 / -1; }
+
   }
 </style>
 </head>
@@ -637,6 +664,7 @@
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-wallpic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="6.5" y="7.5" width="4.5" height="5.5" rx=".6"/><rect x="13" y="7.5" width="4.5" height="5.5" rx=".6"/><path d="M6.5 16.5h11"/></symbol>
+  <symbol id="i-weave" viewBox="0 0 24 24"><path stroke-width="2.9" stroke-linecap="butt" d="M3.5 8.5h9.3M18.2 8.5h2.3M3.5 15.5h2.3M11.2 15.5h9.3M8.5 3.5v2.3M8.5 11.2v9.3M15.5 3.5v9.3M15.5 18.2v2.3"/></symbol>
   <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
 </svg>
 
@@ -645,6 +673,7 @@
     <div id="stage"></div>
     <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
     <div class="viewbar pill" role="group" aria-label="View">
+      <button class="vb-auto lay-v5" id="autoBtn" type="button" hidden><svg class="i"><use href="#i-spark"/></svg>Auto-Suggest</button>
       <button data-view="front">Front</button>
       <button data-view="angle" class="on">Angle</button>
       <button data-view="back">Back</button>
@@ -677,14 +706,16 @@
     <div class="p-head">
       <button class="back-looks lay-v4" id="backLooks" type="button" hidden><svg class="i"><use href="#i-left"/></svg>Looks</button>
       <h1>Design Options</h1>
-      <!-- v5: in place of the heading, reopen the photo + suggestions screens -->
-      <button class="auto-btn lay-v5" id="autoBtn" type="button" hidden><svg class="i"><use href="#i-spark"/></svg>Auto-suggest</button>
+      <!-- v5: in place of the heading, what we learned from their wall photo + their own documents -->
+      <button class="share-btn mw-btn lay-v5" id="myWallBtn" type="button" hidden><svg class="i"><use href="#i-wallpic"/></svg><span>My Wall<span class="v"></span></span></button>
       <button class="share-btn" id="shareBtn" type="button" aria-label="Share this design"><svg class="i"><use href="#i-share"/></svg><span>Share</span></button>
     </div>
 
     <div class="p-body">
       <!-- All options in one panel, in three groups. Sections fold; clicking part of the board opens its section. -->
       <!-- ====== BOARD ====== -->
+      <!-- v5: popular boards as a strip across the top (main.js moves #presetList in here) -->
+      <div class="popstrip lay-v5" id="popStrip" hidden><p class="pop-h">Popular Boards</p></div>
       <div class="tabpane" data-pane="board">
         <section class="sec" data-sec="presets">
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-spark"/></svg><span class="sec-t">Popular boards</span><span class="sec-v" data-v="presets">Start here</span><svg class="i chev"><use href="#i-chev"/></svg></button>
@@ -698,8 +729,8 @@
           <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-size"/></svg><span class="sec-t">Size</span><span class="sec-v" data-v="size"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b">
             <!-- v5: the photo scan + certificate count, in one line (the count and results live under My wall) -->
-            <div class="autorow lay-v5" hidden><svg class="i"><use href="#i-spark"/></svg><span><b>Auto-suggest</b><small>Size it from a photo of your wall</small></span>
-              <button class="primary snapbtn" type="button" data-snap><svg class="i"><use href="#i-camera"/></svg>Snap your wall</button></div>
+            <div class="autorow lay-v5" hidden><svg class="i"><use href="#i-spark"/></svg><span><b>Auto-Suggest</b><small>Snap your wall and we'll size a board to fit</small></span>
+              <button class="primary camgo" type="button" data-snap aria-label="Snap your wall" title="Snap your wall"><svg class="i"><use href="#i-camera"/></svg></button></div>
             <div class="certcount">
               <div class="opt"><svg class="i"><use href="#i-cert"/></svg><span>How many certificates?</span>
                 <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer">−</button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more">+</button></span></div>
@@ -722,7 +753,7 @@
             <hr class="div">
             <div class="opt"><svg class="i"><use href="#i-orient"/></svg><span>Orientation</span>
               <div class="seg"><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></div></div>
-            <button class="link preset-link lay-v2 lay-v3 lay-v5" type="button" data-open="presets" hidden>Not sure? Start from a popular board</button>
+            <button class="link preset-link lay-v2 lay-v3" type="button" data-open="presets" hidden>Not sure? Start from a popular board</button>
           </div>
         </section>
 
@@ -737,10 +768,10 @@
         <!-- v2: the smaller choices as simple rows: toggles, eye icons (show/hide in the preview) and rows that open a panel -->
         <!-- v5 uses the same rows, minus the ones marked data-only="v2" (v5 shows those as cards, or not at all) -->
         <div class="lines lay-v2 lay-v5" id="lines" hidden>
-          <label class="line"><svg class="i"><use href="#i-edge"/></svg><span>Edge matches board</span><input type="checkbox" class="switch" id="lnMatch"></label>
-          <button class="line" type="button" data-open="edge" id="lnEdge"><svg class="i"><use href="#i-edge"/></svg><span>Edge color</span><span class="v" data-v="edge"></span><svg class="i go"><use href="#i-right"/></svg></button>
+          <label class="line" data-only="v2"><svg class="i"><use href="#i-edge"/></svg><span>Edge matches board</span><input type="checkbox" class="switch" id="lnMatch"></label>
+          <button class="line" type="button" data-open="edge" id="lnEdge" data-only="v2"><svg class="i"><use href="#i-edge"/></svg><span>Edge color</span><span class="v" data-v="edge"></span><svg class="i go"><use href="#i-right"/></svg></button>
           <button class="line" type="button" data-open="caps" data-path="custom" data-only="v2"><svg class="i"><use href="#i-cap"/></svg><span>Caps &amp; studs</span><span class="v" data-v="caps"></span><svg class="i go"><use href="#i-right"/></svg></button>
-          <div class="line"><svg class="i"><use href="#i-cert"/></svg><button class="lt" type="button" data-open="certs">Sample certificates <span class="v" data-v="certs"></span></button><button class="eye turn lay-v5" type="button" id="lnTurn" hidden aria-label="Rotate the certificates 90 degrees" title="Rotate 90°"><svg class="i"><use href="#i-rotate"/></svg></button><button class="eye" type="button" data-eye="sheets" aria-label="Show or hide the sample certificates"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <div class="line" id="lnCerts"><svg class="i"><use href="#i-cert"/></svg><button class="lt" type="button" data-open="certs">Sample certificates <span class="v" data-v="certs"></span></button><button class="eye turn lay-v5" type="button" id="lnTurn" hidden aria-label="Rotate the certificates 90 degrees" title="Rotate 90°"><svg class="i"><use href="#i-rotate"/></svg></button><button class="eye" type="button" data-eye="sheets" aria-label="Show or hide the sample certificates"><svg class="i"><use href="#i-eye"/></svg></button></div>
           <div class="line" data-path="custom" data-only="v2"><svg class="i"><use href="#i-logo"/></svg><button class="lt" type="button" data-open="logo">Logo <span class="v" data-v="logo"></span></button><button class="eye" type="button" data-eye="logo" aria-label="Show or hide the logo"><svg class="i"><use href="#i-eye"/></svg></button></div>
           <div class="line" data-path="custom" data-only="v2"><svg class="i"><use href="#i-image"/></svg><button class="lt" type="button" data-open="bgimg">Background image <span class="v" data-v="bgimg"></span></button><button class="eye" type="button" data-eye="background" aria-label="Show or hide the background image"><svg class="i"><use href="#i-eye"/></svg></button></div>
           <button class="line" type="button" data-open="wall" data-only="v2"><svg class="i"><use href="#i-room"/></svg><span>Room &amp; lighting</span><span class="v" data-v="wall"></span><svg class="i go"><use href="#i-right"/></svg></button>
@@ -755,7 +786,7 @@
         </section>
 
         <section class="sec" data-sec="laminate">
-          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-layers"/></svg><span class="sec-t">Custom laminate</span><img class="wa-mini lay-v5" src="../img/wilsonart-logo.png" alt="Wilsonart" hidden><span class="sec-v" data-v="laminate"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-layers"/></svg><span class="sec-t">Custom laminate</span><span class="sec-v" data-v="laminate"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b">
             <!-- the arrow points left (panel opens to the left) and flips to point right while the panel is open -->
             <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel" aria-expanded="false">
@@ -991,19 +1022,17 @@
     <button id="lamClear" class="link" type="button">Remove</button>
   </div>
   <div class="side-search">
-    <svg class="i"><use href="#i-search"/></svg>
-    <input id="lamSearch" type="search" placeholder="Design number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name">
-  </div>
-  <div class="side-body">
-    <div class="rowsb">
-      <span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span>
+    <label class="sbox"><svg class="i"><use href="#i-search"/></svg>
+      <input id="lamSearch" type="search" placeholder="Number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name"></label>
       <div class="seg cols" id="lamCols" role="group" aria-label="Swatches per row">
         <button type="button" data-cols="1" aria-label="1 per row" title="1 per row"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="12" rx="1.5"/></svg></button>
         <button type="button" data-cols="2" aria-label="2 per row" title="2 per row"><svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="6" height="10" rx="1.2"/><rect x="8.5" y="3" width="6" height="10" rx="1.2"/></svg></button>
         <button type="button" data-cols="3" aria-label="3 per row" title="3 per row"><svg viewBox="0 0 16 16"><rect x="1" y="4" width="4" height="8" rx="1"/><rect x="6" y="4" width="4" height="8" rx="1"/><rect x="11" y="4" width="4" height="8" rx="1"/></svg></button>
       </div>
-    </div>
-    <div id="lamFilters" style="display:grid;gap:8px"></div>
+  </div>
+  <div class="side-body">
+    <div class="ffilters" id="lamFilters"></div>
+    <div class="rowsb"><span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span></div>
     <div id="lamNotFound" class="nf" hidden>
       <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
       <p>You can still use it: we'll match the number when we quote your board. Pick a stand-in color for the preview:</p>
@@ -1076,6 +1105,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610291255" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610291427" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
