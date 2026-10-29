@@ -174,6 +174,18 @@
   .preset:hover { border-color: var(--accent); }
   .preset i { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 8px; background: var(--swatch); border: 3px solid var(--edge, transparent); box-sizing: border-box; position: relative; }
   .preset b { font-size: 13px; } .preset small { font-size: 11px; color: var(--muted); line-height: 1.25; }
+  /* the customer's own documents */
+  .doclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .doclist:empty { display: none; }
+  .doc { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 4px 8px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .doc.miss { border-color: #d9a441; background: #fff9ec; }
+  .doc img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); grid-row: 1 / span 2; }
+  .doc select { font: inherit; font-size: 13px; border: 1px solid var(--line-2); border-radius: 8px; padding: 5px 6px; background: #fff; min-width: 0; }
+  .doc .cust { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+  .doc .cust input { width: 58px; padding: 4px 6px; border: 1px solid var(--line-2); border-radius: 6px; font: inherit; font-size: 13px; }
+  .doc .ib { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; width: 32px; height: 30px; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+  .doc .ib .i { width: 16px; height: 16px; }
+  .doc .warn { grid-column: 2 / -1; font-size: 11.5px; color: #8a5a00; }
   /* how many certificates */
   .certcount { background: var(--tint); border-radius: 12px; padding: 4px 12px 10px; display: grid; gap: 2px; }
   .certcount .help b { color: var(--accent); }
@@ -556,13 +568,16 @@
             <label class="opt"><svg class="i"><use href="#i-rotate"/></svg><span>Rotate certificates 90°</span><input type="checkbox" class="switch" id="sheetTurn"></label>
             <p class="help" id="sheetFit"></p>
             <hr class="div">
-            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Show your own certificates</span></div>
-            <p class="help" style="margin-top:-8px">Snap or upload photos of your real permits and licenses to see them on the board.</p>
+            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Show your own documents</span></div>
+            <p class="help" style="margin-top:-8px">Snap or upload your real permits, licenses and posters, any size, to see them on the board.</p>
+            <ul class="doclist" id="docList"></ul>
             <div class="row">
               <label class="upload"><input type="file" accept="image/*" capture="environment" id="certCam"><svg class="i"><use href="#i-camera"/></svg>Take a photo</label>
               <label class="upload"><input type="file" accept="image/*" multiple id="certFiles"><svg class="i"><use href="#i-image"/></svg>Upload</label>
               <button class="link" type="button" id="certClear" hidden>Back to samples</button>
+              <button class="link" type="button" id="docDemo">or try it with examples</button>
             </div>
+            <div class="row" id="docTools" hidden><button class="link" type="button" id="docAuto">Auto-arrange</button><span class="lbl">or drag documents on the board to move them</span></div>
             <p class="help" id="certOwnInfo" hidden></p>
           </div>
         </section>
@@ -731,6 +746,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610282144" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610282205" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

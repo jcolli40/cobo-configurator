@@ -66,6 +66,16 @@ export const UPCHARGES = {
 // ---- Volume discounts shown in the cart (PLACEHOLDER tiers: set the real ones here AND as an automatic discount in Shopify) ----
 export const DISCOUNTS = [ { min: 3, pct: 5 }, { min: 5, pct: 10 }, { min: 10, pct: 15 } ];
 
+// ---- Sizes customers can pick for their own uploaded documents (inches, upright) ----
+export const DOC_SIZES = [
+  { id: 'half',    name: 'Half letter', w: 5.5, h: 8.5 },
+  { id: 'letter',  name: 'Letter',      w: 8.5, h: 11 },
+  { id: 'legal',   name: 'Legal',       w: 8.5, h: 14 },
+  { id: 'tabloid', name: 'Tabloid',     w: 11,  h: 17 },
+  { id: 'p1824',   name: 'Poster',      w: 18,  h: 24 },
+  { id: 'p2436',   name: 'Poster',      w: 24,  h: 36 },
+];
+
 // ---- Rooms: preset wall + lighting for the 3D preview (preview only; "Studio" shows true colors) ----
 // wall: 'color' = use the wall color picker; otherwise a drawn texture (wood, brick, subway, steel, paint) in that color.
 // light: key = main light strength/color, hemi = soft fill, env = reflections, spot = overhead spotlight strength (0 = off).
