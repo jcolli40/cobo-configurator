@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291916';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291916';
-import { wallTexture, wallSwatch } from './env.js?v=202610291916';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291943';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291943';
+import { wallTexture, wallSwatch } from './env.js?v=202610291943';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -655,11 +655,14 @@ let tween = null;
 // When the Wilsonart side panel covers the right of the 3D view (desktop), the view slides left by half the panel
 // width and the board is framed to fit the part still visible. inset = covered width in pixels (animated).
 const inset = { now: 0, target: 0 };
-// v6 computers: the dock floats over the bottom of the view, so the board is framed in the part above it
-const dockH = () => (V6 && !phone.matches && !fullStage() ? $('.p-body').offsetHeight + 24 : 0);
+// v6 computers: the icon dock floats on the left, and its pop-ups open beside it, so the board is framed in the part
+// to the right of them (the view slides right instead of left)
+const LEFT = () => V6 && !phone.matches;
+const dockW = () => (LEFT() && !fullStage() ? $('.p-body').offsetWidth + 16 : 0);
+const offX = (px) => (LEFT() ? -(px + dockW()) / 2 : px / 2);
 function applyInset() {
-  const W = stage.clientWidth, H = stage.clientHeight, B = dockH();
-  if ((inset.now > 0.5 || B) && W && H) camera.setViewOffset(W, H, inset.now / 2, B / 2, W, H);
+  const W = stage.clientWidth, H = stage.clientHeight, x = offX(inset.now);
+  if (Math.abs(x) > 0.5 && W && H) camera.setViewOffset(W, H, x, 0, W, H);
   else camera.clearViewOffset();
 }
 function setInset(px) {
@@ -671,9 +674,8 @@ function setInset(px) {
 // distance that shows the whole board with a margin, in the part of the view the side panel doesn't cover
 function fitDist() {
   const { w, h } = dims();
-  const aspect = camera.aspect * (1 - inset.target / Math.max(1, stage.clientWidth));
-  const tall = 1 - dockH() / Math.max(1, stage.clientHeight);       // the part of the height not under the v6 dock
-  return Math.max(h / 2 / tall, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
+  const aspect = camera.aspect * (1 - (inset.target + dockW()) / Math.max(1, stage.clientWidth));
+  return Math.max(h / 2, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
 }
 // v5: zooming out stops before the edge of the room photo comes into view, at any left/right turn
 // (never closer than the distance that shows the whole board, so a very big custom board can still be seen)
@@ -684,8 +686,8 @@ function limitZoom() {
   if (!photoRect || sway) { controls.maxDistance = Infinity; return; }
   const R = photoRect, tgt = new THREE.Vector3(0, 0, 0.5), p = new THREE.Vector3(), W = stage.clientWidth, H = stage.clientHeight;
   probe.copy(camera);
-  const B = dockH();
-  if ((inset.target > 0.5 || B) && W && H) probe.setViewOffset(W, H, inset.target / 2, B / 2, W, H); else probe.clearViewOffset();
+  const x = offX(inset.target);
+  if (Math.abs(x) > 0.5 && W && H) probe.setViewOffset(W, H, x, 0, W, H); else probe.clearViewOffset();
   const fills = (d) => [-1, -0.5, 0, 0.5, 1].every(k => {   // turned all the way left, part way, straight on, ... right
     const a = k * TURN;
     probe.position.set(Math.sin(a) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(a) * Math.cos(PITCH)).multiplyScalar(d).add(tgt);
@@ -865,21 +867,20 @@ function markActive(name) {
 // Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
 // it fits the space above the sheet, so the whole board is always visible while you make changes.
 const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the screen height (sheet: matches .side top: 44vh)
+const STAGE6 = { max: 0.58, min: 0.58, sheet: 1 / 3 };  // v6: no scrolling; a pop-up takes the bottom 2/3 (top: --sheetTop)
 let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
   if (!phone.matches || fullStage()) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
-  if (V6) {                     // v6 phones: the view never shrinks; the dock and every pop-up start right under it
-    if (stageW !== innerWidth || !stageMax) { stageW = innerWidth; stageMax = Math.round(innerHeight * 0.58); root.style.setProperty('--stageMax', `${stageMax}px`); }
-    return;
-  }
+  const S = V6 ? STAGE6 : STAGE;
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
   if (!stageMax || stageW !== innerWidth) {
-    stageW = innerWidth; stageMax = Math.round(innerHeight * STAGE.max);
+    stageW = innerWidth; stageMax = Math.round(innerHeight * S.max);
     root.style.setProperty('--stageMax', `${stageMax}px`);
+    root.style.setProperty('--sheetTop', `${Math.round(innerHeight * S.sheet)}px`);
   }
-  const H = stageMax / STAGE.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
-  const h = sheet ? H * STAGE.sheet : Math.max(H * STAGE.min, stageMax - scrollY);   // visible height of the view
+  const H = stageMax / S.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
+  const h = sheet ? H * S.sheet : Math.max(H * S.min, stageMax - scrollY);   // visible height of the view
   const top = st.offsetTop;                                        // the Front/Angle/Back row above the 3D view
   const s = Math.max(0.2, (h - top) / (stageMax - top));
   if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 320); }
@@ -947,7 +948,11 @@ function updateUI() {
   // main button: what it does + this board's price (quantity is set per board in the cart)
   $('#editBar').hidden = !(editing && sp.price);
   $('#ctaLabel').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
-  $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';  $('#note').textContent = sp.price
+  $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';
+  if (V6) {                                       // v6: the bar shows this board's price as it's built (the cart total is in the cart)
+    $('#cartTotBtn small').textContent = 'Your board';
+    $('#cartTotal').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote';
+  }  $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
     : (sp.logo || sp.background)
       ? 'Printed boards are made to order — send us this spec (and your image files) and we will quote it.'
@@ -1242,6 +1247,7 @@ function wireLayout() {
     if (V6) {                                                    // short names under the dock icons; the pop-up says it in full
       const dock = { presets: 'Styles', edge: 'Edge', caps: 'Caps', certs: 'Certificates' };
       $('.sec[data-sec="presets"] .sec-t').textContent = 'Popular Styles';
+      $('.sec[data-sec="wall"] .sec-t').textContent = 'Room';
       for (const [k, t] of Object.entries(dock)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); el.dataset.full = el.textContent; el.textContent = t; }
     }
     $('#lnCerts .lt').firstChild.textContent = 'Sample Certificates ';
@@ -1379,6 +1385,7 @@ function paintPrices() {
     up.classList.add('size');
     up.textContent = std ? `$${std.price.toFixed(2)}` : '';
     up.hidden = !std;
+    if (V6) { const { w, h } = dims(); up.textContent = `${fmt(w)} × ${fmt(h)}`; up.hidden = false; }   // v6: the size itself
   }
   document.querySelectorAll('#fastSw .fast').forEach(b => {
     let up = b.querySelector('.up');
@@ -2424,7 +2431,7 @@ function renderCart(cart) {
   $('#sumTotal').textContent = `$${total.toFixed(2)}`;
   const next = DISCOUNTS.find(t => count < t.min);
   $('#discHint').textContent = !next ? '' : count ? `Add ${next.min - count} more board${next.min - count === 1 ? '' : 's'} to save ${next.pct}%.` : `Save ${DISCOUNTS[0].pct}% when you order ${DISCOUNTS[0].min} or more boards.`;
-  $('#cartTotal').textContent = `$${total.toFixed(2)}`;               // the bar always shows the cart total
+  if (!V6) $('#cartTotal').textContent = `$${total.toFixed(2)}`;      // the bar always shows the cart total (v6: the board's price)
   const list = $('#cartList'); list.innerHTML = '';
   cart.items.forEach((it, i) => {
     const li = document.createElement('li'); li.className = 'ci';

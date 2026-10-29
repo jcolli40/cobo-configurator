@@ -691,8 +691,14 @@
   [data-v6] .tile.nofit > * { opacity: .45; }
   [data-v6] .tile.nofit::after { content: "Too small"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8a8a90; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
   @media (min-width: 861px) {
+    /* computers: the icons stand in a column on the left; their pop-ups open beside them; the cart stays bottom right */
     [data-v6] .viewbar { display: none; }
-    [data-v6] .side { top: 16px; right: 16px; bottom: 136px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); }
+    [data-v6] .hint { left: 50%; transform: translateX(-50%); }     /* top center, clear of the pop-ups on the left */
+    [data-v6] .panel { justify-content: flex-end; }
+    [data-v6] .p-body { position: fixed; left: 16px; top: 50%; transform: translateY(-50%); flex-direction: column; }
+    [data-v6] .p-body .sec-h { padding: 8px 4px 7px; }
+    [data-v6] .side { top: 16px; bottom: 16px; left: 128px; right: auto; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); animation: slideL .22s ease; }
+    @keyframes slideL { from { transform: translateX(-24px); opacity: 0; } }
   }
   @media (max-width: 860px) {
     [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
@@ -705,7 +711,9 @@
     [data-v6] .p-body .sec-h { padding: 12px 2px 10px; min-height: 76px; justify-content: center; }
     [data-v6] .p-body .sec-t { font-size: 11.5px; }
     [data-v6] .buysheet { width: auto; border-radius: 18px 18px 0 0; border-width: 1px 0 0; }
-    [data-v6] .side { top: var(--stageMax, 58vh); }
+    /* phones: a pop-up slides up over the bottom 2/3 of the screen, and the board shrinks into the top third */
+    [data-v6] .side { top: var(--sheetTop, 33.33vh); animation: slideUp .28s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } }
   }
 </style>
 </head>
@@ -1182,6 +1190,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610291916" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610291943" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
