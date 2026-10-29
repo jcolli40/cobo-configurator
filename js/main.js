@@ -61,7 +61,7 @@ function dims() {
 
 /* ------------------------------------------------------------------ three setup */
 const stage = $('#stage');
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });   // alpha: photo mode draws over the camera
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
 renderer.setPixelRatio(new URLSearchParams(location.search).get('lowfx') ? 1 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;   // keeps board colors true to their hex values (ACES washed them out)
 renderer.toneMappingExposure = 1.0;
@@ -770,12 +770,12 @@ function wireBoardClicks() {
   let down = null, hoverQueued = false;
   el.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
   el.addEventListener('pointerup', (e) => {
-    if (photo.on || !down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // photo mode, or a drag (rotate)
+    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
     const sec = partAt(e);
     if (sec) openSection(sec);
   });
   el.addEventListener('pointermove', (e) => {
-    if (e.buttons || hoverQueued || photo.on) return;
+    if (e.buttons || hoverQueued) return;
     hoverQueued = true;
     requestAnimationFrame(() => { hoverQueued = false; el.style.cursor = partAt(e) ? 'pointer' : ''; });
   });
@@ -1152,9 +1152,7 @@ if (embedded) window.parent.postMessage({ type: 'cobo:get-cart' }, '*');
   let ok = new URLSearchParams(location.search).get('ar') === '1';
   if (!ok) ok = !!document.createElement('a').relList?.supports?.('ar');               // Apple Quick Look
   if (!ok) { try { ok = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-ar')); } catch { /* no WebXR */ } }
-  const cam = !!navigator.mediaDevices?.getUserMedia;
-  $('#arBtn').hidden = !(ok || (cam && phone.matches));   // phones without AR still get photo mode
-  $('#photoBtn').hidden = !cam;
+  $('#arBtn').hidden = !ok;
 })();
 
 let arUrl = null;
@@ -1180,9 +1178,7 @@ async function openAR() {
     const { w, h } = dims();
     msg.textContent = mv.canActivateAR
       ? `Tap the button, then point your phone at a wall. Your ${fmt(w)}" × ${fmt(h)}" board appears at real size; pinch to resize it.`
-      : !$('#photoBtn').hidden
-        ? 'Live AR isn\'t available here, but photo mode works: see the board over your camera, then snap a picture.'
-        : 'Open this page on an iPhone, iPad or Android phone to place the board on your wall.';
+      : 'Open this page on an iPhone, iPad or Android phone to place the board on your wall.';
   } catch (err) {
     console.error(err);
     msg.textContent = 'Sorry, the AR view could not be prepared on this device.';
@@ -1193,123 +1189,8 @@ $('#arBtn').addEventListener('click', openAR);
 $('#arModal').addEventListener('click', (e) => { if (e.target.id === 'arModal' || e.target.closest('[data-close]')) closeAR(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#arModal').hidden) closeAR(); });
 
-/* ------------------------------------------------------------------ photo on your wall */
-// Works on any phone or computer with a camera (no AR needed): the live camera fills the screen, the 3D board is
-// drawn on top. Drag to move, pinch to resize, twist to rotate; the shutter saves camera + board as one photo.
-const photo = { on: false, stream: null, blob: null, saved: null, pts: new Map(), g0: null };
-const shadowCatcher = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.25 }));
-shadowCatcher.receiveShadow = true;
-
-async function openPhoto() {
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
-  } catch { return toast('Camera not available. Allow camera access to use photo mode.'); }
-  closeAR();
-  if (!$('#lamPanel').hidden) closePicker();
-  inset.now = inset.target = 0; camera.clearViewOffset();
-  photo.stream = stream;
-  const v = $('#photoVideo'); v.srcObject = stream; v.play().catch(() => {});
-  $('#photoMode').hidden = false; $('#photoResult').hidden = true;
-  document.body.style.overflow = 'hidden';
-  photo.on = true;
-  $('#photoStage').appendChild(renderer.domElement);
-  controls.enabled = false;
-  setView('front', true);
-  camera.position.z *= 1.7;                                  // start with the board at about half the screen
-  root.getObjectByName('wall').visible = false;
-  shadowCatcher.position.z = root.getObjectByName('wall').position.z;
-  root.add(shadowCatcher);
-  scene.background = null;
-  photoResize();
-}
-function closePhoto() {
-  photo.on = false;
-  photo.stream?.getTracks().forEach(t => t.stop());
-  $('#photoMode').hidden = true;
-  document.body.style.overflow = '';
-  root.remove(shadowCatcher);
-  root.position.set(0, 0, 0); root.scale.setScalar(1); root.rotation.set(0, 0, 0);
-  stage.appendChild(renderer.domElement);
-  controls.enabled = true;
-  resize();
-  refresh();
-  setView('angle', true);
-}
-function photoResize() {
-  renderer.setSize(innerWidth, innerHeight, false);
-  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-  dirty = true;
-}
-// gestures: 1 finger = move, 2 fingers = pinch to resize + twist to rotate (mouse: drag + wheel)
-function wirePhotoGestures() {
-  const el = renderer.domElement, P = photo.pts;
-  const base = () => ({ pts: new Map([...P].map(([k, p]) => [k, { ...p }])), pos: root.position.clone(), s: root.scale.x, rot: root.rotation.z });
-  const perPx = () => 2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / innerHeight;
-  el.addEventListener('pointerdown', (e) => {
-    if (!photo.on) return;
-    try { el.setPointerCapture(e.pointerId); } catch { /* not capturable; gestures still work */ }
-    P.set(e.pointerId, { x: e.clientX, y: e.clientY }); photo.g0 = base();
-  });
-  el.addEventListener('pointermove', (e) => {
-    if (!photo.on || !P.has(e.pointerId)) return;
-    P.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const g = photo.g0, now = [...P.values()], then = [...P.keys()].map(k => g.pts.get(k));
-    if (now.length === 1) {
-      root.position.set(g.pos.x + (now[0].x - then[0].x) * perPx(), g.pos.y - (now[0].y - then[0].y) * perPx(), 0);
-    } else if (now.length >= 2) {
-      const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
-      const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-      root.scale.setScalar(Math.min(4, Math.max(0.15, g.s * d(now[0], now[1]) / Math.max(1, d(then[0], then[1])))));
-      root.rotation.z = g.rot - (ang(now[0], now[1]) - ang(then[0], then[1]));
-      const m1 = mid(now[0], now[1]), m0 = mid(then[0], then[1]);
-      root.position.set(g.pos.x + (m1.x - m0.x) * perPx(), g.pos.y - (m1.y - m0.y) * perPx(), 0);
-    }
-    dirty = true;
-  });
-  const up = (e) => { if (!P.delete(e.pointerId)) return; photo.g0 = base(); };
-  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  el.addEventListener('wheel', (e) => {
-    if (!photo.on) return;
-    e.preventDefault();
-    root.scale.setScalar(Math.min(4, Math.max(0.15, root.scale.x * (e.deltaY < 0 ? 1.08 : 1 / 1.08)))); dirty = true;
-  }, { passive: false });
-}
-// shutter: camera frame (cropped like the screen) + the board render, as one JPEG
-function snapPhoto() {
-  const dpr = Math.min(devicePixelRatio || 1, 2), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
-  const out = document.createElement('canvas'); out.width = W; out.height = H;
-  const g = out.getContext('2d'), v = $('#photoVideo');
-  if (v.videoWidth) {
-    const s = Math.max(W / v.videoWidth, H / v.videoHeight);
-    g.drawImage(v, (W - v.videoWidth * s) / 2, (H - v.videoHeight * s) / 2, v.videoWidth * s, v.videoHeight * s);
-  }
-  renderer.render(scene, camera);
-  g.drawImage(renderer.domElement, 0, 0, W, H);
-  out.toBlob((b) => {
-    photo.blob = b;
-    $('#photoImg').src = URL.createObjectURL(b);
-    $('#photoResult').hidden = false;
-  }, 'image/jpeg', 0.92);
-}
-async function savePhoto() {
-  const file = new File([photo.blob], 'my-compliance-board.jpg', { type: 'image/jpeg' });
-  if (navigator.canShare?.({ files: [file] })) {               // phones: share sheet (Save to Photos, Messages, ...)
-    try { await navigator.share({ files: [file], title: 'My compliance board' }); return; } catch { /* cancelled: fall back */ }
-  }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
-}
-$('#photoBtn').addEventListener('click', openPhoto);
-$('#photoClose').addEventListener('click', closePhoto);
-$('#photoShutter').addEventListener('click', snapPhoto);
-$('#photoRetake').addEventListener('click', () => { $('#photoResult').hidden = true; });
-$('#photoSave').addEventListener('click', savePhoto);
-addEventListener('resize', () => { if (photo.on) photoResize(); });
-wirePhotoGestures();
-
 /* ------------------------------------------------------------------ loop */
 function resize() {
-  if (photo.on) return photoResize();
   const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
   camera.aspect = r.width / Math.max(r.height, 1);
