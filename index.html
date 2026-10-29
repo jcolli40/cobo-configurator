@@ -265,7 +265,8 @@
 
   @media (max-width: 860px) {
     /* phones: the 3D view is pinned to the top and shrinks as you scroll (js sets --stageH), so the board stays in sight */
-    .app { display: block; height: auto; padding-top: 56vh; }
+    .app { display: block; height: auto; padding-top: var(--stageMax, 56vh); padding-bottom: 150px; }   /* bottom: room to scroll the last option clear of the cart bar */
+    html, body { height: auto; }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
     .p-body { overflow: visible; }
     /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
@@ -275,7 +276,6 @@
     .side-body { padding-left: 12px; padding-right: 12px; }
     .grid { gap: 8px; }
     /* phones: the cart panel is fixed to the bottom of the screen */
-    body { padding-bottom: 130px; }
     .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(40,32,20,.16); max-height: 90vh; }
     .buysheet.open .sheet-body { max-height: 66vh; }
     .buybar { padding: 6px 12px 12px; gap: 6px; }
@@ -283,10 +283,11 @@
     .ghost, #cta { height: 46px; padding: 0 12px; }
     .sheet-dim { display: block; position: fixed; inset: 0; background: rgba(20,16,10,.3); z-index: 11; }
     /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
-    #stageWrap { position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: var(--stageH, 56vh); display: flex; flex-direction: column; background: var(--bg); }
-    #stageWrap.anim { transition: height .25s ease; }               /* only when a sheet opens/closes, not while scrolling */
-    #stageWrap.shrunk { box-shadow: 0 6px 18px rgba(40,32,20,.12); }
-    #stage { position: relative; inset: auto; flex: 1; min-height: 0; }
+    /* The view never changes size (that would redraw the 3D canvas every frame and stutter). Instead the canvas is
+       scaled down (transform) and the bottom is trimmed off (clip-path); phones do both smoothly on the graphics chip. */
+    #stageWrap { position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: var(--stageMax, 56vh); display: flex; flex-direction: column; background: var(--bg); will-change: clip-path; }
+    #stage { position: relative; inset: auto; flex: 1; min-height: 0; transform-origin: 50% 0; will-change: transform; }
+    #stageWrap.anim, #stageWrap.anim #stage { transition: clip-path .28s ease, transform .28s ease; }   /* sheets open/close only */
     /* phones: options are a list; tapping one opens its controls in a pop-up sheet (like the Wilsonart picker) */
     .p-body .sec-b { display: none !important; }
     .sec-h .chev { transform: rotate(-90deg); }

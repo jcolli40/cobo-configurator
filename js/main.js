@@ -483,6 +483,7 @@ function buildBoard() {
   sc.left = -s; sc.right = s; sc.top = s; sc.bottom = -s; sc.near = 0.5; sc.far = R * 6; sc.updateProjectionMatrix();
 
   scene.background = new THREE.Color(state.view === 'back' ? '#d7d7d9' : wallHex());
+  needBgSample = true;
   dirty = true;
   updateUI();
 }
@@ -520,6 +521,7 @@ function setView(view, instant = false) {
   const wall = root.getObjectByName('wall');
   if (wall) wall.visible = view !== 'back';
   scene.background = new THREE.Color(view === 'back' ? '#d7d7d9' : wallHex());
+  needBgSample = true;
   if (instant) { camera.position.copy(pos); controls.target.copy(tgt); controls.update(); }
   else tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: tgt };
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
@@ -644,15 +646,22 @@ function closeOptSheet(switching) {
 // Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
 // it fits the space above the sheet, so the whole board is always visible while you make changes.
 const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the screen height (sheet: matches .side top: 44vh)
-let stageQueued = false;
+let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
-  const w = $('#stageWrap');
-  if (!phone.matches) { w.style.removeProperty('--stageH'); w.classList.remove('shrunk'); return; }
-  const H = innerHeight, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
-  const h = sheet ? H * STAGE.sheet : Math.max(H * STAGE.min, H * STAGE.max - scrollY);
-  if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 300); }
-  w.style.setProperty('--stageH', `${Math.round(h)}px`);
-  w.classList.toggle('shrunk', h < H * STAGE.max - 1);
+  const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
+  if (!phone.matches) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
+  // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
+  if (!stageMax || stageW !== innerWidth) {
+    stageW = innerWidth; stageMax = Math.round(innerHeight * STAGE.max);
+    root.style.setProperty('--stageMax', `${stageMax}px`);
+  }
+  const H = stageMax / STAGE.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
+  const h = sheet ? H * STAGE.sheet : Math.max(H * STAGE.min, stageMax - scrollY);   // visible height of the view
+  const top = st.offsetTop;                                        // the Front/Angle/Back row above the 3D view
+  const s = Math.max(0.2, (h - top) / (stageMax - top));
+  if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 320); }
+  st.style.transform = s < 0.999 ? `scale(${s.toFixed(4)})` : '';
+  w.style.clipPath = h < stageMax - 0.5 ? `inset(0 0 ${(stageMax - h).toFixed(1)}px 0)` : '';
 }
 
 function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, ''); }
@@ -1251,6 +1260,15 @@ function resize() {
 }
 const clock = new THREE.Clock();
 let dirty = true;
+// Phones: the 3D view is scaled down while scrolling; paint the space around it with the exact rendered wall color
+// (read from a corner of the image) so there's no visible box edge.
+let needBgSample = true;
+function sampleBg() {
+  needBgSample = false;
+  const gl = renderer.getContext(), px = new Uint8Array(4);
+  gl.readPixels(2, gl.drawingBufferHeight - 3, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  stage.parentElement.style.background = `rgb(${px[0]}, ${px[1]}, ${px[2]})`;
+}
 controls.addEventListener('change', () => { dirty = true; });
 function loop() {
   const dt = clock.getDelta();
@@ -1268,7 +1286,10 @@ function loop() {
   }
   if (controls.update()) dirty = true;   // true while the user is orbiting / damping
   if (tween) dirty = true;
-  if (dirty) { renderer.render(scene, camera); dirty = false; }   // draw only when something changed
+  if (dirty) {                                    // draw only when something changed
+    renderer.render(scene, camera); dirty = false;
+    if (needBgSample) sampleBg();
+  }
   requestAnimationFrame(loop);
 }
 
