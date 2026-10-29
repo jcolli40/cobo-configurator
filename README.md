@@ -47,6 +47,16 @@ Before pushing changes to `js/main.js` or `js/config.js`, run `node tools/stamp-
 You can also link straight to a preset, handy from product pages:
 `.../cobo-configurator/?size=12x24&color=Forest%20Green&edge=Yellow&finish=chrome&orient=landscape`
 
+## Three versions
+
+- **v1** (main link): one panel with every option.
+- **v2** (`/v2/`): size first, then **Standard board** (stock colors, priced) or **Custom board** (laminate, any color, printing; quoted). Fewer big cards; small choices are rows with toggles and eye icons (show/hide in the preview).
+- **v3** (`/v3/`): size first, then every option with its price ("Included" or "+$X"). Options are priced and go in the cart; only custom sizes are quoted. Upcharge amounts are placeholders in `UPCHARGES` in `js/config.js`.
+
+All three share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/index.html` and `v3/index.html`. Before pushing, also run `node tools/stamp-version.js`.
+
+Rooms and lighting presets live in `ENVIRONMENTS` (config.js), with the wall textures drawn in `js/env.js`. Popular boards are in `PRESETS`, and volume discounts in `DISCOUNTS` (placeholders; set the same tiers as an automatic discount in Shopify).
+
 ## Other features (and where to tweak them)
 
 - **Sample certificates:** the viewer fits as many 8.5×11 certificates as it can (clear of the edges and caps) and says how many fit. Customers can rotate them 90°. Sizes, spacing and certificate titles are in `SHEETS` in `js/config.js`.

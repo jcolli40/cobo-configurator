@@ -24,6 +24,11 @@
   var ALLOWED_ORIGIN = 'https://jcolli40.github.io';   // must match the iframe src
   var frame = document.getElementById('cobo-config-frame');
 
+  // A shared design link looks like  /pages/design-your-board?cobo=size%3D24x36%26color%3DBlack...
+  // Pass those settings on to the viewer so it opens that exact board.
+  var shared = new URLSearchParams(location.search).get('cobo');
+  if (shared) frame.src = frame.src.split('?')[0] + '?' + shared;
+
   function tell(msg) { frame.contentWindow.postMessage(msg, ALLOWED_ORIGIN); }
   function sendCart(added, updated) {
     return fetch('/cart.js')
@@ -42,7 +47,11 @@
     if (e.origin !== ALLOWED_ORIGIN) return;                     // ignore anything else
     var d = e.data || {};
 
-    if (d.type === 'cobo:get-cart') { sendCart(false); return; }
+    if (d.type === 'cobo:get-cart') {
+      tell({ type: 'cobo:page', url: location.origin + location.pathname });   // so "Share" links point at this store page
+      sendCart(false);
+      return;
+    }
 
     if (d.type === 'cobo:qty') {                                 // − / + / Remove on a board in the viewer's cart
       fetch('/cart/change.js', {

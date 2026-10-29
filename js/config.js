@@ -43,6 +43,47 @@ export const WALLS = [
   { name: 'Charcoal',   hex: '#3a3c40' },
 ];
 
+// ---- Popular boards: one-tap starting points (lam = Wilsonart design number; room = a room id below) ----
+export const PRESETS = [
+  { name: 'Restaurant classic', blurb: '24×36 · Black · chrome caps', cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'chrome' }, room: 'bistro' },
+  { name: 'Front desk',         blurb: '12×24 · White · aluminum',    cfg: { sizeId: '12x24', orient: 'portrait', face: 'White', edge: 'Black', fastener: 'alum' }, room: 'office' },
+  { name: 'Kitchen line',       blurb: '24×24 · Black · black caps',  cfg: { sizeId: '24x24', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'black' }, room: 'kitchen' },
+  { name: 'Café',               blurb: '12×36 wide · Forest Green',   cfg: { sizeId: '12x36', orient: 'landscape', face: 'Forest Green', edge: 'match', fastener: 'alum' }, room: 'casual' },
+  { name: 'Fine dining',        blurb: '24×36 · woodgrain laminate',  cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'Black', fastener: 'black' }, lam: 'Y0822', room: 'dining' },
+];
+
+// ---- Version 3 only: upcharges for options (PLACEHOLDER amounts in dollars; set the real ones here) ----
+// In v3 these boards are priced and go in the cart (only custom sizes are still quoted).
+export const UPCHARGES = {
+  customColor: 25,                         // any color outside the stock list
+  laminate: 60,                            // Wilsonart laminate face
+  edgeCustom: 10,                          // edge banding in a non-stock color (stock colors are included)
+  caps: { alum: 0, chrome: 8, black: 8 },  // per board (4 caps)
+  logo: 45,                                // printed logo
+  background: 75,                          // printed background image
+};
+
+// ---- Volume discounts shown in the cart (PLACEHOLDER tiers: set the real ones here AND as an automatic discount in Shopify) ----
+export const DISCOUNTS = [ { min: 3, pct: 5 }, { min: 5, pct: 10 }, { min: 10, pct: 15 } ];
+
+// ---- Rooms: preset wall + lighting for the 3D preview (preview only; "Studio" shows true colors) ----
+// wall: 'color' = use the wall color picker; otherwise a drawn texture (wood, brick, subway, steel, paint) in that color.
+// light: key = main light strength/color, hemi = soft fill, env = reflections, spot = overhead spotlight strength (0 = off).
+export const ENVIRONMENTS = [
+  { id: 'studio',  name: 'Studio',             blurb: 'True color',                      wall: 'color',
+    light: { key: 2.3, keyColor: '#ffffff', hemi: 0.5, sky: '#ffffff', ground: '#8a8a8a', env: 0.35, exposure: 1.0, spot: 0 } },
+  { id: 'dining',  name: 'Fine dining',        blurb: 'Candlelit, warm spotlight',        wall: { tex: 'wood', color: '#5a3a26' },
+    light: { key: 0.25, keyColor: '#ffb070', hemi: 0.1, sky: '#ffcf9a', ground: '#2a1a10', env: 0.1, exposure: 1.0, spot: 1.6, spotColor: '#ffc283', spotAngle: 0.55 } },
+  { id: 'bistro',  name: 'Bistro café',        blurb: 'Warm daylight on brick',           wall: { tex: 'brick', color: '#a0573a' },
+    light: { key: 2.0, keyColor: '#fff0d8', hemi: 0.45, sky: '#ffe9c8', ground: '#6b4a35', env: 0.3, exposure: 1.0, spot: 0 } },
+  { id: 'casual',  name: 'Fast casual',        blurb: 'Bright fluorescent, white tile',   wall: { tex: 'subway', color: '#f3f5f6' },
+    light: { key: 1.5, keyColor: '#eef4ff', hemi: 0.95, sky: '#f2f7ff', ground: '#c9d1d9', env: 0.45, exposure: 1.02, spot: 0 } },
+  { id: 'kitchen', name: 'Commercial kitchen', blurb: 'Stainless steel, hard overhead light', wall: { tex: 'steel', color: '#c3c8ce' },
+    light: { key: 1.2, keyColor: '#f2f7ff', hemi: 0.5, sky: '#eef4ff', ground: '#9aa3ab', env: 0.45, exposure: 1.0, spot: 1.1, spotColor: '#f4f8ff', spotAngle: 0.75 } },
+  { id: 'office',  name: 'Office lobby',       blurb: 'Soft, neutral painted wall',       wall: { tex: 'paint', color: '#d8d4cc' },
+    light: { key: 1.9, keyColor: '#fff7ec', hemi: 0.55, sky: '#ffffff', ground: '#9a958c', env: 0.3, exposure: 1.0, spot: 0 } },
+];
+
 // ---- Sample certificates shown under the acrylic (preview only) ----
 // The viewer fits as many as it can, keeping clear of the edges and the 4 caps.
 export const SHEETS = {

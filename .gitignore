@@ -5,6 +5,7 @@ node_modules/
 CLAUDE.md
 .claude/
 preview-*.png
+screenshots/
 
 # Old placeholder swatches (not in data/laminates.json)
 textures/**/DEMO-*.jpg

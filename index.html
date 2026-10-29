@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-layout="v1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -163,6 +163,64 @@
   .fld select { font: inherit; font-size: 13.5px; color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px; }
   input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .upload input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  /* share button (panel header) */
+  .p-head { position: relative; }
+  .share-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .share-btn .i { width: 15px; height: 15px; }
+  /* popular boards */
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .preset { display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; align-items: center; text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 8px; cursor: pointer; }
+  .preset:hover { border-color: var(--accent); }
+  .preset i { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 8px; background: var(--swatch); border: 3px solid var(--edge, transparent); box-sizing: border-box; position: relative; }
+  .preset b { font-size: 13px; } .preset small { font-size: 11px; color: var(--muted); line-height: 1.25; }
+  /* how many certificates */
+  .certcount { background: var(--tint); border-radius: 12px; padding: 4px 12px 10px; display: grid; gap: 2px; }
+  .certcount .help b { color: var(--accent); }
+  .tile.rec { position: relative; border-color: #2e7d4f; }
+  .tile.rec::after { content: "Best fit"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #2e7d4f; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .tile.nofit { opacity: .45; }
+  /* cart totals */
+  .cart-sum { display: grid; gap: 4px; font-size: 13.5px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  .cart-sum .disc { color: #2e7d4f; font-weight: 600; }
+  .cart-sum .tot2 { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; font-size: 14.5px; }
+  .disc-hint { margin: 0; font-size: 12.5px; color: #2e7d4f; font-weight: 600; }
+  .disc-hint:empty { display: none; }
+  /* ---------- v2: Standard / Custom fork + simple rows ---------- */
+  /* v2/v3: one list (groups dissolved) so the order is: size, fork, main cards, then the simple rows last */
+  [data-layout="v2"] .tabpane, [data-layout="v3"] .tabpane { display: contents; }
+  .lines { order: 2; }
+  .preset-link { justify-self: start; font-size: 12.5px; }
+  .fork-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .forkc { display: grid; gap: 3px; justify-items: start; text-align: left; border: 1.5px solid var(--line-2); background: #fff; border-radius: 14px; padding: 14px; cursor: pointer; box-shadow: var(--shadow); }
+  .forkc .i { width: 24px; height: 24px; color: var(--accent); margin-bottom: 4px; }
+  .forkc b { font-size: 15px; } .forkc small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .forkc em { font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .forkc.on { border-color: var(--accent); background: var(--tint); box-shadow: 0 0 0 1.5px var(--accent) inset; }
+  .lines { display: grid; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .line { display: flex; align-items: center; gap: 11px; min-height: 52px; padding: 6px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; font-size: 14px; text-align: left; cursor: pointer; width: 100%; }
+  .line:last-child { border-bottom: 0; }
+  .line > .i:first-child { color: var(--muted); }
+  .line > span:first-of-type, .line .lt { flex: 1; }
+  .line .lt { border: 0; background: none; padding: 0; text-align: left; font-size: 14px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+  .line .v { margin-left: auto; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+  .line .lt .v { margin-left: 0; }
+  .line .go { color: var(--faint); }
+  .eye { border: 1px solid var(--line-2); background: #fff; border-radius: 10px; width: 40px; height: 34px; display: grid; place-items: center; cursor: pointer; color: var(--accent); flex: none; }
+  .eye[aria-pressed="false"] { color: var(--faint); background: var(--hover); }
+  .eye[aria-pressed="false"] .i { opacity: .6; }
+  .eye[disabled] { visibility: hidden; }
+  /* ---------- v3: price tags ---------- */
+  .up { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--tint); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .up.inc { color: #2e7d4f; background: #e8f4ec; }
+  .fast .up { margin-left: auto; margin-right: 8px; }
+  /* room picker */
+  .envgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .envt { border: 1.5px solid var(--line); border-radius: 12px; padding: 0; background: #fff; cursor: pointer; overflow: hidden; text-align: left; display: grid; }
+  .envt i { display: block; height: 52px; background: var(--swatch); }
+  .envt b { font-size: 12.5px; font-weight: 600; padding: 6px 8px 0; }
+  .envt small { font-size: 10.5px; color: var(--muted); padding: 1px 8px 8px; line-height: 1.25; }
+  .envt.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
 
   /* ---------- cart: the bottom panel (handle, cart lines, bar) ---------- */
   .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(0,0,0,.08); display: flex; flex-direction: column; }
@@ -282,6 +340,12 @@
     .p-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; overflow: visible; padding: 12px 14px 18px; }
     .tabpane { display: contents; }
     .p-body .sec { aspect-ratio: 1; min-width: 0; scroll-margin-top: 40vh; }
+    .fork, .lines { grid-column: 1 / -1; }
+    [data-layout="v2"] .p-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* v2: fewer, larger squares */
+    [data-layout="v2"] .p-body .sec { aspect-ratio: 1.25; }
+    [data-layout="v2"] .p-body .sec-h > .i:first-child { width: 28px; height: 28px; }
+    [data-layout="v2"] .p-body .sec-t { font-size: 14px; }
+    .fork-cards { gap: 8px; } .forkc { padding: 12px; }
     .p-body .sec-h { height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 4px; padding: 8px 6px; text-align: center; }
     .p-body .sec-h > .i:first-child { width: 24px; height: 24px; color: var(--accent); }
     .p-body .sec-t { font-size: 12px; line-height: 1.2; font-weight: 600; }
@@ -347,6 +411,10 @@
   <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v7h14v-7"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></symbol>
+  <symbol id="i-room" viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11"/><circle cx="12" cy="11.5" r="2.5"/><path d="M12 6.8v2.2"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
 </svg>
@@ -366,15 +434,29 @@
   <div class="panel">
     <div class="p-head">
       <h1>Design Options</h1>
+      <button class="share-btn" id="shareBtn" type="button" aria-label="Share this design"><svg class="i"><use href="#i-share"/></svg><span>Share</span></button>
     </div>
 
     <div class="p-body">
       <!-- All options in one panel, in three groups. Sections fold; clicking part of the board opens its section. -->
       <!-- ====== BOARD ====== -->
       <div class="tabpane" data-pane="board">
+        <section class="sec" data-sec="presets">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-spark"/></svg><span class="sec-t">Popular boards</span><span class="sec-v" data-v="presets">Start here</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">One tap to start from a board other businesses order. You can change anything after.</p>
+            <div class="presets" id="presetList"></div>
+          </div>
+        </section>
+
         <section class="sec" data-sec="size">
           <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-size"/></svg><span class="sec-t">Size</span><span class="sec-v" data-v="size"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b">
+            <div class="certcount">
+              <div class="opt"><svg class="i"><use href="#i-cert"/></svg><span>How many certificates?</span>
+                <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer">−</button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more">+</button></span></div>
+              <p class="help" id="certAdvice">Tell us how many 8.5×11 documents you need to display, and we'll suggest the size that fits.</p>
+            </div>
             <div id="sizes"></div>
             <div id="customBox" hidden>
               <span class="lbl">Width</span><input id="cw" type="number" min="6" max="96" value="18">
@@ -385,8 +467,28 @@
             <hr class="div">
             <div class="opt"><svg class="i"><use href="#i-orient"/></svg><span>Orientation</span>
               <div class="seg"><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></div></div>
+            <button class="link preset-link lay-v2 lay-v3" type="button" data-open="presets" hidden>Not sure? Start from a popular board</button>
           </div>
         </section>
+
+        <!-- v2: after size, pick Standard (stock colors, priced) or Custom (laminate, any color, printing; quoted) -->
+        <div class="fork lay-v2" id="fork" hidden>
+          <div class="fork-cards">
+            <button class="forkc" type="button" data-path="standard"><svg class="i"><use href="#i-board"/></svg><b>Standard board</b><small>8 stock colors · priced online · ships fast</small><em id="forkStd"></em></button>
+            <button class="forkc" type="button" data-path="custom"><svg class="i"><use href="#i-layers"/></svg><b>Custom board</b><small>Wilsonart laminates, any color, logo &amp; printing</small><em>Quoted</em></button>
+          </div>
+        </div>
+
+        <!-- v2: the smaller choices as simple rows: toggles, eye icons (show/hide in the preview) and rows that open a panel -->
+        <div class="lines lay-v2" id="lines" hidden>
+          <label class="line"><svg class="i"><use href="#i-edge"/></svg><span>Edge matches board</span><input type="checkbox" class="switch" id="lnMatch"></label>
+          <button class="line" type="button" data-open="edge" id="lnEdge"><svg class="i"><use href="#i-edge"/></svg><span>Edge color</span><span class="v" data-v="edge"></span><svg class="i go"><use href="#i-right"/></svg></button>
+          <button class="line" type="button" data-open="caps" data-path="custom"><svg class="i"><use href="#i-cap"/></svg><span>Caps &amp; studs</span><span class="v" data-v="caps"></span><svg class="i go"><use href="#i-right"/></svg></button>
+          <div class="line"><svg class="i"><use href="#i-cert"/></svg><button class="lt" type="button" data-open="certs">Sample certificates <span class="v" data-v="certs"></span></button><button class="eye" type="button" data-eye="sheets" aria-label="Show or hide the sample certificates"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <div class="line" data-path="custom"><svg class="i"><use href="#i-logo"/></svg><button class="lt" type="button" data-open="logo">Logo <span class="v" data-v="logo"></span></button><button class="eye" type="button" data-eye="logo" aria-label="Show or hide the logo"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <div class="line" data-path="custom"><svg class="i"><use href="#i-image"/></svg><button class="lt" type="button" data-open="bgimg">Background image <span class="v" data-v="bgimg"></span></button><button class="eye" type="button" data-eye="background" aria-label="Show or hide the background image"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <button class="line" type="button" data-open="wall"><svg class="i"><use href="#i-room"/></svg><span>Room &amp; lighting</span><span class="v" data-v="wall"></span><svg class="i go"><use href="#i-right"/></svg></button>
+        </div>
 
         <section class="sec" data-sec="color">
           <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-color"/></svg><span class="sec-t">Board color</span><span class="sec-v" data-v="color"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
@@ -407,7 +509,7 @@
               <small id="lamBtnLabel">Woodgrains, stones, solids and more</small>
               <img class="thumb" id="lamThumb" alt="" hidden>
             </button>
-            <p class="help">Laminate boards are custom-made, so they are quoted rather than priced online.</p>
+            <p class="help"><span data-quote="laminate">Laminate boards are custom-made, so they are quoted rather than priced online.</span></p>
           </div>
         </section>
 
@@ -434,7 +536,7 @@
         <section class="sec" data-sec="bgimg">
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
-            <p class="help">Printed across the board face, behind your logo and certificates. Printed boards are made to order and quoted.</p>
+            <p class="help">Printed across the board face, behind your logo and certificates. <span data-quote="background">Printed boards are made to order and quoted.</span></p>
             <div id="bgArt"></div>
           </div>
         </section>
@@ -442,7 +544,7 @@
         <section class="sec" data-sec="logo">
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-logo"/></svg><span class="sec-t">Logo</span><span class="sec-v" data-v="logo"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
-            <p class="help">Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. Logo boards are made to order and quoted.</p>
+            <p class="help">Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. <span data-quote="logo">Logo boards are made to order and quoted.</span></p>
             <div id="logoArt"></div>
           </div>
         </section>
@@ -453,15 +555,41 @@
             <label class="opt"><span>Show sample 8.5×11 certificates</span><input type="checkbox" class="switch" id="sheets" checked></label>
             <label class="opt"><svg class="i"><use href="#i-rotate"/></svg><span>Rotate certificates 90°</span><input type="checkbox" class="switch" id="sheetTurn"></label>
             <p class="help" id="sheetFit"></p>
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Show your own certificates</span></div>
+            <p class="help" style="margin-top:-8px">Snap or upload photos of your real permits and licenses to see them on the board.</p>
+            <div class="row">
+              <label class="upload"><input type="file" accept="image/*" capture="environment" id="certCam"><svg class="i"><use href="#i-camera"/></svg>Take a photo</label>
+              <label class="upload"><input type="file" accept="image/*" multiple id="certFiles"><svg class="i"><use href="#i-image"/></svg>Upload</label>
+              <button class="link" type="button" id="certClear" hidden>Back to samples</button>
+            </div>
+            <p class="help" id="certOwnInfo" hidden></p>
           </div>
         </section>
 
         <section class="sec" data-sec="wall">
-          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-eye"/></svg><span class="sec-t">Viewer background</span><span class="sec-v" data-v="wall">Preview only</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-room"/></svg><span class="sec-t">Room &amp; lighting</span><span class="sec-v" data-v="wall">Studio</span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
-            <p class="help">Changes the wall behind the board in this 3D view. It does not change the board you order.</p>
-            <div class="swgrid" id="wallSw"></div>
-            <div class="opt"><span>Any wall color</span><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom wall color"></div>
+            <p class="help">See your board in a real setting. Preview only: it doesn't change the board you order. Studio shows true colors.</p>
+            <div class="envgrid" id="envGrid"></div>
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Your own wall</span></div>
+            <p class="help" style="margin-top:-8px">Snap the wall where the board will hang and design right on it.</p>
+            <div class="row">
+              <label class="upload"><input type="file" accept="image/*" capture="environment" id="wallCam"><svg class="i"><use href="#i-camera"/></svg>Take a photo</label>
+              <label class="upload"><input type="file" accept="image/*" id="wallFile"><svg class="i"><use href="#i-image"/></svg>Upload</label>
+              <button class="link" type="button" id="wallPhotoClear" hidden>Remove photo</button>
+            </div>
+            <div class="art-opts" id="wallPhotoOpts" hidden>
+              <label class="fld"><span>Width of the wall in your photo <output id="wallPhotoWOut"></output></span><input type="range" id="wallPhotoW" min="36" max="240" step="2"></label>
+              <label class="fld"><span>Move photo down / up <output id="wallPhotoYOut"></output></span><input type="range" id="wallPhotoY" min="-60" max="60" step="1"></label>
+            </div>
+            <div id="wallColorWrap">
+              <hr class="div" style="margin-bottom:14px">
+              <div class="lbl" style="margin-bottom:8px">Studio wall color</div>
+              <div class="swgrid" id="wallSw"></div>
+              <div class="opt"><span>Any wall color</span><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom wall color"></div>
+            </div>
           </div>
         </section>
       </div>
@@ -477,6 +605,12 @@
       <div class="sheet-body" id="sheetBody">
         <p class="help" id="cartEmpty">Nothing in your cart yet. Design a board and tap Add to cart.</p>
         <ul id="cartList" class="cart"></ul>
+        <div class="cart-sum" id="cartSum" hidden>
+          <div class="rowsb"><span>Boards</span><span id="sumBoards"></span></div>
+          <div class="rowsb disc" id="sumDiscRow" hidden><span id="sumDiscLbl"></span><span id="sumDisc"></span></div>
+          <div class="rowsb tot2"><b>Estimated total</b><b id="sumTotal"></b></div>
+        </div>
+        <p class="disc-hint" id="discHint"></p>
         <div class="rowsb cart-foot" id="cartFoot" hidden><span id="cartCount" class="lbl"></span><button id="cartView" class="link" type="button">View full cart</button></div>
         <p class="help" id="note"></p>
       </div>
@@ -597,6 +731,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610282045" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610282144" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

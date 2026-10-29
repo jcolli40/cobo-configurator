@@ -8,10 +8,10 @@ const root = path.resolve(__dirname, '..');
 const d = new Date(), pad = (n) => String(n).padStart(2, '0');
 const v = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
 
-for (const f of ['index.html', 'js/main.js']) {
+for (const f of ['index.html', 'v2/index.html', 'v3/index.html', 'js/main.js'].filter(f => fs.existsSync(path.join(root, f)))) {
   const p = path.join(root, f);
   const before = fs.readFileSync(p, 'utf8');
-  const after = before.replace(/(main\.js|config\.js)\?v=[\w-]+/g, `$1?v=${v}`);
+  const after = before.replace(/([\w-]+\.js)\?v=[\w-]+/g, `$1?v=${v}`);   // every versioned script link/import
   fs.writeFileSync(p, after);
-  console.log(`${f}: ${(before.match(/(main|config)\.js\?v=/g) || []).length} link(s) -> v=${v}`);
+  console.log(`${f}: ${(before.match(/[\w-]+\.js\?v=/g) || []).length} link(s) -> v=${v}`);
 }

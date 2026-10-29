@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK } from './config.js?v=202610282045';   // ?v= stamped by tools/stamp-version.js
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, DISCOUNTS, UPCHARGES } from './config.js?v=202610282144';   // ?v= stamped by tools/stamp-version.js
+import { wallTexture, wallSwatch } from './env.js?v=202610282144';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -22,6 +23,10 @@ function artDefaults(key) {
   return { layout: c.layout, size: c.size, gap: c.gap, rot: 0, opacity: 100, offX: 0, offY: 0, seed: 1 };
 }
 
+// Which version of the page this is (set on <html data-layout> by index.html / v2 / v3; see tools/make-versions.js)
+//   v1: one panel of options   v2: size, then Standard or Custom, with simple rows   v3: size, then every option, priced
+const LAYOUT = document.documentElement.dataset.layout || 'v1';
+
 /* ------------------------------------------------------------------ state */
 const state = {
   sizeId: '24x36',          // a standard id, or 'custom'
@@ -32,8 +37,13 @@ const state = {
   fastener: 'alum',
   sheets: true,
   sheetTurn: false,         // rotate the sample certificates 90 degrees from the automatic choice
-  wall: 0,                  // index into WALLS, or -1 for wallCustom
+  wall: 0,                  // index into WALLS, or -1 for wallCustom (Studio room only)
   wallCustom: '#ffffff',
+  env: 'studio',            // room preset (ENVIRONMENTS in config.js)
+  certNeed: 0,              // "How many certificates?" (0 = not answered)
+  path: null,               // v2 only: 'standard' or 'custom' (null = not chosen yet)
+  myCerts: [],              // the customer's own certificate photos, shown in place of the samples (in order)
+  wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offY: 0 },   // photo of the customer's own wall
   view: 'angle',
   art: {                    // uploaded images: { img (canvas), name, aspect, imgId, ...layout settings }
     logo: { img: null, name: '', ...artDefaults('logo') },
@@ -47,7 +57,12 @@ const state = {
 /* ------------------------------------------------------------------ helpers */
 const $ = (s) => document.querySelector(s);
 const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? '#888888');
-const wallHex = () => (state.wall < 0 ? state.wallCustom : WALLS[state.wall].hex);
+const envNow = () => ENVIRONMENTS.find(e => e.id === state.env) || ENVIRONMENTS[0];
+const wallHex = () => {
+  const E = envNow();
+  if (E.wall !== 'color') return E.wall.color;
+  return state.wall < 0 ? state.wallCustom : WALLS[state.wall].hex;
+};
 
 function dims() {
   let a, b;
@@ -89,7 +104,27 @@ key.shadow.mapSize.set(2048, 2048);
 key.shadow.bias = -0.0004;
 key.shadow.radius = 6;
 scene.add(key);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 0.5));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 0.5);
+scene.add(hemi);
+// overhead spotlight, used by some rooms (fine dining, kitchen); off in Studio
+const spot = new THREE.SpotLight(0xffffff, 0, 0, 0.55, 0.65, 2);
+spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -0.0005;
+scene.add(spot); scene.add(spot.target);
+// Room lighting: Studio is the neutral, true-color setup; the other rooms change color, strength and mood.
+function applyRoomLight(w, h) {
+  const L = envNow().light, R = Math.max(w, h);
+  key.color.set(L.keyColor); key.intensity = L.key;
+  hemi.color.set(L.sky); hemi.groundColor.set(L.ground); hemi.intensity = L.hemi;
+  scene.environmentIntensity = L.env; renderer.toneMappingExposure = L.exposure;
+  spot.visible = L.spot > 0;
+  if (spot.visible) {
+    spot.position.set(0, h / 2 + R * 0.55, R * 0.75);
+    spot.target.position.set(0, h * 0.12, 0);
+    const d = spot.position.distanceTo(spot.target.position);
+    spot.color.set(L.spotColor); spot.angle = L.spotAngle; spot.intensity = L.spot * d * d;   // inverse-square: strength at the board
+    spot.shadow.camera.far = d * 3;
+  }
+}
 const backFill = new THREE.DirectionalLight(0xffffff, 1.6);   // lights the back / z-clip when viewed from behind
 backFill.position.set(40, 60, -120);
 scene.add(backFill);
@@ -302,7 +337,7 @@ function artTexture(L) {   // L = layer settings (cover/fit already turned into 
 // A transparent plane (sw x sh inches) carrying the artwork, centered on the surface + the move sliders.
 function artMesh(key, sw, sh, rough) {
   const A = state.art[key];
-  if (!A.img) return null;
+  if (!A.img || A.hide) return null;   // hide = turned off with the eye icon (preview only)
   let L = { ...A, cache: A };
   if (A.layout === 'cover' || A.layout === 'fit') {          // size the image from the board instead of the slider
     const wide = A.aspect > sw / sh;
@@ -316,6 +351,16 @@ function artMesh(key, sw, sh, rough) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), mat);
   m.receiveShadow = true;
   return m;
+}
+// photo of the customer's wall (see "Room & lighting"): one texture, rebuilt only when a new photo is loaded
+let photoTex = null, photoTexId = 0;
+function photoTexture(P) {
+  if (photoTex && photoTexId === P.imgId) return photoTex;
+  photoTex?.dispose();
+  photoTex = new THREE.CanvasTexture(P.img);
+  photoTex.colorSpace = THREE.SRGBColorSpace; photoTex.anisotropy = 8; photoTex.userData.keep = true;
+  photoTexId = P.imgId;
+  return photoTex;
 }
 async function loadArt(L, file) {
   const url = URL.createObjectURL(file);
@@ -420,7 +465,8 @@ function buildBoard() {
   lastSheets = sheetLayout(w, h, state.sheetTurn);
   if (state.sheets && lastSheets) {
     lastSheets.rects.forEach((r, i) => {
-      const mat = new THREE.MeshStandardMaterial({ map: certificateTexture(r.w, r.h, SHEETS.titles[i % SHEETS.titles.length]), roughness: 0.8 });
+      const own = state.myCerts[i];   // the customer's own certificate photo, if they uploaded one for this spot
+      const mat = new THREE.MeshStandardMaterial({ map: own ? ownCertTexture(own, r.w, r.h) : certificateTexture(r.w, r.h, SHEETS.titles[i % SHEETS.titles.length]), roughness: 0.8 });
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
       p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; root.add(p);
     });
@@ -457,11 +503,23 @@ function buildBoard() {
   add(ywl, ywl + L, -D - t, -D);               // wall-half lip
   add(ywl - F, ywl, -D - 2 * t, -D - t);       // wall-half flange
 
-  // wall (viewer background color)
+  // wall: the room's wall (color or drawn texture), or a photo of the customer's own wall
   const wallG = new THREE.Group();
   wallG.name = 'wall'; wallG.position.z = -(D + 2 * t); wallG.visible = state.view !== 'back';
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 }));
+  const E = envNow();
+  const wallMat = E.wall === 'color'
+    ? new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 })
+    : new THREE.MeshStandardMaterial({ map: wallTexture(E.wall.tex, E.wall.color, 400), roughness: E.wall.tex === 'steel' ? 0.45 : E.wall.tex === 'subway' ? 0.35 : 0.9, metalness: E.wall.tex === 'steel' ? 0.6 : 0 });
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), wallMat);
   wall.receiveShadow = true; wallG.add(wall);
+  const P = state.wallPhoto;
+  if (P.img) {                                   // the photo shows as-is (unlit), with the board's shadow laid over it
+    const pw = P.widthIn, ph = P.widthIn / P.aspect;
+    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: photoTexture(P), toneMapped: false }));
+    photo.position.set(0, P.offY, 0.03); wallG.add(photo);
+    const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.ShadowMaterial({ opacity: 0.3 }));
+    shade.position.set(0, P.offY, 0.05); shade.receiveShadow = true; wallG.add(shade);
+  }
   root.add(wallG);
 
   // which panel section opens when this part of the board is clicked
@@ -481,6 +539,7 @@ function buildBoard() {
   key.target.position.set(0, 0, 0); scene.add(key.target);
   const sc = key.shadow.camera; const s = R * 1.2;
   sc.left = -s; sc.right = s; sc.top = s; sc.bottom = -s; sc.near = 0.5; sc.far = R * 6; sc.updateProjectionMatrix();
+  applyRoomLight(w, h);
 
   scene.background = new THREE.Color(state.view === 'back' ? '#d7d7d9' : wallHex());
   needBgSample = true;
@@ -556,6 +615,8 @@ function paintActive() {
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
+  document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === state.env));
+  $('#wallColorWrap').hidden = envNow().wall !== 'color' || !!state.wallPhoto.img;
   renderSizes();
   document.querySelectorAll('#sizes .tile').forEach(b => b.classList.toggle('on', b.dataset.k === state.sizeId));
   document.querySelectorAll('[data-orient]').forEach(b => b.classList.toggle('on', b.dataset.orient === state.orient));
@@ -618,6 +679,7 @@ function openSection(name) {
   const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
   if (phone.matches) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
+  if (sec.hidden) return openOptSheet(sec);                          // v2/v3: options that aren't cards open in the side sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
@@ -638,6 +700,7 @@ function openOptSheet(sec) {
   optOpen = { sec, body };
   markActive(sec.dataset.sec);
   updateStage(true);
+  if (!phone.matches) setInset($('#optSheet').getBoundingClientRect().width);   // computers: slide the board clear of the sheet
 }
 function closeOptSheet(switching) {
   if (!optOpen) return;
@@ -645,7 +708,7 @@ function closeOptSheet(switching) {
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
   optOpen = null;
-  if (!switching) { markActive(null); updateStage(true); }
+  if (!switching) { markActive(null); updateStage(true); if (!phone.matches && inset.target) setInset(0); }
 }
 // phones: highlight the option button whose sheet is open
 function markActive(name) {
@@ -679,11 +742,16 @@ function currentSpec() {
   const std = SIZES.find(s => s.id === state.sizeId);
   const f = FASTENERS.find(x => x.id === state.fastener);
   const edgeName = state.edge === 'match' ? 'Match board' : (state.edge[0] === '#' ? `Custom ${state.edge}` : state.edge);
-  const faceName = state.face[0] === '#' ? `Custom laminate ${state.face}` : state.face;
+  const faceName = state.face[0] === '#' ? `Custom color ${state.face}` : state.face;
   const L = state.lamSel;
-  const G = state.art.logo, B = state.art.background;
-  const custom = !std || L || G.img || B.img;   // custom size, laminate, logo or printed background = quoted, not priced online
-  const variantId = custom ? null : (SHOPIFY.variantIds[std.id]?.[state.face] ?? null);
+  const printing = !(LAYOUT === 'v2' && state.path === 'standard');   // v2 Standard boards have no printing
+  const G = printing ? state.art.logo : {}, B = printing ? state.art.background : {};
+  // v1/v2: custom size, laminate, logo or printed background = quoted, not priced online.
+  // v3: options are priced with upcharges and go in the cart; only custom sizes are quoted.
+  const ups = LAYOUT === 'v3' ? upcharges(L, G, B) : [];
+  const custom = LAYOUT === 'v3' ? !std : (!std || L || G.img || B.img);
+  const baseFace = LAYOUT === 'v3' && (L || state.face[0] === '#') ? 'Black' : state.face;   // v3: options ride on a base board
+  const variantId = custom ? null : (SHOPIFY.variantIds[std.id]?.[baseFace] ?? null);
   return {
     size: std ? std.id : `custom ${fmt(w)}x${fmt(h)}`, widthIn: w, heightIn: h, orientation: state.orient,
     boardColor: L ? `Wilsonart ${L.n}${L.name ? ' ' + L.name : ''}` : faceName,
@@ -696,10 +764,23 @@ function currentSpec() {
     background: B.img ? { file: B.name, layout: LAYOUTS.find(x => x.id === B.layout).name, widthIn: B.size, spacingIn: B.gap,
                           rotationDeg: B.rot, opacityPct: B.opacity, moveXIn: B.offX, moveYIn: B.offY } : null,
     quantity: state.qty,
-    price: custom ? null : std.price, variantId,
+    price: custom ? null : std.price + ups.reduce((s, u) => s + u.amount, 0), variantId,
+    basePrice: std ? std.price : null, upcharges: ups,   // v3: the board's own price + each option's upcharge
     // everything needed to reopen this board from the cart ("Edit board")
     config: { sizeId: state.sizeId, orient: state.orient, face: state.face, edge: state.edge, fastener: state.fastener },
   };
+}
+// v3: the options on this board that cost extra (amounts in UPCHARGES, config.js)
+function upcharges(L, G, B) {
+  const U = UPCHARGES, out = [];
+  if (L) out.push({ label: `Wilsonart laminate ${L.n}`, amount: U.laminate });
+  else if (state.face[0] === '#') out.push({ label: 'Custom board color', amount: U.customColor });
+  if (state.edge[0] === '#') out.push({ label: 'Custom edge color', amount: U.edgeCustom });
+  const cap = U.caps[state.fastener] || 0;
+  if (cap) out.push({ label: `${FASTENERS.find(f => f.id === state.fastener).name} caps`, amount: cap });
+  if (G?.img) out.push({ label: 'Printed logo', amount: U.logo });
+  if (B?.img) out.push({ label: 'Printed background image', amount: U.background });
+  return out;
 }
 function logoLine(lg) {
   const fixed = lg.layout.startsWith('Single') || lg.layout.startsWith('Fill') || lg.layout.startsWith('Fit');
@@ -707,7 +788,10 @@ function logoLine(lg) {
 }
 function updateUI() {
   paintActive();
+  paintExtras();
+  rememberDesign();
   const sp = currentSpec();
+  paintLayout(sp);
   // main button: what it does + this board's price (quantity is set per board in the cart)
   $('#editBar').hidden = !(editing && sp.price);
   $('#ctaLabel').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
@@ -728,7 +812,8 @@ function updateUI() {
     bgimg: sp.background ? sp.background.layout : 'None',
     logo: sp.logo ? sp.logo.file : 'None',
     certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
-    wall: `${state.wall < 0 ? 'Custom' : WALLS[state.wall].name} · preview only`,
+    wall: `${envNow().name}${state.wallPhoto.img ? ' · your wall' : ''}`,
+    certs: state.myCerts.length ? `${state.myCerts.length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
   };
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
 
@@ -782,6 +867,32 @@ function build() {
   swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
+
+  // rooms (wall + lighting presets)
+  const eg = $('#envGrid');
+  eg.innerHTML = ENVIRONMENTS.map(e => `<button type="button" class="envt" data-env="${e.id}"><i></i><b>${e.name}</b><small>${e.blurb}</small></button>`).join('');
+  eg.querySelectorAll('.envt').forEach(b => b.querySelector('i').style.setProperty('--swatch', wallSwatch(ENVIRONMENTS.find(x => x.id === b.dataset.env))));
+  eg.addEventListener('click', (e) => { const b = e.target.closest('.envt'); if (b) { state.env = b.dataset.env; refresh(); } });
+
+  // a photo of the customer's own wall as the background (camera on phones, or upload)
+  const P = state.wallPhoto;
+  const syncPhoto = () => {
+    $('#wallPhotoOpts').hidden = $('#wallPhotoClear').hidden = !P.img;
+    $('#wallPhotoW').value = P.widthIn; $('#wallPhotoWOut').textContent = `${fmt(Math.round(P.widthIn / 12 * 10) / 10)} ft`;
+    $('#wallPhotoY').value = P.offY; $('#wallPhotoYOut').textContent = `${P.offY}"`;
+  };
+  for (const id of ['#wallCam', '#wallFile']) $(id).addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    try { await loadArt(P, f); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
+    P.offY = 0; syncPhoto();
+    refresh(); setView('front');
+    toast('Your wall is now the background. Adjust "Width of the wall" until the board looks right.');
+  });
+  $('#wallPhotoClear').addEventListener('click', () => { P.img = null; syncPhoto(); refresh(); });
+  $('#wallPhotoW').addEventListener('input', (e) => { P.widthIn = +e.target.value; syncPhoto(); refresh(); });
+  $('#wallPhotoY').addEventListener('input', (e) => { P.offY = +e.target.value; syncPhoto(); refresh(); });
+  syncPhoto();
   wireArt('logo', $('#logoArt'));
   wireArt('background', $('#bgArt'));
 
@@ -809,15 +920,22 @@ function build() {
   $('#sheets').addEventListener('change', (e) => { state.sheets = e.target.checked; refresh(); });
   $('#sheetTurn').addEventListener('change', (e) => { state.sheetTurn = e.target.checked; refresh(); });
   $('#cta').addEventListener('click', onCta);
-  // URL presets: ?size=12x24&color=Black&edge=Red&finish=chrome&orient=landscape
-  const q = new URLSearchParams(location.search);
-  if (q.get('size') && (SIZES.some(s => s.id === q.get('size')))) state.sizeId = q.get('size');
-  if (q.get('color') && COLORS.some(c => c.name === q.get('color'))) state.face = q.get('color');
-  if (q.get('edge') && COLORS.some(c => c.name === q.get('edge'))) state.edge = q.get('edge');
-  if (q.get('finish') && FASTENERS.some(f => f.id === q.get('finish'))) state.fastener = q.get('finish');
-  if (q.get('orient') === 'landscape') state.orient = 'landscape';
-  if (q.get('sheets') === '0') { state.sheets = false; $('#sheets').checked = false; }
+  wireExtras();
+
+  // Start from a shared link (?size=12x24&color=Black&edge=Red&finish=chrome&orient=landscape&room=dining&lam=5075...),
+  // otherwise from the last design made on this device.
+  let d = readParams(new URLSearchParams(location.search));
+  if (!Object.keys(d).length) {
+    try { const saved = localStorage.getItem('cobo.last'); if (saved) { d = readParams(new URLSearchParams(saved)); restoredDesign = Object.keys(d).length > 0; } } catch { /* storage blocked */ }
+  }
+  const { lam, ...rest } = d;
+  Object.assign(state, rest);
+  pendingLam = lam || null;
+  $('#sheets').checked = state.sheets; $('#sheetTurn').checked = state.sheetTurn;
+  $('#cw').value = state.customA; $('#ch').value = state.customB;
+  wireLayout();
 }
+let restoredDesign = false;
 function clamp(v) { return Math.max(1, Math.min(96, isFinite(v) ? v : 12)); }
 
 // Click a part of the board (a click, not a drag) to open its section in the panel; the cursor shows what's clickable.
@@ -890,6 +1008,251 @@ function wireArt(key, mount) {
   sync();
 }
 
+/* ------------------------------------------------------------------ v2 / v3 layouts */
+// Sections shown as main cards/squares in each version (the rest open from a row or link, in a side/bottom sheet).
+const MAIN = {
+  v2: { none: ['size'], standard: ['size', 'color', 'caps'], custom: ['size', 'laminate', 'color', 'logo', 'bgimg'] },
+  v3: ['size', 'color', 'laminate', 'edge', 'caps', 'logo', 'bgimg', 'certs', 'wall'],
+};
+function wireLayout() {
+  document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });
+  if (LAYOUT === 'v1') return;
+  // rows/links that open a section (in the side sheet on computers, the bottom sheet on phones)
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-open]');
+    if (b) { const sec = document.querySelector(`.sec[data-sec="${b.dataset.open}"]`); if (sec) openOptSheet(sec); }
+  });
+  if (LAYOUT === 'v2') {
+    $('#fork').addEventListener('click', (e) => { const b = e.target.closest('[data-path]'); if (b) setPath(b.dataset.path); });
+    $('#lnMatch').addEventListener('change', (e) => { $('#edgeMatch').checked = e.target.checked; $('#edgeMatch').dispatchEvent(new Event('change')); });
+    document.querySelectorAll('[data-eye]').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.eye;
+      if (k === 'sheets') { state.sheets = !state.sheets; $('#sheets').checked = state.sheets; }
+      else state.art[k].hide = !state.art[k].hide;
+      refresh();
+    }));
+    // a shared/restored design picks its own path
+    if (state.lamSel || pendingLam || state.face[0] === '#' || state.art.logo.img) state.path = 'custom';
+    else if (restoredDesign || new URLSearchParams(location.search).has('size')) state.path = 'standard';
+  }
+}
+// v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted
+function setPath(p) {
+  state.path = p;
+  if (p === 'standard') {
+    state.lamSel = null;
+    if (state.face[0] === '#') state.face = 'Black';
+    if (state.edge[0] === '#') state.edge = 'match';
+  }
+  closeOptSheet();
+  refresh();
+  if (phone.matches) document.querySelector('.p-body .sec:not([hidden]):not([data-sec="size"])')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function paintLayout(sp) {
+  if (LAYOUT === 'v1') return;
+  const main = LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN.v3;
+  document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
+  if (LAYOUT === 'v2') {
+    document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
+    $('#forkStd').textContent = `$${(SIZES.find(s => s.id === state.sizeId)?.price ?? SIZES[0].price).toFixed(2)}`;
+    $('#lines').hidden = !state.path;
+    document.querySelectorAll('#lines [data-path]').forEach(r => { r.hidden = r.dataset.path !== state.path; });
+    $('#lnMatch').checked = state.edge === 'match';
+    $('#lnEdge').hidden = state.edge === 'match';
+    $('#faceCustom').closest('.opt').hidden = state.path === 'standard';   // Standard = stock colors only
+    for (const b of document.querySelectorAll('[data-eye]')) {
+      const k = b.dataset.eye, on = k === 'sheets' ? state.sheets : !state.art[k].hide;
+      b.setAttribute('aria-pressed', on);
+      b.disabled = k !== 'sheets' && !state.art[k].img;          // nothing to show/hide until something's uploaded
+    }
+  }
+  if (LAYOUT === 'v3') paintPrices();
+}
+// v3: "Included" / "+$X" on each option
+function paintPrices() {
+  const U = UPCHARGES, tag = (n) => (n ? `+$${n}` : 'Included');
+  const set = (sel, n) => { const el = typeof sel === 'string' ? $(sel) : sel; if (el) { el.textContent = tag(n); el.classList.toggle('inc', !n); } };
+  const head = {
+    color: state.face[0] === '#' && !state.lamSel ? U.customColor : 0,
+    laminate: U.laminate, edge: state.edge[0] === '#' ? U.edgeCustom : 0,
+    caps: U.caps[state.fastener] || 0, logo: U.logo, bgimg: U.background,
+  };
+  for (const [k, n] of Object.entries(head)) {
+    const h = document.querySelector(`.sec[data-sec="${k}"] .sec-h`);
+    if (!h) continue;
+    let up = h.querySelector('.up');
+    if (!up) { up = document.createElement('em'); up.className = 'up'; h.insertBefore(up, h.querySelector('.chev')); }
+    set(up, n);
+  }
+  document.querySelectorAll('#fastSw .fast').forEach(b => {
+    let up = b.querySelector('.up');
+    if (!up) { up = document.createElement('em'); up.className = 'up'; b.insertBefore(up, b.querySelector('span').nextSibling); }
+    set(up, U.caps[b.dataset.k] || 0);
+  });
+  const extra = (input, n) => { const row = $(input)?.closest('.opt'); if (!row) return; let up = row.querySelector('.up'); if (!up) { up = document.createElement('em'); up.className = 'up'; row.insertBefore(up, $(input)); } set(up, n); };
+  extra('#faceCustom', U.customColor); extra('#edgeCustom', U.edgeCustom);
+  // v3 prices these instead of quoting them
+  const words = { laminate: `Wilsonart laminate adds $${U.laminate} to the board price.`, background: `A printed background adds $${U.background} per board.`, logo: `A printed logo adds $${U.logo} per board.` };
+  document.querySelectorAll('[data-quote]').forEach(el => { el.textContent = words[el.dataset.quote]; });
+}
+
+/* ------------------------------------------------------------------ helpers for a better start */
+// Own certificates: each photo is fitted onto a white sheet the size of the certificate spot.
+function ownCertTexture(own, w, h) {
+  const k = `${w}x${h}`;
+  own.tex ??= {};
+  if (own.tex[k]) return own.tex[k];
+  const ppi = 48, c = document.createElement('canvas'); c.width = Math.round(w * ppi); c.height = Math.round(h * ppi);
+  const g = c.getContext('2d'), m = 0.2 * ppi;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+  const s = Math.min((c.width - 2 * m) / own.img.width, (c.height - 2 * m) / own.img.height);
+  const iw = own.img.width * s, ih = own.img.height * s;
+  g.drawImage(own.img, (c.width - iw) / 2, (c.height - ih) / 2, iw, ih);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.keep = true;
+  return (own.tex[k] = t);
+}
+
+// "How many certificates?": the smallest standard board that fits them (either way round), or a custom size.
+function fitsOn(w, h) { const L = sheetLayout(w, h); return L?.primary ? L.n : 0; }
+function bestFit(n) {
+  if (!n) return null;
+  let best = null;
+  for (const s of SIZES) for (const o of ['portrait', 'landscape']) {
+    const [w, h] = o === 'portrait' ? [s.a, s.b] : [s.b, s.a];
+    const fit = fitsOn(w, h);
+    if (fit >= n && (!best || s.price < best.size.price || (s.price === best.size.price && o === state.orient))) best = { size: s, orient: o, fit };
+  }
+  if (best) return best;
+  // more than any standard board holds: suggest a custom size (grid of sheets + margins clear of the caps)
+  const cols = Math.ceil(Math.sqrt(n * 11 / 8.5)), rows = Math.ceil(n / cols);
+  let w = Math.ceil(cols * 8.5 + (cols - 1) + 4), h = Math.ceil(rows * 11 + (rows - 1) + 4);
+  while (fitsOn(w, h) < n && w <= CUSTOM.maxShort) w++;
+  return { custom: true, w: Math.min(w, CUSTOM.maxShort), h: Math.min(h, CUSTOM.maxLong), fit: fitsOn(Math.min(w, CUSTOM.maxShort), Math.min(h, CUSTOM.maxLong)) };
+}
+function useBestFit() {
+  const b = bestFit(state.certNeed);
+  if (!b) return;
+  if (b.custom) Object.assign(state, { sizeId: 'custom', customA: Math.min(b.w, b.h), customB: Math.max(b.w, b.h), orient: b.w > b.h ? 'landscape' : 'portrait' });
+  else Object.assign(state, { sizeId: b.size.id, orient: b.orient });
+  $('#cw').value = state.customA; $('#ch').value = state.customB;
+  refresh(true);
+}
+
+// Apply a whole design at once (popular boards, shared links, restored last design)
+function applyDesign(d) {
+  for (const k of ['sizeId', 'orient', 'face', 'edge', 'fastener', 'customA', 'customB', 'sheets', 'sheetTurn', 'env', 'certNeed']) if (d[k] !== undefined) state[k] = d[k];
+  $('#sheets').checked = state.sheets; $('#sheetTurn').checked = state.sheetTurn;
+  $('#cw').value = state.customA; $('#ch').value = state.customB;
+  if (d.lam) { pendingLam = d.lam; if (libraryReady) { const it = findByNumber(d.lam) || unknownLam(d.lam, '#bdbdbd'); state.lamSel = it; pendingLam = null; } }
+  else state.lamSel = null;
+  refresh(true);
+}
+let pendingLam = null;
+
+// A design as link settings (?size=24x36&color=Black...) and back again
+function designParams() {
+  const p = new URLSearchParams();
+  if (state.sizeId === 'custom') { p.set('size', 'custom'); p.set('w', state.customA); p.set('h', state.customB); } else p.set('size', state.sizeId);
+  p.set('orient', state.orient); p.set('color', state.face); p.set('edge', state.edge); p.set('finish', state.fastener);
+  if (state.lamSel) p.set('lam', state.lamSel.n);
+  if (state.env !== 'studio') p.set('room', state.env);
+  if (!state.sheets) p.set('sheets', '0');
+  if (state.sheetTurn) p.set('turn', '1');
+  if (state.certNeed) p.set('need', state.certNeed);
+  return p;
+}
+function readParams(q) {
+  const d = {}, hex = (v) => /^#[0-9a-f]{6}$/i.test(v || '');
+  if (q.get('size') === 'custom') { d.sizeId = 'custom'; d.customA = clamp(+q.get('w')); d.customB = clamp(+q.get('h')); }
+  else if (SIZES.some(s => s.id === q.get('size'))) d.sizeId = q.get('size');
+  if (q.get('orient') === 'landscape' || q.get('orient') === 'portrait') d.orient = q.get('orient');
+  if (COLORS.some(c => c.name === q.get('color')) || hex(q.get('color'))) d.face = q.get('color');
+  if (q.get('edge') === 'match' || COLORS.some(c => c.name === q.get('edge')) || hex(q.get('edge'))) d.edge = q.get('edge');
+  if (FASTENERS.some(f => f.id === q.get('finish'))) d.fastener = q.get('finish');
+  if (ENVIRONMENTS.some(e => e.id === q.get('room'))) d.env = q.get('room');
+  if (q.get('sheets') === '0') d.sheets = false;
+  if (q.get('turn') === '1') d.sheetTurn = true;
+  if (+q.get('need') > 0) d.certNeed = Math.min(40, +q.get('need'));
+  if (q.get('lam')) d.lam = q.get('lam');
+  return d;
+}
+// Share: phones open the share sheet (Messages, email...); computers copy the link.
+let parentPage = null;   // inside Shopify: the store page's address (sent by the embed snippet)
+async function shareDesign() {
+  const p = designParams().toString();
+  const url = parentPage ? `${parentPage}?cobo=${encodeURIComponent(p)}` : `${location.origin}${location.pathname}?${p}`;
+  const { w, h } = dims();
+  const text = `My ${fmt(w)}" × ${fmt(h)}" compliance board design`;
+  if (navigator.share) { try { await navigator.share({ title: 'Compliance board design', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it into an email or message to share this design.'); }
+  catch { prompt('Copy this link to share your design:', url); }
+}
+// Remember the last design on this device, and bring it back next visit
+let saveT = null;
+function rememberDesign() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem('cobo.last', designParams().toString()); } catch { /* storage blocked */ } }, 600);
+}
+
+function wireExtras() {
+  // popular boards
+  $('#presetList').innerHTML = PRESETS.map((p, i) => `<button type="button" class="preset" data-p="${i}"><i></i><b>${p.name}</b><small>${p.blurb}</small></button>`).join('');
+  $('#presetList').querySelectorAll('.preset').forEach((b) => {
+    const p = PRESETS[+b.dataset.p], c = p.cfg;
+    b.querySelector('i').style.setProperty('--swatch', p.lam ? '#6b4a33' : colorHex(c.face));
+    b.querySelector('i').style.setProperty('--edge', c.edge === 'match' ? 'transparent' : colorHex(c.edge));
+  });
+  $('#presetList').addEventListener('click', (e) => {
+    const b = e.target.closest('.preset'); if (!b) return;
+    const p = PRESETS[+b.dataset.p];
+    applyDesign({ ...p.cfg, lam: p.lam, env: p.room || state.env });
+    closeOptSheet();
+    toast(`${p.name}: change anything you like from here.`);
+  });
+  // how many certificates
+  document.querySelectorAll('[data-cc]').forEach(b => b.addEventListener('click', () => {
+    state.certNeed = Math.max(0, Math.min(40, state.certNeed + +b.dataset.cc));
+    updateUI(); rememberDesign();
+  }));
+  $('#certAdvice').addEventListener('click', (e) => { if (e.target.closest('#useFit')) useBestFit(); });
+  // own certificates
+  const addCerts = async (files) => {
+    for (const f of files) { const own = {}; try { await loadArt(own, f); state.myCerts.push(own); } catch { toast(`Couldn't read ${f.name}`); } }
+    refresh();
+  };
+  for (const id of ['#certCam', '#certFiles']) $(id).addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
+  $('#certClear').addEventListener('click', () => { state.myCerts = []; refresh(); });
+  // share
+  $('#shareBtn').addEventListener('click', shareDesign);
+}
+// parts of the panel that depend on the extras (called from updateUI)
+function paintExtras() {
+  // how many certificates -> advice + highlight the best-fit size tile
+  const n = state.certNeed, b = bestFit(n);
+  $('#certNeed').textContent = n || '—';
+  const { w, h } = dims(), here = fitsOn(w, h);
+  let advice;
+  if (!n) advice = 'Tell us how many 8.5×11 documents you need to display, and we\'ll suggest the size that fits.';
+  else if (b?.custom) advice = `More than any standard board holds. A custom <b>${b.w}" × ${b.h}"</b> fits ${b.fit}. <button class="link" id="useFit" type="button">Use it</button>`;
+  else {
+    const name = `${b.size.a} × ${b.size.b}${b.orient === 'landscape' ? ' landscape' : ''}`;
+    const on = state.sizeId === b.size.id && state.orient === b.orient;
+    advice = on ? `<b>${name}</b> is the best fit: it holds ${b.fit}.` : `Best fit: <b>${name}</b> holds ${b.fit}. <button class="link" id="useFit" type="button">Use it</button>`
+      + (here >= n ? ` (Your current size fits them too.)` : '');
+  }
+  $('#certAdvice').innerHTML = advice;
+  document.querySelectorAll('#sizes .tile').forEach(t => {
+    const s = SIZES.find(x => x.id === t.dataset.k);
+    t.classList.toggle('rec', !!(n && b && !b.custom && t.dataset.k === b.size.id && b.orient === state.orient));
+    t.classList.toggle('nofit', !!(n && s && fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a])) < n));
+  });
+  // own certificates
+  const k = state.myCerts.length;
+  $('#certClear').hidden = !k;
+  $('#certOwnInfo').hidden = !k;
+  if (k) { const fit = lastSheets?.n || 0; $('#certOwnInfo').textContent = `${k} of your certificate${k === 1 ? '' : 's'} shown${k > fit ? ` (only ${fit} fit on this board)` : fit > k ? `, plus ${fit - k} sample${fit - k === 1 ? '' : 's'}` : ''}. Upload more to add them.`; }
+}
+
 /* ------------------------------------------------------------------ Wilsonart laminate library + picker */
 const texCache = new Map();
 function lamTexture(url) {
@@ -908,13 +1271,16 @@ const pick = { q: '', type: new Set(), color: new Set(), shade: new Set(), cut: 
                open: new Set() };   // open = which filter categories are expanded (all start folded)
 const FIELD = { type: 'type', color: 'color', shade: 'shade', cut: 'cut', match: 'match' };
 
-fetch(LAMINATE.libraryUrl, { cache: 'no-cache' })
+// paths are worked out from this script's own location, so /v2/ and /v3/ pages find the same files
+const SITE = new URL('../', import.meta.url);
+fetch(new URL(LAMINATE.libraryUrl, SITE), { cache: 'no-cache' })
   .then(r => (r.ok ? r.json() : { items: [] }))
   .catch(() => ({ items: [] }))
   .then(j => {
-    library = j.items || [];
+    library = (j.items || []).map(it => ({ ...it, thumb: it.thumb && new URL(it.thumb, SITE).href, full: it.full && new URL(it.full, SITE).href }));
     libraryReady = true;
-    const want = new URLSearchParams(location.search).get('lam');      // ?lam=5075 preset
+    const want = pendingLam;                                           // laminate from a link, preset or saved design
+    pendingLam = null;
     if (want) { selectLam(findByNumber(want) || unknownLam(want, '#bdbdbd'), true); }
     if (!$('#lamPanel').hidden) renderPicker();
   });
@@ -1134,7 +1500,8 @@ function boardThumb() {
 }
 function specRows(sp) {
   return [['Size', `${fmt(sp.widthIn)}" × ${fmt(sp.heightIn)}"`], ['Orientation', sp.orientation[0].toUpperCase() + sp.orientation.slice(1)],
-    ['Board color', sp.boardColor], ['Edge banding', sp.edgeBanding === 'Match board' ? 'Matches board' : sp.edgeBanding], ['Caps & studs', sp.fastenerFinish]];
+    ['Board color', sp.boardColor], ['Edge banding', sp.edgeBanding === 'Match board' ? 'Matches board' : sp.edgeBanding], ['Caps & studs', sp.fastenerFinish],
+    ...(sp.upcharges?.length ? [['Board', `$${sp.basePrice.toFixed(2)}`], ...sp.upcharges.map(u => [u.label, `+$${u.amount}`])] : [])];
 }
 
 // "Edit board" on a cart line: load that board back into the builder; the main button becomes "Update cart item"
@@ -1166,7 +1533,21 @@ function renderCart(cart) {
   $('#cartCheckout').hidden = !count && !phone.matches;     // phones: Checkout always sits beside Add to cart
   $('#sheetCount').textContent = count ? `(${count})` : '';
   $('#cartCount').textContent = count ? `${count} board${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
-  $('#cartTotal').textContent = `$${cart.total.toFixed(2)}`;               // the bar always shows the cart total
+  // price breakdown + volume discount. Preview cart: worked out here from DISCOUNTS; in Shopify: the store's own
+  // automatic discount (cart.discount), so what's shown always matches checkout.
+  const tier = [...DISCOUNTS].reverse().find(t => count >= t.min);
+  const discount = cart.demo ? (tier ? cart.total * tier.pct / 100 : 0) : (cart.discount || 0);
+  const subtotal = cart.demo ? cart.total : (cart.subtotal ?? cart.total + discount);
+  const total = subtotal - discount;
+  $('#cartSum').hidden = !count;
+  $('#sumBoards').textContent = `$${subtotal.toFixed(2)}`;
+  $('#sumDiscRow').hidden = !(discount > 0);
+  $('#sumDiscLbl').textContent = tier ? `Volume discount (${tier.pct}% off ${tier.min}+)` : 'Discount';
+  $('#sumDisc').textContent = `−$${discount.toFixed(2)}`;
+  $('#sumTotal').textContent = `$${total.toFixed(2)}`;
+  const next = DISCOUNTS.find(t => count < t.min);
+  $('#discHint').textContent = !next ? '' : count ? `Add ${next.min - count} more board${next.min - count === 1 ? '' : 's'} to save ${next.pct}%.` : `Save ${DISCOUNTS[0].pct}% when you order ${DISCOUNTS[0].min} or more boards.`;
+  $('#cartTotal').textContent = `$${total.toFixed(2)}`;               // the bar always shows the cart total
   const list = $('#cartList'); list.innerHTML = '';
   cart.items.forEach((it, i) => {
     const li = document.createElement('li'); li.className = 'ci';
@@ -1209,10 +1590,11 @@ window.addEventListener('message', (e) => {
         rows: Object.entries(it.properties || {}).filter(([k, v]) => v && k[0] !== '_'),   // "_" properties are hidden data
       };
     });
-    renderCart({ items, total: (d.cart.total_price || 0) / 100 });
+    renderCart({ items, total: (d.cart.total_price || 0) / 100, subtotal: (d.cart.original_total_price ?? d.cart.total_price ?? 0) / 100, discount: (d.cart.total_discount || 0) / 100 });
     if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); setSheet(true); }
   }
   if (d?.type === 'cobo:notice' && d.text) toast(String(d.text));
+  if (d?.type === 'cobo:page' && /^https:\/\//.test(d.url || '')) parentPage = String(d.url);   // for share links
 });
 if (embedded) window.parent.postMessage({ type: 'cobo:get-cart' }, '*');
 
@@ -1310,5 +1692,10 @@ new ResizeObserver(() => { resize(); }).observe(stage);
 resize();
 buildBoard();
 setView('angle', true);
-window.__cobo = { state, refresh, setView, currentSpec, THREE, scene, camera, renderer };
+window.__cobo = { state, refresh, setView, currentSpec, THREE, scene, camera, renderer, applyDesign };   // also tells index.html the builder started
 loop();
+renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + volume-discount hint
+if (restoredDesign) toast('Welcome back! We restored your last design.');
+// ?peek=#fork scrolls that part of the panel into view (used for screenshots)
+const peek = new URLSearchParams(location.search).get('peek');
+if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);
