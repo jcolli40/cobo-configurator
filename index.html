@@ -264,13 +264,14 @@
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   @media (max-width: 860px) {
-    .app { grid-template-columns: 1fr; grid-template-rows: 54vh auto; height: auto; }
+    /* phones: the 3D view is pinned to the top and shrinks as you scroll (js sets --stageH), so the board stays in sight */
+    .app { display: block; height: auto; padding-top: 56vh; }
     .panel { border-left: 0; border-top: 1px solid var(--line); }
     .p-body { overflow: visible; }
     /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
     input[type=search], input[type=number], input[type=text], select { font-size: 16px !important; }
     html, body { overflow-x: clip; }
-    .side { overflow-x: hidden; top: 46vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(40,32,20,.18); }   /* board stays visible above */
+    .side { overflow-x: hidden; top: 44vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(40,32,20,.18); }   /* board stays visible above */
     .side-body { padding-left: 12px; padding-right: 12px; }
     .grid { gap: 8px; }
     /* phones: the cart panel is fixed to the bottom of the screen */
@@ -282,8 +283,17 @@
     .ghost, #cta { height: 46px; padding: 0 12px; }
     .sheet-dim { display: block; position: fixed; inset: 0; background: rgba(20,16,10,.3); z-index: 11; }
     /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
-    #stageWrap { display: flex; flex-direction: column; }
-    #stage { position: relative; inset: auto; height: 50vh; }
+    #stageWrap { position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: var(--stageH, 56vh); display: flex; flex-direction: column; background: var(--bg); }
+    #stageWrap.anim { transition: height .25s ease; }               /* only when a sheet opens/closes, not while scrolling */
+    #stageWrap.shrunk { box-shadow: 0 6px 18px rgba(40,32,20,.12); }
+    #stage { position: relative; inset: auto; flex: 1; min-height: 0; }
+    /* phones: options are a list; tapping one opens its controls in a pop-up sheet (like the Wilsonart picker) */
+    .p-body .sec-b { display: none !important; }
+    .sec-h .chev { transform: rotate(-90deg); }
+    .sec-h[aria-expanded="true"] .chev { transform: rotate(-90deg); }
+    .sec-h[aria-expanded="true"] .sec-v { visibility: visible; }
+    #optBody { display: grid; gap: 14px; align-content: start; }
+    #optBody .sec-b { display: grid !important; padding: 0; gap: 14px; }
     .viewbar { position: static; order: -1; align-self: flex-start; margin: 10px 0 4px 12px; max-width: calc(100% - 24px); }   /* top of the screen, board below */
     .viewbar button { padding: 7px 12px; }
     .viewbar .ar-btn { gap: 5px; }
@@ -465,6 +475,12 @@
 <div class="sheet-dim" id="sheetDim" hidden></div>
 
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
+<!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
+<aside id="optSheet" class="side" role="dialog" aria-labelledby="optTitle" hidden>
+  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close">×</button></header>
+  <div class="side-body" id="optBody"></div>
+</aside>
+
 <aside id="lamPanel" class="side" role="dialog" aria-labelledby="lamTitle" hidden>
   <header class="side-h">
     <img src="img/wilsonart-logo.png" alt="Wilsonart">

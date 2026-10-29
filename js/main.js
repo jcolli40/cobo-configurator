@@ -585,6 +585,7 @@ function renderSizes() {
 // The cart is a bottom panel (computers and phones): tap or swipe the handle (or the cart total) up to see it; swipe down to close.
 const phone = matchMedia('(max-width: 860px)');
 function setSheet(open) {
+  if (open) { closeOptSheet(); if (phone.matches && !$('#lamPanel').hidden) closePicker(); }
   $('#buysheet').classList.toggle('open', open);
   $('#sheetGrab').setAttribute('aria-expanded', open);
   $('#sheetDim').hidden = !open || !phone.matches;
@@ -609,12 +610,51 @@ function setSec(sec, open) {
 }
 // Clicking a part of the board: open its section and fold the others (like Photoshop's auto-collapse)
 function openSection(name) {
-  const sec = document.querySelector(`.p-body .sec[data-sec="${name}"]`);
+  const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
+  if (phone.matches) return openOptSheet(sec);                       // phones: the option opens in a pop-up sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   sec.classList.remove('flash'); void sec.offsetWidth; sec.classList.add('flash');
 }
+// Phones: one option at a time in a pop-up sheet. The section's own controls are moved into the sheet while it's open.
+let optOpen = null;   // { sec, body }
+function openOptSheet(sec) {
+  closeOptSheet(true);
+  if (!$('#lamPanel').hidden) closePicker();
+  setSheet(false);
+  const body = sec.querySelector('.sec-b');
+  body.hidden = false;
+  $('#optBody').appendChild(body);
+  $('#optTitle').textContent = sec.querySelector('.sec-t').textContent;
+  $('#optIcon').innerHTML = sec.querySelector('.sec-h .i').outerHTML;
+  $('#optSheet').hidden = false;
+  $('#optBody').scrollTop = 0;
+  optOpen = { sec, body };
+  updateStage(true);
+}
+function closeOptSheet(switching) {
+  if (!optOpen) return;
+  optOpen.sec.appendChild(optOpen.body);
+  setSec(optOpen.sec, false);
+  $('#optSheet').hidden = true;
+  optOpen = null;
+  if (!switching) updateStage(true);
+}
+// Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
+// it fits the space above the sheet, so the whole board is always visible while you make changes.
+const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the screen height (sheet: matches .side top: 44vh)
+let stageQueued = false;
+function updateStage(animate) {
+  const w = $('#stageWrap');
+  if (!phone.matches) { w.style.removeProperty('--stageH'); w.classList.remove('shrunk'); return; }
+  const H = innerHeight, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
+  const h = sheet ? H * STAGE.sheet : Math.max(H * STAGE.min, H * STAGE.max - scrollY);
+  if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 300); }
+  w.style.setProperty('--stageH', `${Math.round(h)}px`);
+  w.classList.toggle('shrunk', h < H * STAGE.max - 1);
+}
+
 function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, ''); }
 
 function currentSpec() {
@@ -654,8 +694,7 @@ function updateUI() {
   // main button: what it does + this board's price (quantity is set per board in the cart)
   $('#editBar').hidden = !(editing && sp.price);
   $('#ctaLabel').textContent = sp.price ? (editing ? 'Update cart item' : 'Add to cart') : 'Request a quote';
-  $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';
-  $('#note').textContent = sp.price
+  $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';  $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
     : (sp.logo || sp.background)
       ? 'Printed boards are made to order — send us this spec (and your image files) and we will quote it.'
@@ -699,8 +738,20 @@ function build() {
 
   // collapsible sections
   document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
+    if (phone.matches) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
+  $('#optSheet [data-close]').addEventListener('click', () => closeOptSheet());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && optOpen && $('#lamPanel').hidden) closeOptSheet(); });
+  addEventListener('scroll', () => {                               // phones: shrink the pinned 3D view as you scroll
+    if (stageQueued) return;
+    stageQueued = true;
+    requestAnimationFrame(() => { stageQueued = false; updateStage(false); });
+  }, { passive: true });
+  addEventListener('resize', () => updateStage(false));
+  phone.addEventListener('change', () => { closeOptSheet(); updateStage(false); $('#cartCheckout').hidden = !cartItems.length && !phone.matches; });
+  $('#cartCheckout').hidden = !phone.matches;
+  updateStage(false);
   wireBoardClicks();
   wireSheet();
 
@@ -718,7 +769,7 @@ function build() {
 
   // quantity
   $('#cartView').addEventListener('click', () => goShopify('/cart'));
-  $('#cartCheckout').addEventListener('click', () => goShopify('/checkout'));
+  $('#cartCheckout').addEventListener('click', () => (cartItems.length ? goShopify('/checkout') : toast('Your cart is empty. Add a board first.')));
 
   const fs = $('#fastSw'); fs.innerHTML = '';
   for (const f of FASTENERS) {
@@ -740,7 +791,6 @@ function build() {
   $('#sheets').addEventListener('change', (e) => { state.sheets = e.target.checked; refresh(); });
   $('#sheetTurn').addEventListener('change', (e) => { state.sheetTurn = e.target.checked; refresh(); });
   $('#cta').addEventListener('click', onCta);
-
   // URL presets: ?size=12x24&color=Black&edge=Red&finish=chrome&orient=landscape
   const q = new URLSearchParams(location.search);
   if (q.get('size') && (SIZES.some(s => s.id === q.get('size')))) state.sizeId = q.get('size');
@@ -922,13 +972,14 @@ function openPicker() {
   if (!phone.matches) setInset($('#lamPanel').getBoundingClientRect().width);   // slide the board out from under the panel
   renderPicker();
   if (!phone.matches) setTimeout(() => $('#lamSearch').focus(), 30);   // on phones, focusing would pop up the keyboard
-  else window.scrollTo({ top: 0, behavior: 'smooth' });                // phones: bring the board into view above the picker
+  updateStage(true);                                                   // phones: board fits above the picker
 }
 function closePicker() {
   $('#lamPanel').hidden = true;
   $('#lamBtn').setAttribute('aria-expanded', 'false');
   if (inset.target) setInset(0);
-  $('#lamBtn').focus();
+  updateStage(true);
+  if (!phone.matches) $('#lamBtn').focus();
 }
 function selectLam(item) {
   state.lamSel = item;
@@ -1092,7 +1143,7 @@ function renderCart(cart) {
   const count = cart.items.reduce((s, it) => s + it.qty, 0);
   $('#cartEmpty').hidden = !!count;
   $('#cartFoot').hidden = !count;
-  $('#cartCheckout').hidden = !count;
+  $('#cartCheckout').hidden = !count && !phone.matches;     // phones: Checkout always sits beside Add to cart
   $('#sheetCount').textContent = count ? `(${count})` : '';
   $('#cartCount').textContent = count ? `${count} board${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
   $('#cartTotal').textContent = `$${cart.total.toFixed(2)}`;               // the bar always shows the cart total
