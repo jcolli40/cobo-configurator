@@ -650,6 +650,63 @@
     [data-layout="v5"] .popstrip { grid-column: 1 / -1; }
 
   }
+
+  /* ---------- v6 (<html data-v6>, on top of v5): the options are icons in a dock floating at the bottom, each with its
+     price under it; tapping one opens its pop-up. Computers: the 3D view fills the window, dock bottom left, cart bottom
+     right, pop-ups float on the right. Phones: board on top, dock + cart below; pop-ups cover exactly the part below. */
+  .t-sub { display: none; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .42); transform: scale(0); animation: ripple .6s ease-out; pointer-events: none; }
+  @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+  [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list, #tourSkipCard) { display: none !important; }
+  [data-v6] .t-card .g-kick { font-size: 0; }
+  [data-v6] .t-card .g-kick::after { content: "Compliance board designer"; font-size: 12px; }
+  [data-v6] .t-sub { display: block; margin: -2px 0 2px; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, .82); }
+  [data-v6] #shareBtn { top: 14px; right: 16px; transform: none; z-index: 5; box-shadow: var(--shadow); }
+  [data-v6][data-step="intro"] #shareBtn { display: none; }
+  [data-v6] #toast { bottom: auto; top: 16px; }                 /* clear of the dock and the cart */
+  [data-v6] .app { grid-template-columns: minmax(0, 1fr); }
+  [data-v6] .tabpane { display: contents; }
+  [data-v6] .panel { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 12; flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 12px; background: none; border: 0; pointer-events: none; }
+  [data-v6] .panel > * { pointer-events: auto; }
+  [data-v6] .p-body { flex: none; display: flex; gap: 2px; padding: 6px; overflow: visible; background: color-mix(in srgb, #fff 94%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, .14); }
+  [data-v6] .p-body .sec { width: 84px; border: 0; background: none; box-shadow: none; border-radius: 12px; aspect-ratio: auto; }
+  [data-v6] .p-body .sec-h { height: 100%; flex-direction: column; justify-content: flex-start; align-items: center; gap: 3px; padding: 9px 4px 8px; text-align: center; border-radius: 12px; }
+  [data-v6] .p-body .sec-h:hover { background: var(--hover); }
+  [data-v6] .p-body .sec-h > .i:first-child { width: 24px; height: 24px; color: var(--accent); }
+  [data-v6] .p-body .sec-t { font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+  [data-v6] .p-body :is(.sec-v, .sec-h .chev, .up-for) { display: none; }
+  [data-v6] .p-body .sec-b { display: none !important; }
+  [data-v6] .p-body .sec-h .up { position: static; order: 9; margin: 0; padding: 0; background: none; font-size: 11px; font-weight: 650; color: var(--accent); }
+  [data-v6] .p-body .sec-h .up.size { color: var(--ink); }
+  [data-v6] .p-body .sec-h .up[data-for]::before { content: none; }
+  [data-v6] .p-body .sec.active { box-shadow: none; }
+  [data-v6] .p-body .sec.active .sec-h { background: var(--tint); }
+  [data-v6] #optBody { display: grid; gap: 14px; align-content: start; }
+  [data-v6] #optBody .sec-b { display: grid !important; padding: 0; gap: 14px; }
+  [data-v6] .buysheet { width: 380px; flex: none; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, .14); overflow: hidden; }
+  [data-v6] .buybar { padding: 4px 12px 12px; }
+  [data-v6] #cta { position: relative; overflow: hidden; padding: 0 22px; }
+  [data-v6] .certcount { background: var(--tint); padding: 4px 12px 10px; gap: 2px; }
+  [data-v6] .tile.nofit { opacity: 1; position: relative; }
+  [data-v6] .tile.nofit > * { opacity: .45; }
+  [data-v6] .tile.nofit::after { content: "Too small"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8a8a90; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  @media (min-width: 861px) {
+    [data-v6] .viewbar { display: none; }
+    [data-v6] .side { top: 16px; right: 16px; bottom: 136px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); }
+  }
+  @media (max-width: 860px) {
+    [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
+    [data-v6] .app { padding: 0; }
+    [data-v6] #shareBtn { top: 10px; right: 10px; }
+    [data-v6] .viewbar:not(:has(#arBtn:not([hidden]))) { display: none; }
+    [data-v6] .panel { top: var(--stageMax, 58vh); left: 0; right: 0; bottom: 0; flex-direction: column; justify-content: center; align-items: stretch; padding: 8px 10px calc(84px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); pointer-events: auto; }
+    [data-v6] .p-body { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+    [data-v6] .p-body .sec { width: auto; background: #f4f4f6; }
+    [data-v6] .p-body .sec-h { padding: 12px 2px 10px; min-height: 76px; justify-content: center; }
+    [data-v6] .p-body .sec-t { font-size: 11.5px; }
+    [data-v6] .buysheet { width: auto; border-radius: 18px 18px 0 0; border-width: 1px 0 0; }
+    [data-v6] .side { top: var(--stageMax, 58vh); }
+  }
 </style>
 </head>
 <body>
@@ -986,6 +1043,7 @@
     <div class="t-card">
       <p class="g-kick">Step 1 of 3 · Compliance board designer</p>
       <h1>A board made for your wall</h1>
+      <p class="t-sub">Start from a style, tell us how many certificates you have, then make it yours.</p>
       <ol class="t-list">
         <li><svg class="i"><use href="#i-camera"/></svg><span><b>Snap your wall</b>We count your certificates and size a board to fit.</span></li>
         <li><svg class="i"><use href="#i-spark"/></svg><span><b>See our picks</b>Swipe through looks that suit your room.</span></li>
@@ -1124,6 +1182,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610291608" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610291916" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

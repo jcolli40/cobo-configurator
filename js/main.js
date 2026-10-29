@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291608';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291608';
-import { wallTexture, wallSwatch } from './env.js?v=202610291608';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291916';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291916';
+import { wallTexture, wallSwatch } from './env.js?v=202610291916';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -31,6 +31,9 @@ const LAYOUT = document.documentElement.dataset.layout || 'v1';
 const PRICED = LAYOUT === 'v3' || LAYOUT === 'v5';          // options priced with upcharges (else laminate/printing = quoted)
 const ROWS = LAYOUT === 'v2' || LAYOUT === 'v5';            // the simple rows (edge switch, eye icons)
 const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
+//   v6 = v5 + <html data-v6>: the options are icons in a dock floating at the bottom (each opens a pop-up panel),
+//   style presets instead of popular boards, no wall photo scan (the certificate count sizes the board)
+const V6 = 'v6' in document.documentElement.dataset;
 // an upcharge from UPCHARGES (config.js): one amount, or one per size
 const upAmt = (v) => (v && typeof v === 'object' ? (v[state.sizeId] ?? v.custom ?? 0) : (v || 0));
 
@@ -652,9 +655,11 @@ let tween = null;
 // When the Wilsonart side panel covers the right of the 3D view (desktop), the view slides left by half the panel
 // width and the board is framed to fit the part still visible. inset = covered width in pixels (animated).
 const inset = { now: 0, target: 0 };
+// v6 computers: the dock floats over the bottom of the view, so the board is framed in the part above it
+const dockH = () => (V6 && !phone.matches && !fullStage() ? $('.p-body').offsetHeight + 24 : 0);
 function applyInset() {
-  const W = stage.clientWidth, H = stage.clientHeight;
-  if (inset.now > 0.5 && W && H) camera.setViewOffset(W, H, inset.now / 2, 0, W, H);
+  const W = stage.clientWidth, H = stage.clientHeight, B = dockH();
+  if ((inset.now > 0.5 || B) && W && H) camera.setViewOffset(W, H, inset.now / 2, B / 2, W, H);
   else camera.clearViewOffset();
 }
 function setInset(px) {
@@ -667,7 +672,8 @@ function setInset(px) {
 function fitDist() {
   const { w, h } = dims();
   const aspect = camera.aspect * (1 - inset.target / Math.max(1, stage.clientWidth));
-  return Math.max(h / 2, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
+  const tall = 1 - dockH() / Math.max(1, stage.clientHeight);       // the part of the height not under the v6 dock
+  return Math.max(h / 2 / tall, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
 }
 // v5: zooming out stops before the edge of the room photo comes into view, at any left/right turn
 // (never closer than the distance that shows the whole board, so a very big custom board can still be seen)
@@ -678,7 +684,8 @@ function limitZoom() {
   if (!photoRect || sway) { controls.maxDistance = Infinity; return; }
   const R = photoRect, tgt = new THREE.Vector3(0, 0, 0.5), p = new THREE.Vector3(), W = stage.clientWidth, H = stage.clientHeight;
   probe.copy(camera);
-  if (inset.target > 0.5 && W && H) probe.setViewOffset(W, H, inset.target / 2, 0, W, H); else probe.clearViewOffset();
+  const B = dockH();
+  if ((inset.target > 0.5 || B) && W && H) probe.setViewOffset(W, H, inset.target / 2, B / 2, W, H); else probe.clearViewOffset();
   const fills = (d) => [-1, -0.5, 0, 0.5, 1].every(k => {   // turned all the way left, part way, straight on, ... right
     const a = k * TURN;
     probe.position.set(Math.sin(a) * Math.cos(PITCH), Math.sin(PITCH), Math.cos(a) * Math.cos(PITCH)).multiplyScalar(d).add(tgt);
@@ -789,6 +796,7 @@ function renderSizes() {
 
 // The cart is a bottom panel (computers and phones): tap or swipe the handle (or the cart total) up to see it; swipe down to close.
 const phone = matchMedia('(max-width: 860px)');
+const SHEETS_ONLY = () => phone.matches || V6;   // options open one at a time in a pop-up (phones; v6 everywhere)
 function setSheet(open) {
   if (open) { closeOptSheet(); if (phone.matches && !$('#lamPanel').hidden) closePicker(); }
   $('#buysheet').classList.toggle('open', open);
@@ -817,7 +825,7 @@ function setSec(sec, open) {
 function openSection(name) {
   const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
-  if (phone.matches) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
+  if (SHEETS_ONLY()) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
   if (sec.hidden) return openOptSheet(sec);                          // v2/v3: options that aren't cards open in the side sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -832,7 +840,8 @@ function openOptSheet(sec) {
   const body = sec.querySelector('.sec-b');
   body.hidden = false;
   $('#optBody').appendChild(body);
-  $('#optTitle').textContent = sec.querySelector('.sec-t').textContent;
+  const t = sec.querySelector('.sec-t');
+  $('#optTitle').textContent = t.dataset.full || t.textContent;
   $('#optIcon').innerHTML = sec.querySelector('.sec-h .i').outerHTML;
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
@@ -860,6 +869,10 @@ let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
   if (!phone.matches || fullStage()) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
+  if (V6) {                     // v6 phones: the view never shrinks; the dock and every pop-up start right under it
+    if (stageW !== innerWidth || !stageMax) { stageW = innerWidth; stageMax = Math.round(innerHeight * 0.58); root.style.setProperty('--stageMax', `${stageMax}px`); }
+    return;
+  }
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
   if (!stageMax || stageW !== innerWidth) {
     stageW = innerWidth; stageMax = Math.round(innerHeight * STAGE.max);
@@ -975,13 +988,13 @@ function updateUI() {
 function build() {
   $('#sizes').addEventListener('click', (e) => {
     const t = e.target.closest('.tile');
-    if (t) { state.sizeId = t.dataset.k; refresh(true); }
+    if (t) { state.sizeId = t.dataset.k; sizePicked = true; refresh(true); }
   });
 
   // collapsible sections
   document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
-    if (phone.matches && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
-    if (phone.matches) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
+    if (SHEETS_ONLY() && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
+    if (SHEETS_ONLY()) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
   $('#optSheet [data-close]').addEventListener('click', () => closeOptSheet());
@@ -1079,6 +1092,7 @@ function build() {
   wireLayout();
 }
 let restoredDesign = false;
+let sizePicked = false;         // v6: they tapped a size themselves, so the certificate count stops changing it
 let syncWallPhoto = () => {};   // refreshes the "Your own wall" controls (set in build)
 function clamp(v) { return Math.max(1, Math.min(96, isFinite(v) ? v : 12)); }
 
@@ -1195,6 +1209,7 @@ const MAIN = {
   v2: { none: ['size'], standard: ['size', 'color', 'caps'], custom: ['size', 'laminate', 'color', 'logo', 'bgimg'] },
   v3: ['size', 'color', 'laminate', 'edge', 'caps', 'logo', 'bgimg', 'certs', 'wall'],
   v5: ['size', 'color', 'laminate', 'edge', 'caps', 'wall'],       // phones: 3 per row, Size / Colors / Textures on top
+  v6: ['presets', 'size', 'color', 'laminate', 'edge', 'caps', 'certs', 'wall'],   // the icons in the dock, in order
 };
 function wireLayout() {
   document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });
@@ -1224,6 +1239,11 @@ function wireLayout() {
     const titles = { size: 'Size', color: 'Colors', laminate: 'Textures', edge: 'Edge Banding', caps: 'Caps & Studs', wall: 'Environment',
                      mywall: 'My Wall', certs: 'Sample Certificates', presets: 'Popular Boards' };
     for (const [k, t] of Object.entries(titles)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); if (el) el.textContent = t; }
+    if (V6) {                                                    // short names under the dock icons; the pop-up says it in full
+      const dock = { presets: 'Styles', edge: 'Edge', caps: 'Caps', certs: 'Certificates' };
+      $('.sec[data-sec="presets"] .sec-t').textContent = 'Popular Styles';
+      for (const [k, t] of Object.entries(dock)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); el.dataset.full = el.textContent; el.textContent = t; }
+    }
     $('#lnCerts .lt').firstChild.textContent = 'Sample Certificates ';
     $('.sec[data-sec="laminate"] .sec-h .i use').setAttribute('href', '#i-weave');
     $('#lamTitle').textContent = 'Textures';
@@ -1231,14 +1251,16 @@ function wireLayout() {
     const orient = $('[data-orient]').closest('.opt');
     orient.previousElementSibling?.matches('hr') && orient.previousElementSibling.remove();
     $('#sizes').before(orient);
-    // Environment: "Your own wall" first, then the preset rooms
+    // Environment: "Your own wall" first, then the preset rooms (v6: preset rooms only)
     const envB = $('.sec[data-sec="wall"] .sec-b'), envHr = envB.querySelector(':scope > hr.div'), own = [];
     for (let n = envHr.nextElementSibling; n && n.id !== 'wallColorWrap'; n = n.nextElementSibling) own.push(n);
-    envB.prepend(...own, envHr);
+    if (V6) [...own, envHr].forEach(n => { n.hidden = true; });
+    else envB.prepend(...own, envHr);
+    if (V6) wireDock();
     // Popular boards: a strip across the very top of the panel
-    $('#popStrip').append($('#presetList'));
+    if (!V6) $('#popStrip').append($('#presetList'));
     // My Wall (opened from the panel header) holds the photo results, the certificate count and their own documents
-    $('#mwSlot').append($('.certcount'), $('#ownDocs'));
+    if (!V6) $('#mwSlot').append($('.certcount'), $('#ownDocs'));
     $('#ownDocs .opt span').textContent = 'Your Documents';
     $('#ownDocs .opt + .help').textContent = 'Each document we found, with its guessed size: change a size, turn one or remove extras. Or snap and upload your real permits and licenses to see them on the board.';
     $('#docTools .lbl').hidden = true;                         // (no dragging in v5)
@@ -1258,6 +1280,19 @@ function wireLayout() {
     }));
   }
 }
+// v6: Share moves onto the 3D view; Add to cart comes before Checkout, with a ripple where it's tapped
+function wireDock() {
+  $('#stageWrap').append($('#shareBtn'));
+  $('#cartCheckout').before($('#cta'));
+  $('#cta').addEventListener('pointerdown', (e) => {
+    const b = $('#cta'), r = b.getBoundingClientRect(), s = Math.max(r.width, r.height) * 2.2, rip = document.createElement('i');
+    rip.className = 'ripple';
+    Object.assign(rip.style, { width: `${s}px`, height: `${s}px`, left: `${e.clientX - r.left - s / 2}px`, top: `${e.clientY - r.top - s / 2}px` });
+    b.append(rip);
+    rip.addEventListener('animationend', () => rip.remove());
+  });
+  $('.sec[data-sec="presets"] .help').textContent = 'Starter looks to build on. Pick one, then change anything you like. Your size and certificates stay as they are.';
+}
 // v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted
 function setPath(p) {
   state.path = p;
@@ -1272,7 +1307,7 @@ function setPath(p) {
 }
 function paintLayout(sp) {
   if (LAYOUT === 'v1') return;
-  const main = LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
+  const main = V6 ? MAIN.v6 : LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
   document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
   if (LAYOUT === 'v2') {
     document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
@@ -1289,6 +1324,13 @@ function paintLayout(sp) {
       b.setAttribute('aria-pressed', on);
       b.disabled = k !== 'sheets' && !state.art[k].img;          // nothing to show/hide until something's uploaded
     }
+  }
+  if (V6 && libraryReady && !paintLayout.lams) {                // style presets with a laminate show its swatch
+    paintLayout.lams = true;
+    document.querySelectorAll('#presetList .preset').forEach((b) => {
+      const it = STYLES[+b.dataset.p].lam && findByNumber(STYLES[+b.dataset.p].lam);
+      if (it?.thumb) b.querySelector('i').style.background = `center / cover url("${it.thumb}")`;
+    });
   }
   if (LAYOUT === 'v5') {
     // their own uploaded documents replace the samples: the samples row is greyed out
@@ -1808,7 +1850,8 @@ function wireTour() {
   });
   $('#tourDemo').addEventListener('click', () => guideScan(null));
   $('#tourLive').addEventListener('click', startCam);
-  $('#tourStart').addEventListener('click', () => setStep('snap'));
+  // v6: no photo step; Get started opens the style presets as a starting point
+  $('#tourStart').addEventListener('click', () => (V6 ? (setStep('custom'), openOptSheet($('.sec[data-sec="presets"]'))) : setStep('snap')));
   $('#tourSkipCard').addEventListener('click', () => setStep('custom'));   // computers: the welcome's Skip
   $('#tourResume').hidden = !restoredDesign;
   $('#tourResume').addEventListener('click', () => setStep('custom'));
@@ -1951,23 +1994,25 @@ function rememberDesign() {
 }
 
 function wireExtras() {
-  // popular boards
-  $('#presetList').innerHTML = PRESETS.map((p, i) => `<button type="button" class="preset" data-p="${i}"><i></i><b>${p.name}</b><small>${p.blurb}</small></button>`).join('');
+  // popular boards (v6: style presets, which change the look but keep the size)
+  const PICKS = V6 ? STYLES : PRESETS;
+  $('#presetList').innerHTML = PICKS.map((p, i) => `<button type="button" class="preset" data-p="${i}"><i></i><b>${p.name}</b><small>${p.blurb}</small></button>`).join('');
   $('#presetList').querySelectorAll('.preset').forEach((b) => {
-    const p = PRESETS[+b.dataset.p], c = p.cfg;
+    const p = PICKS[+b.dataset.p], c = p.cfg;
     b.querySelector('i').style.setProperty('--swatch', p.lam ? '#6b4a33' : colorHex(c.face));
     b.querySelector('i').style.setProperty('--edge', c.edge === 'match' ? 'transparent' : colorHex(c.edge));
   });
   $('#presetList').addEventListener('click', (e) => {
     const b = e.target.closest('.preset'); if (!b) return;
-    const p = PRESETS[+b.dataset.p];
-    applyDesign({ ...p.cfg, lam: p.lam, env: p.room || state.env });
+    const p = PICKS[+b.dataset.p];
+    applyDesign(V6 ? { ...p.cfg, lam: p.lam || null } : { ...p.cfg, lam: p.lam, env: p.room || state.env });
     closeOptSheet();
     toast(`${p.name}: change anything you like from here.`);
   });
-  // how many certificates
+  // how many certificates (v6: the board follows the best fit until they pick a size themselves)
   document.querySelectorAll('[data-cc]').forEach(b => b.addEventListener('click', () => {
     state.certNeed = Math.max(0, Math.min(40, state.certNeed + +b.dataset.cc));
+    if (V6 && !sizePicked && state.certNeed && !state.myCerts.length) return useBestFit(), rememberDesign();
     updateUI(); rememberDesign();
   }));
   $('#certAdvice').addEventListener('click', (e) => { if (e.target.closest('#useFit')) useBestFit(); });
@@ -2108,6 +2153,7 @@ fetch(new URL(LAMINATE.libraryUrl, SITE), { cache: 'no-cache' })
     pendingLam = null;
     if (want) { selectLam(findByNumber(want) || unknownLam(want, '#bdbdbd'), true); }
     if (!$('#lamPanel').hidden) renderPicker();
+    if (V6) paintLayout();                                             // (the style presets' laminate swatches)
   });
 
 const findByNumber = (n) => library.find(it => it.n.toLowerCase() === String(n).trim().toLowerCase());
@@ -2176,7 +2222,7 @@ function renderPicker() {
 
 // The picker is a side panel, not a pop-up: the board stays visible, so each pick shows on it right away.
 function openPicker() {
-  if (phone.matches) { closeOptSheet(true); setSheet(false); markActive('laminate'); }
+  if (SHEETS_ONLY()) { closeOptSheet(true); setSheet(false); markActive('laminate'); }
   $('#lamPanel').hidden = false;
   $('#lamBtn').setAttribute('aria-expanded', 'true');
   if (!phone.matches) setInset($('#lamPanel').getBoundingClientRect().width);   // slide the board out from under the panel

@@ -1,22 +1,24 @@
 // Run after editing index.html (and before each push):  node tools/make-versions.js
-// Builds v2/ to v5/index.html from index.html: same page, a different data-layout (which turns on that
-// version's layout in js/main.js), and paths fixed to work one folder down. Never edit v2/ or v3/ by hand.
+// Builds v2/ to v6/index.html from index.html: same page, a different data-layout (which turns on that
+// version's layout in js/main.js), and paths fixed to work one folder down. Never edit v2/ to v6/ by hand.
+// v6 is v5 plus data-v6 (the floating icon dock, no wall scan), so it keeps every v5 feature it doesn't change.
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const names = { v2: 'Standard or custom', v3: 'All options, priced', v4: 'Guided, photo first', v5: 'Auto-suggest' };
+const names = { v2: 'Standard or custom', v3: 'All options, priced', v4: 'Guided, photo first', v5: 'Auto-suggest', v6: 'Floating dock' };
 
-for (const v of ['v2', 'v3', 'v4', 'v5']) {
+for (const v of ['v2', 'v3', 'v4', 'v5', 'v6']) {
+  const lay = v === 'v6' ? 'v5" data-v6="' : v;
   let html = src
-    .replace('<html lang="en" data-layout="v1">', `<html lang="en" data-layout="${v}"${v === 'v4' || v === 'v5' ? ' data-step="intro"' : ''}>`)
+    .replace('<html lang="en" data-layout="v1">', `<html lang="en" data-layout="${lay}"${v === 'v4' || v === 'v5' || v === 'v6' ? ' data-step="intro"' : ''}>`)
     .replace(/"\.\/vendor\//g, '"../vendor/')
     .replace(/src="\.\/js\//g, 'src="../js/')
     .replace(/src="img\//g, 'src="../img/')
     .replace(/<title>(.*?)<\/title>/, `<title>$1 (${v}: ${names[v]})</title>`);
   html = `<!-- GENERATED from ../index.html by tools/make-versions.js. Edit index.html, not this file. -->\n${html}`;
-  if (!html.includes(`data-layout="${v}"`)) throw new Error(`index.html is missing <html lang="en" data-layout="v1">`);
+  if (!html.includes(`data-layout="${lay}"`)) throw new Error(`index.html is missing <html lang="en" data-layout="v1">`);
   fs.mkdirSync(path.join(root, v), { recursive: true });
   fs.writeFileSync(path.join(root, v, 'index.html'), html);
   console.log(`${v}/index.html written`);
