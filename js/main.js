@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610282205';   // ?v= stamped by tools/stamp-version.js
-import { wallTexture, wallSwatch } from './env.js?v=202610282205';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610282228';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments } from './scan.js?v=202610282228';
+import { wallTexture, wallSwatch } from './env.js?v=202610282228';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -466,7 +467,8 @@ function buildBoard() {
   lastDocs = state.myCerts.length ? packDocs(w, h, state.myCerts) : null;
   if (state.sheets && lastDocs) {
     for (const r of lastDocs.places) {
-      const mat = new THREE.MeshStandardMaterial({ map: ownCertTexture(state.myCerts[r.i], r.w, r.h), roughness: 0.8 });
+      const d = state.myCerts[r.i];   // a photo of their own document, or a sample sized from their wall photo
+      const mat = new THREE.MeshStandardMaterial({ map: d.sample ? certificateTexture(r.w, r.h, d.title) : ownCertTexture(d, r.w, r.h), roughness: 0.8 });
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
       p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; p.userData.doc = r.i; root.add(p);
     }
@@ -1206,6 +1208,60 @@ function packDocs(W, H, docs) {
   }
   return P;
 }
+// "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
+async function scanWall(file) {
+  const tmp = {};
+  try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
+  const found = sizeDocuments(findDocuments(tmp.img), DOC_SIZES);
+  // preview: the photo with a numbered box around each document found
+  const cv = $('#scanCanvas'), k = 640 / Math.max(tmp.img.width, tmp.img.height);
+  cv.width = Math.round(tmp.img.width * k); cv.height = Math.round(tmp.img.height * k);
+  const g = cv.getContext('2d'); g.drawImage(tmp.img, 0, 0, cv.width, cv.height);
+  g.lineWidth = 3; g.font = 'bold 16px system-ui, sans-serif';
+  found.forEach((f, i) => {
+    const b = f.box;
+    g.strokeStyle = '#2e7d4f'; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k);
+    g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, 24, 22); g.fillStyle = '#fff'; g.fillText(i + 1, b.x * k + 7, b.y * k + 17);
+  });
+  $('#scanResult').hidden = false;
+  if (!found.length) {
+    $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
+    return;
+  }
+  const counts = {};
+  for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
+  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}. Wrong? Change sizes or remove extras under Sample certificates.`;
+  state.myCerts = found.map((f, i) => {
+    const s = DOC_SIZES.find(x => x.id === f.size);
+    const d = { sample: true, title: SHEETS.titles[i % SHEETS.titles.length], size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
+    d.thumb = certificateTexture(f.turn ? s.h : s.w, f.turn ? s.w : s.h, d.title).image.toDataURL('image/jpeg', 0.5);
+    return d;
+  });
+  state.sheets = true; $('#sheets').checked = true;
+  docsKey = '';
+  useBestFit();
+  toast(`Found ${found.length} document${found.length === 1 ? '' : 's'}. Here's a board that fits them.`);
+}
+
+// "See an example" (also ?scan=demo): a drawn photo of a wall with 6 certificates, run through the same scan
+async function scanExample() {
+  const W = 1600, H = 1200, ppi = 22, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), rnd = rng(3);
+  g.fillStyle = '#8c9a86'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 30000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * 0.06})`; g.fillRect(rnd() * W, rnd() * H, 3, 3); }
+  const docs = [[90, 110, 8.5, 11, '#1b3a6b'], [330, 110, 8.5, 11, '#b3261e'], [590, 130, 8.5, 11, '#2c6e49', 1], [90, 420, 8.5, 11, '#6b4a33'], [860, 100, 11, 17, '#1b3a6b'], [1150, 380, 18, 24, '#c27c0e']];
+  for (const [x, y, w, h, head, frame] of docs) {
+    const pw = w * ppi, ph = h * ppi;
+    if (frame) { g.fillStyle = '#2a2420'; g.fillRect(x - 18, y - 18, pw + 36, ph + 36); }
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x + 6, y + 8, pw, ph);
+    g.fillStyle = '#f6f3ec'; g.fillRect(x, y, pw, ph);
+    g.fillStyle = head; g.fillRect(x + pw * 0.08, y + ph * 0.06, pw * 0.84, ph * 0.08);
+    g.fillStyle = '#9a9a9a'; for (let yy = y + ph * 0.22; yy < y + ph * 0.9; yy += ph * 0.045) g.fillRect(x + pw * 0.1, yy, pw * 0.8 * (0.6 + rnd() * 0.4), ph * 0.012);
+  }
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+  await scanWall(new File([blob], 'example-wall.jpg', { type: 'image/jpeg' }));
+}
+
 // "Try it with examples" (also ?docs=demo): a labor-law poster plus two permits, drawn on the spot
 function loadExampleDocs() {
   const make = (w, h, color, title, lines) => {
@@ -1237,6 +1293,7 @@ function bestFitDocs() {
   if (best) return best;
   let c = null;
   for (let a = 12; a <= CUSTOM.maxShort; a += 2) for (let b = a; b <= CUSTOM.maxLong; b += 2) {
+    if (b / a > 1.6) break;                   // keep custom boards a normal shape (no 20 x 70 strips)
     if ((!c || a * b < c.w * c.h)) { if (docsFit(a, b)) c = { custom: true, w: a, h: b }; else if (docsFit(b, a)) c = { custom: true, w: b, h: a }; }
   }
   return c || { custom: true, tooBig: true };
@@ -1366,6 +1423,8 @@ function wireExtras() {
   $('#certClear').addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
   $('#docAuto').addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
   $('#docDemo').addEventListener('click', loadExampleDocs);
+  $('#scanDemo').addEventListener('click', scanExample);
+  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) await scanWall(f); });
   const list = $('#docList');
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
@@ -1896,6 +1955,7 @@ loop();
 renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + volume-discount hint
 if (restoredDesign) toast('Welcome back! We restored your last design.');
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
+if (new URLSearchParams(location.search).get('scan') === 'demo') scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)
 const peek = new URLSearchParams(location.search).get('peek');
 if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);

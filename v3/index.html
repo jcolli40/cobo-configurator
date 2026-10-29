@@ -190,6 +190,11 @@
   /* how many certificates */
   .certcount { background: var(--tint); border-radius: 12px; padding: 4px 12px 10px; display: grid; gap: 2px; }
   .certcount .help b { color: var(--accent); }
+  .scanrow { margin-top: 6px; }
+  .scanrow .upload { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .scanup { position: relative; cursor: pointer; font-size: 12.5px; }
+  .scanres { display: grid; gap: 6px; margin-top: 6px; }
+  .scanres canvas { width: 100%; height: auto; border-radius: 10px; display: block; }
   .tile.rec { position: relative; border-color: #2e7d4f; }
   .tile.rec::after { content: "Best fit"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #2e7d4f; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
   .tile.nofit { opacity: .45; }
@@ -469,6 +474,13 @@
               <div class="opt"><svg class="i"><use href="#i-cert"/></svg><span>How many certificates?</span>
                 <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer">−</button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more">+</button></span></div>
               <p class="help" id="certAdvice">Tell us how many 8.5×11 documents you need to display, and we'll suggest the size that fits.</p>
+              <div class="row scanrow">
+                <label class="upload"><input type="file" accept="image/*" capture="environment" id="scanCam"><svg class="i"><use href="#i-camera"/></svg>Snap your wall</label>
+                <label class="link scanup"><input type="file" accept="image/*" id="scanFile" style="position:absolute;opacity:0;width:1px;height:1px">or upload a photo</label>
+                <button class="link scanup" type="button" id="scanDemo">see an example</button>
+              </div>
+              <p class="help" style="margin:0">Photograph the certificates you have up now. We'll count them, guess their sizes and fill a board with samples.</p>
+              <div class="scanres" id="scanResult" hidden><canvas id="scanCanvas"></canvas><p class="help" id="scanText"></p></div>
             </div>
             <div id="sizes"></div>
             <div id="customBox" hidden>
@@ -747,6 +759,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610282205" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610282228" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
