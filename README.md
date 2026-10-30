@@ -102,7 +102,7 @@ You can also link straight to a laminate: `.../cobo-configurator/?size=24x36&lam
 - **Variant IDs.** Only the 12x24 board's IDs are filled in (they were readable on the live site). For the other five sizes, add each size's color → variant ID the same way. In Shopify admin, open a product, click a variant, and the number at the end of the URL is the ID. Until a combination has an ID, the button shows a friendly "not linked yet" message instead of failing.
 - **The missing colors.** The site says "10 colors" but only names seven (Black, White, Red, Forest Green, Orange, Yellow, Raw). I added Light Blue because it appears in your product image filenames. Add the rest to the `COLORS` list as `{ name: '…', hex: '#…' }`. Use the exact Shopify variant name.
 - **Custom boards** show "Request a quote" (opens an email to support@complianceboards.com with the spec) because the site has no custom pricing. Tell me the pricing rule and I will add a live estimate.
-- **Cap & finish pricing.** Right now the finish choice (brushed aluminum / brushed chrome / gloss black) does not change the price.
+- **Cap & finish pricing.** All three finishes (silver / black / brass) are the same price.
 
 ## Assumptions baked into the model (change in `HW` in `config.js` if wrong)
 

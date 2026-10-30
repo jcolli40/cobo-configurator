@@ -273,6 +273,8 @@
   .qty button { border: 0; background: none; width: 26px; height: 100%; font-size: 16px; cursor: pointer; color: var(--muted); }
   .qty span { min-width: 22px; text-align: center; font-size: 13.5px; font-variant-numeric: tabular-nums; }
   .cart-foot { font-size: 13px; }
+  #cartView2 { display: none; }
+  @media (min-width: 861px) { [data-v6] #cartView2:not([hidden]) { display: block; } }
   .editbar { font-size: 12.5px; color: var(--accent); background: var(--tint); padding: 6px 16px; }
   .buybar { padding: 6px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
   .tot { border: 0; background: none; text-align: left; cursor: pointer; padding: 0; display: grid; line-height: 1.15; }
@@ -671,7 +673,17 @@
   /* one way in: a big "Start ›" button (Build comes first) */
   [data-v6] .t-acts { grid-template-columns: 1fr; }
   [data-v6] .t-acts > .t-go { display: flex; justify-content: center; gap: 8px; min-height: 58px; padding: 12px 24px; border-radius: 999px; font-size: 18px; }
-  [data-v6] .t-acts > .t-go .i { width: 22px; height: 22px; }
+  [data-v6] .t-acts > .t-go .i { width: 22px; height: 22px; animation: nudge 1.8s ease-in-out infinite; }   /* the arrow drifts right and back */
+  @keyframes nudge { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(5px); } }
+  @media (prefers-reduced-motion: reduce) { [data-v6] .t-acts > .t-go .i { animation: none; } }
+  /* v7: the three steps as a numbered list, like the step bar */
+  .t-steps { display: none; }
+  [data-v7] .t-steps { display: grid; justify-self: stretch; gap: 10px; margin: 2px 0 4px; padding: 0; list-style: none; text-align: left; }
+  [data-v7] .t-steps li { display: grid; grid-template-columns: 28px 1fr; align-items: start; gap: 12px; padding: 6px 0; font-size: 15.5px; line-height: 1.35; color: #3d3d45; }
+  /* the number sits level with the first line of its text */
+  [data-v7] .t-steps b { display: grid; place-items: center; width: 28px; height: 28px; margin-top: calc((1.35em - 28px) / 2); border-radius: 50%; background: var(--accent); color: #fff; font-size: 14px; }
+  [data-v7] .t-steps strong { color: var(--accent); }
+  [data-v7] .t-card .t-sub { display: none; }
   [data-v6] .t-acts > .t-skip { display: none !important; }
   [data-v6].dmini .popcall span { display: none; }
   [data-v6] .t-card h1 { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
@@ -857,6 +869,17 @@
   /* sample certificates: how many of each paper size */
   .mixhead { margin: 0; font-weight: 700; }
   .mixrows { display: grid; gap: 6px; }
+  /* samples switched off: the counters fade (pressing + turns them back on) */
+  .certcount.off :is(.mixhead, .opt.mix, #certAdvice) { opacity: .45; transition: opacity .2s; }
+  /* more documents than any standard board holds: an amber "custom board, quote needed" note, and an amber count */
+  .quotenote { display: none; }
+  [data-v6] .quotenote:not([hidden]) { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 12px 14px; border: 1.5px solid #f0b44c; border-radius: 14px; background: #fff4e0; color: #6b4200; font-size: 13.5px; line-height: 1.4; animation: tIn .3s ease both; }
+  [data-v6] .quotenote .qn-i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #e08a00; color: #fff; font-size: 15px; font-weight: 800; }
+  [data-v6] .quotenote span > b { display: block; margin-bottom: 2px; font-size: 14.5px; color: #5a3700; }
+  [data-v6] .p-body .sec-h .up.docn.quote { padding: 1px 9px; border-radius: 999px; background: #fff0d4; color: #a35f00; box-shadow: inset 0 0 0 1.5px #f0b44c; }
+  /* Documents: the count (or +) on the right, like Size; a lone + reads as a button */
+  [data-v6] .p-body .sec-h .up.docn { font-size: 13.5px; }
+  [data-v6] .p-body .sec-h .up.docn:not(:empty) { min-width: 1ch; }
   .mixrows[hidden] { display: none; }
   .opt.mix { min-height: 40px; }
   /* each size: upright | sideways, left of its counter */
@@ -875,20 +898,30 @@
   .coach { position: fixed; inset: 0; z-index: 60; }
   .coach[hidden] { display: none; }
   .coach.nospot { background: rgba(12, 20, 36, .3); }
-  .coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(12, 20, 36, .55); outline: 2px solid #fff; transition: left .45s ease, top .45s ease, width .45s ease, height .45s ease, opacity .3s; pointer-events: none; }
-  .coach.nospot .coach-spot { opacity: 0; }
-  .coach-tip { position: fixed; width: min(330px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 16px 16px 14px; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .32); transition: left .45s ease, top .45s ease; }
+  .coach-dim { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .coach-shade { fill: rgba(12, 20, 36, .55); transition: fill .3s; }
+  .coach.nospot .coach-shade { fill: rgba(12, 20, 36, .3); }
+  .coach-bar .cpause { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: #f0f0f3; color: var(--accent); cursor: pointer; flex: none; }
+  .coach-bar .cpause:hover { background: var(--tint); }
+  .coach-bar .cpause .i { width: 16px; height: 16px; }
+  .coach-tip { position: fixed; width: min(380px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 16px 16px 14px; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .32); transition: left .45s ease, top .45s ease; }
   .coach-tip.swap > :not(.coach-prog) { animation: tIn .35s ease both; }
   .coach-k { margin: 0; font-size: 11.5px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .coach-t { font-size: 19px; line-height: 1.2; color: var(--accent); }
   .coach-s { font-size: 14px; line-height: 1.45; color: var(--ink); }
   .coach-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-  .coach-dots { display: flex; gap: 5px; margin-right: auto; }
+  .coach-dots { display: flex; gap: 4px; margin: 0 auto 0 2px; min-width: 0; }
+  .coach-bar button { white-space: nowrap; flex: none; }
+  .coach-tip > * { min-width: 0; }
+  .coach-bar { min-width: 0; }
+  .coach-dots { flex: 1 1 auto; overflow: hidden; }
+  .coach-bar .skip[hidden] { display: none; }
   .coach-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .25s, background .25s; }
   .coach-dots i.on { width: 18px; background: var(--accent); }
   .coach-dots i.done { background: var(--tint-2); }
   .coach-bar .skip { border: 0; background: none; padding: 9px 10px; border-radius: 999px; font: inherit; font-size: 13.5px; color: var(--muted); cursor: pointer; }
   .coach-bar .skip:hover { background: var(--hover); }
+  .coach-bar .skip:disabled { opacity: .35; cursor: default; background: none; }
   .coach-bar .next { border: 0; padding: 9px 18px; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
   .coach-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--tint-2); transform-origin: left; transform: scaleX(0); }
   .coach-prog.run { animation: coachProg var(--d, 4s) linear forwards; }
@@ -903,7 +936,7 @@
   [data-v6] .helpbtn:hover { background: var(--tint); }
   [data-v6] .hint { left: 64px; top: 18px; }
   .coach-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .coach-spot, .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
   /* the white studio: a soft vignette at the edges for depth */
   #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
   /* sketch icons (?icons=sketch) */
@@ -918,12 +951,11 @@
     /* the options column: middle right (clear of the room picker above and the cart below) */
     [data-v6] .p-body { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); width: 236px; flex-direction: column; max-height: calc(100vh - 152px); overflow-y: auto; transition: width .2s ease; }
     [data-v6] .p-body .sec { width: auto; }
-    [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 9px 14px 9px 12px; text-align: left; }
+    [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 19px 14px 19px 12px; text-align: left; }   /* 20px taller than before */
     [data-v6] .p-body .sec-h > .i:first-child { grid-row: 1; align-self: center; }
-    [data-v6] .p-body .sec-h:has(.up.size:not([hidden])) > .i:first-child { grid-row: 1 / span 2; }
     [data-v6] .p-body .sec-t { font-size: 13.5px; line-height: 1.25; }
     [data-v6] .p-body .sec-h .up { grid-column: 3; grid-row: 1; justify-self: end; font-size: 11.5px; }   /* upcharge: right of the name */
-    [data-v6] .p-body .sec-h .up.size { grid-column: 2; grid-row: 2; justify-self: start; }               /* the size: under it */
+    [data-v6] .p-body .sec-h .up.size { grid-column: 3; grid-row: 1; justify-self: end; font-size: 13.5px; }   /* the size: right of the name, same line */
     [data-v6] .dockhead { display: block; margin: 8px 12px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
     [data-v6] .dockhead[hidden], [data-v6] .p-body .sec[data-sec="boardgrp"] { display: none !important; }
     /* an option slides out to the left of the column, full height (like the Wilsonart panel) */
@@ -953,6 +985,12 @@
     [data-v6] .buybar { grid-template-columns: 1fr; padding: 0 12px 12px; }
     [data-v6] .buybar :is(.tot, #cta) { display: none; }
     [data-v6] .buybar:not(:has(#cartCheckout:not([hidden]))) { display: none; }
+    /* the open cart's two buttons side by side: View full cart | Checkout */
+    [data-v6] .buybar:has(#cartView2:not([hidden])) { grid-template-columns: 1fr 1fr; gap: 10px; }
+    [data-v6] .buysheet #cartCheckout { background: var(--accent); border-color: var(--accent); color: #fff; }
+    [data-v6] .buysheet #cartCheckout:hover { filter: brightness(1.15); }
+    [data-v6] .buysheet #cartView2 { height: auto; min-height: 50px; }
+    [data-v6] #cartView { display: none; }
     [data-v6] .buysheet.pop { animation: cartPop .5s ease; }
     @keyframes cartPop { 0% { transform: scale(.92); } 50% { transform: scale(1.03); } 100% { transform: none; } }
     /* collapse the column to icons */
@@ -960,7 +998,8 @@
     [data-v6].dmini .dockmini { padding: 0; }
     [data-v6].dmini .dm-t { display: none; }
     /* the column's foot: more room above "Your board"; the price in medium weight */
-    [data-v6] .colbuy { padding-top: 25px; }
+    [data-v6] .colbuy { padding-top: 25px; row-gap: 20px; }   /* 20px between the price and Add to cart */
+    [data-v6] .stepbar { margin-bottom: 20px; }                /* 20px under the steps */
     [data-v6] .colbuy b { font-weight: 500; }
     [data-v6] .buysheet.open .grab .gtxt { font-size: 16px; font-weight: 750; color: var(--accent); }
     [data-v6] .dockmini:hover { background: var(--hover); color: var(--ink); }
@@ -1082,6 +1121,8 @@
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
   <symbol id="i-tall" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="1.6"/></symbol>
   <symbol id="i-wide" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1.6"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></symbol>
@@ -1423,6 +1464,7 @@
       <div class="editbar" id="editBar" hidden>Editing a board in your cart · <button class="link" type="button" id="cancelEdit">Cancel</button></div>
       <div class="buybar">
         <button class="tot" id="cartTotBtn" type="button" aria-controls="sheetBody"><small>Cart total</small><b id="cartTotal">$0.00</b></button>
+        <button id="cartView2" class="ghost cview" type="button" hidden>View full cart</button>
         <button id="cartCheckout" class="ghost" type="button" hidden>Checkout</button>
         <button id="cta" type="button"><span id="ctaLabel">Add to cart</span><small id="price"></small></button>
       </div>
@@ -1504,12 +1546,12 @@
 
 <!-- v6: the animated tutorial. A dimmed screen with a "spotlight" on the control each step is about, and a tip card -->
 <div class="coach" id="coach" hidden>
-  <div class="coach-spot" aria-hidden="true"></div>
+  <svg class="coach-dim" aria-hidden="true"><defs><mask id="coachMask"><rect width="100%" height="100%" fill="#fff"/><g id="coachHoles"></g></mask></defs><rect class="coach-shade" width="100%" height="100%" mask="url(#coachMask)"/><g id="coachRings"></g></svg>
   <div class="coach-tip" role="dialog" aria-modal="true" aria-labelledby="coachT">
     <p class="coach-k" id="coachK"></p>
     <b class="coach-t" id="coachT"></b>
     <span class="coach-s" id="coachS" aria-live="polite"></span>
-    <div class="coach-bar"><span class="coach-dots" id="coachDots" aria-hidden="true"></span>
+    <div class="coach-bar"><button class="cpause" type="button" id="coachPause" aria-pressed="false" aria-label="Pause" title="Pause"><svg class="i"><use href="#i-pause"/></svg></button><button class="skip" type="button" id="coachBack">Back</button><span class="coach-dots" id="coachDots" aria-hidden="true"></span>
       <button class="skip" type="button" id="coachSkip">Skip</button><button class="next" type="button" id="coachNext">Next</button></div>
     <i class="coach-prog" aria-hidden="true"></i>
   </div>
@@ -1624,6 +1666,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610301333" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610301533" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

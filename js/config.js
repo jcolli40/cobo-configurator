@@ -31,9 +31,9 @@ export const COLORS = [
 
 // ---- Fastener (1" dia aluminum cap) finishes ----
 export const FASTENERS = [
-  { id: 'alum',   name: 'Brushed Aluminum', color: '#c8cbd0', metal: 1.0, rough: 0.42, brushed: true },
-  { id: 'chrome', name: 'Brushed Chrome',   color: '#eef0f2', metal: 1.0, rough: 0.24, brushed: true },
-  { id: 'black',  name: 'Gloss Black',      color: '#0b0b0c', metal: 0.65, rough: 0.12, brushed: false },
+  { id: 'chrome', name: 'Silver',           color: '#eef0f2', metal: 1.0, rough: 0.24, brushed: true },
+  { id: 'black',  name: 'Black',            color: '#0b0b0c', metal: 0.65, rough: 0.12, brushed: false },
+  { id: 'brass',  name: 'Brass',            color: '#e6cd82', metal: 1.0, rough: 0.3, brushed: true },   // (replaced Brushed Aluminum, Oct 2026)
 ];
 
 // Viewer background (the wall behind the board in the 3D preview; not part of the product)
@@ -45,10 +45,10 @@ export const WALLS = [
 
 // ---- Popular boards: one-tap starting points (lam = Wilsonart design number; room = a room id below) ----
 export const PRESETS = [
-  { name: 'Restaurant classic', blurb: '24×36 · Black · chrome caps', cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'chrome' }, room: 'bistro' },
-  { name: 'Front desk',         blurb: '12×24 · White · aluminum',    cfg: { sizeId: '12x24', orient: 'portrait', face: 'White', edge: 'Black', fastener: 'alum' }, room: 'office' },
+  { name: 'Restaurant classic', blurb: '24×36 · Black · silver caps', cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'chrome' }, room: 'bistro' },
+  { name: 'Front desk',         blurb: '12×24 · White · silver',    cfg: { sizeId: '12x24', orient: 'portrait', face: 'White', edge: 'Black', fastener: 'chrome' }, room: 'office' },
   { name: 'Kitchen line',       blurb: '24×24 · Black · black caps',  cfg: { sizeId: '24x24', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'black' }, room: 'kitchen' },
-  { name: 'Café',               blurb: '12×36 wide · Forest Green',   cfg: { sizeId: '12x36', orient: 'landscape', face: 'Forest Green', edge: 'match', fastener: 'alum' }, room: 'casual' },
+  { name: 'Café',               blurb: '12×36 wide · Forest Green',   cfg: { sizeId: '12x36', orient: 'landscape', face: 'Forest Green', edge: 'match', fastener: 'brass' }, room: 'casual' },
   { name: 'Fine dining',        blurb: '24×36 · woodgrain laminate',  cfg: { sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'Black', fastener: 'black' }, lam: 'Y0822', room: 'dining' },
 ];
 
@@ -58,13 +58,13 @@ export const PRESETS = [
 // base = a head start (or handicap) on every wall. Boards that contrast with the wall also get a boost (see rankLooks
 // in main.js). Add, remove or reorder freely; the order here is used when there's no photo.
 export const STYLES = [
-  { name: 'Classic black',  blurb: 'Black · chrome caps',               cfg: { face: 'Black', edge: 'match', fastener: 'chrome' },        suits: { light: 1,    warm: 0,    colorful: 0.5 }, base: 0.5 },
+  { name: 'Classic black',  blurb: 'Black · silver caps',               cfg: { face: 'Black', edge: 'match', fastener: 'chrome' },        suits: { light: 1,    warm: 0,    colorful: 0.5 }, base: 0.5 },
   { name: 'Warm walnut',    blurb: 'Java Cane woodgrain · black caps',   cfg: { face: 'Black', edge: 'Black', fastener: 'black' }, lam: 'Y0822', suits: { light: 0.5, warm: 1.5, colorful: -0.5 }, base: 0.3 },
-  { name: 'Gallery white',  blurb: 'White · black edge · aluminum',      cfg: { face: 'White', edge: 'Black', fastener: 'alum' },          suits: { light: -1,   warm: 0,    colorful: 0.5 } },
+  { name: 'Gallery white',  blurb: 'White · black edge · silver',        cfg: { face: 'White', edge: 'Black', fastener: 'chrome' },          suits: { light: -1,   warm: 0,    colorful: 0.5 } },
   { name: 'Iron stone',     blurb: 'Iron Strata stone · black caps',     cfg: { face: 'Black', edge: 'Black', fastener: 'black' }, lam: '5084',  suits: { light: 0.5, warm: -1.5, colorful: -0.5 } },
-  { name: 'Forest green',   blurb: 'Forest Green · aluminum caps',       cfg: { face: 'Forest Green', edge: 'match', fastener: 'alum' },   suits: { light: 0.5,  warm: 1,    colorful: -1 } },
-  { name: 'Deep navy',      blurb: 'Ceramic Blue · chrome caps',         cfg: { face: 'Black', edge: 'Black', fastener: 'chrome' }, lam: 'Y0745', suits: { light: 1, warm: 1,  colorful: -0.5 } },
-  { name: 'Ivory stone',    blurb: 'Ivory Terrene · aluminum caps',      cfg: { face: 'White', edge: 'White', fastener: 'alum' }, lam: '5075',  suits: { light: -1,  warm: -0.5, colorful: 0 } },
+  { name: 'Forest green',   blurb: 'Forest Green · brass caps',          cfg: { face: 'Forest Green', edge: 'match', fastener: 'brass' },   suits: { light: 0.5,  warm: 1,    colorful: -1 } },
+  { name: 'Deep navy',      blurb: 'Ceramic Blue · silver caps',         cfg: { face: 'Black', edge: 'Black', fastener: 'chrome' }, lam: 'Y0745', suits: { light: 1, warm: 1,  colorful: -0.5 } },
+  { name: 'Ivory stone',    blurb: 'Ivory Terrene · brass caps',         cfg: { face: 'White', edge: 'White', fastener: 'brass' }, lam: '5075',  suits: { light: -1,  warm: -0.5, colorful: 0 } },
   { name: 'Natural raffia', blurb: 'Natural Raffia texture · black edge', cfg: { face: 'White', edge: 'Black', fastener: 'black' }, lam: 'Y0823', suits: { light: -0.5, warm: 1, colorful: -0.5 } },
   { name: 'Industrial raw', blurb: 'Raw wood · black edge · black caps', cfg: { face: 'Raw (unfinished)', edge: 'Black', fastener: 'black' }, suits: { light: 0, warm: -1,   colorful: -1 } },
   { name: 'Bold red',       blurb: 'Red · black edge · black caps',      cfg: { face: 'Red', edge: 'Black', fastener: 'black' },            suits: { light: 1,    warm: -0.5, colorful: -0.6 }, base: -0.3 },
@@ -77,7 +77,7 @@ export const UPCHARGES = {
   customColor: 25,                         // any color outside the stock list
   laminate: { '6x12': 20, '12x12': 30, '12x24': 45, '12x36': 60, '24x24': 75, '24x36': 95, custom: 95 },   // Wilsonart laminate face ("Textures")
   edgeCustom: 10,                          // edge banding in a non-stock color (stock colors are included)
-  caps: { alum: 0, chrome: 8, black: 8 },  // per board (4 caps)
+  caps: { chrome: 0, black: 0, brass: 0 },  // per board (4 caps): every finish is the same price
   logo: 45,                                // printed logo
   background: 75,                          // printed background image
 };
