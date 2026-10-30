@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610301533';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610301533';
-import { wallTexture, wallSwatch } from './env.js?v=202610301533';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610301911';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610301911';
+import { wallTexture, wallSwatch } from './env.js?v=202610301911';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -35,6 +35,8 @@ const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
 //   style presets instead of popular boards, no wall photo scan (the certificate count sizes the board)
 const V6 = 'v6' in document.documentElement.dataset;
 const V7 = 'v7' in document.documentElement.dataset;   // v7 = v6 without popular designs
+// ?embed=morph: only the welcome's morphing board, for the store's home page (no controls, no saving, no messages)
+const EMBED = new URLSearchParams(location.search).get('embed') === 'morph';
 // v6: three steps, Build › Style › Preview. Each shows only its own options in the dock (the room picker sits on the
 // 3D view the whole time). Build starts with the customer's documents because the size depends on them.
 // Style: computers list Solid Colors and Textures & Patterns under a "Board style" heading; phones show Board | Edge |
@@ -102,7 +104,7 @@ function dims() {
 
 /* ------------------------------------------------------------------ three setup */
 const stage = $('#stage');
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: EMBED, preserveDrawingBuffer: true });   // (the embed: see-through around the board)
 renderer.setPixelRatio(new URLSearchParams(location.search).get('lowfx') ? 1 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.toneMapping = THREE.NeutralToneMapping;   // keeps board colors true to their hex values (ACES washed them out)
 renderer.toneMappingExposure = 1.0;
@@ -654,7 +656,8 @@ function buildBoard() {
   const wallG = new THREE.Group();
   wallG.name = 'wall'; wallG.position.z = -(D + 2 * t); wallG.visible = state.view !== 'back';
   const E = envNow();
-  const wallMat = E.wall === 'color' || E.wall.photo
+  const wallMat = EMBED ? new THREE.ShadowMaterial({ opacity: 0.22 })   // (the embed: only the board's shadow shows)
+    : E.wall === 'color' || E.wall.photo
     ? new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 })
     : new THREE.MeshStandardMaterial({ map: wallTexture(E.wall.tex, E.wall.color, 400), roughness: E.wall.tex === 'steel' ? 0.45 : E.wall.tex === 'subway' ? 0.35 : 0.9, metalness: E.wall.tex === 'steel' ? 0.6 : 0 });
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), wallMat);
@@ -708,8 +711,8 @@ function buildBoard() {
   sc.left = -s; sc.right = s; sc.top = s; sc.bottom = -s; sc.near = 0.5; sc.far = R * 6; sc.updateProjectionMatrix();
   applyRoomLight(w, h);
 
-  scene.background = new THREE.Color(state.view === 'back' ? '#d7d7d9' : wallHex());
-  needBgSample = true;
+  scene.background = EMBED ? null : new THREE.Color(state.view === 'back' ? '#d7d7d9' : wallHex());
+  needBgSample = !EMBED;
   dirty = true;
   limitZoom();
   updateUI();
@@ -809,8 +812,8 @@ function setView(view, instant = false) {
   const { pos, tgt } = viewTarget(view);
   const wall = root.getObjectByName('wall');
   if (wall) wall.visible = view !== 'back';
-  scene.background = new THREE.Color(view === 'back' ? '#d7d7d9' : wallHex());
-  needBgSample = true;
+  scene.background = EMBED ? null : new THREE.Color(view === 'back' ? '#d7d7d9' : wallHex());
+  needBgSample = !EMBED;
   if (instant) { camera.position.copy(pos); controls.target.copy(tgt); lockAngles(view); controls.update(); }
   else { unlockAngles(); tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: tgt }; }
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
@@ -1542,8 +1545,8 @@ function wireSteps() {
   rows.innerHTML = MIX_SIZES.map(id => {
     const s = DOC_SIZES.find(x => x.id === id), name = `${s.name} ${fmt(s.w)}×${fmt(s.h)}`;
     return `<div class="opt mix"><span>${s.name} <small>${fmt(s.w)}×${fmt(s.h)}</small></span>${rotBtn(id, s.name)}<span class="qty" role="group" aria-label="${name} samples">`
-      + `<button type="button" data-mix="${id}" data-d="-1" aria-label="One fewer ${s.name}">−</button><span data-mixn="${id}">0</span>`
-      + `<button type="button" data-mix="${id}" data-d="1" aria-label="One more ${s.name}">+</button></span></div>`;
+      + `<button type="button" data-mix="${id}" data-d="-1" aria-label="One fewer ${s.name}"><svg class="i"><use href="#i-minus"/></svg></button><span data-mixn="${id}">0</span>`
+      + `<button type="button" data-mix="${id}" data-d="1" aria-label="One more ${s.name}"><svg class="i"><use href="#i-plus"/></svg></button></span></div>`;
   }).join('') + '<p class="help warn" id="mixMiss" role="status"></p>';
   letter.after(rows);
   $('#sheetTurn').closest('.opt').hidden = true;             // (one Rotate per size instead)
@@ -1744,7 +1747,7 @@ function paintPrices() {
   }
   if (V6) {                                                    // Documents: how many are on the board (+ when none yet)
     const up = badge($('.sec[data-sec="certs"] .sec-h')), n = state.myCerts.length || (state.sheets ? sampleCount() : 0);
-    up.classList.add('size', 'docn'); up.textContent = n || '+'; up.hidden = false;
+    up.classList.add('size', 'docn'); if (n) up.textContent = n; else up.innerHTML = '<svg class="i"><use href="#i-plus"/></svg>'; up.hidden = false;
     up.setAttribute('aria-label', n ? `${n} document${n === 1 ? '' : 's'}` : 'None added yet');
   }
   document.querySelectorAll('#fastSw .fast').forEach(b => {
@@ -1981,6 +1984,7 @@ function setStep(s) {
     if (!sway) return setView(s === 'styles' ? 'angle' : state.view);
     sway = swayFrame();                                      // (sized for the full-screen view, after the resize)
     const p = swayPose(sway);
+    if (EMBED) { camera.position.copy(p.pos); controls.target.copy(p.tgt); dirty = true; return; }   // (the embed starts framed: no glide in)
     unlockAngles(); tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: p.pos, t1: p.tgt };
   });
 }
@@ -2154,8 +2158,20 @@ function stopMorph() {
   root.scale.set(1, 1, 1);
   morph = null;
 }
+// the embed rests while it's scrolled off screen or the tab is hidden, and carries on when it's back
+let morphRest = false;
+if (EMBED) {
+  let seen = true;
+  const check = () => {
+    morphRest = !seen || document.hidden;
+    if (!morphRest && morph?.waiting) { morph.waiting = false; morphNext(); }
+  };
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; check(); }).observe(stage);
+  document.addEventListener('visibilitychange', check);
+}
 function morphNext() {
   if (!morph || step() !== 'intro') return stopMorph();
+  if (morphRest) { morph.waiting = true; return; }
   morph.i = (morph.i + 1) % MORPH.length;
   const [id, face, capFinish, lamN] = MORPH[morph.i], to = SIZES.find(x => x.id === id);
   const L = lamN && libraryReady ? findByNumber(lamN) : null;          // (a texture: blend toward its average color, then lay it on)
@@ -2190,6 +2206,10 @@ function morphNext() {
 function swayFrame() {
   const { w, h } = morph ? { w: 24, h: 36 } : dims(), fov = THREE.MathUtils.degToRad(camera.fov) / 2, r = stage.getBoundingClientRect();
   const aspect = r.width / Math.max(1, r.height);
+  if (EMBED) {                                               // the embed: centered, filling the frame
+    const d = Math.max(h / 2 / 0.86, w / 2 / aspect / 0.86) / Math.tan(fov) + 2;
+    return { tgt: new THREE.Vector3(0, 0, 0.5), d };
+  }
   if (step() === 'snap') {                                   // snap: centered, between the tip and the shutter
     const d = Math.max(h / 2 / 0.6, w / 2 / aspect / 0.8) / Math.tan(fov) + 2;
     return { tgt: new THREE.Vector3(0, 0, 0.5), d };
@@ -2329,7 +2349,8 @@ const COACH = [
   { el: () => [onScreen('#arModal .mpanel')], k: 'Step 3 · Preview', t: 'Preview and order', s: 'See it on your own wall with your phone, share it, then add it to your cart.', ms: 5200,
     go: () => { $('#roomNav').classList.remove('open'); goStep('preview', false); openAR(); } },
 ];
-const coachMs = (c) => c.ms || Math.max(4600, (c.seq?.length || 0) * (c.every || 0) + 1600);
+const COACH_PACE = 1.15;   // every step, demo change and spotlight glide runs 15% slower than the numbers above
+const coachMs = (c) => Math.round(COACH_PACE * (c.ms || Math.max(4600, (c.seq?.length || 0) * (c.every || 0) + 1600)));
 let coach = null;   // { i, k, timer, seqT, until, paused, snap } while the tutorial runs
 function runCoach() {
   if (coach || !V6) return;
@@ -2359,9 +2380,9 @@ function coachSeq() {
   const c = COACH[coach.i];
   if (!c.seq) return;
   if (coach.k >= c.seq.length) {                           // demo done: hold a moment, then the next step (however long the demo took)
-    const i = coach.i; coach.until = performance.now() + 1500; coach.timer = setTimeout(() => coachTo(i + 1), 1500); return;
+    const i = coach.i, hold = 1500 * COACH_PACE; coach.until = performance.now() + hold; coach.timer = setTimeout(() => coachTo(i + 1), hold); return;
   }
-  coach.seqT = setTimeout(() => { if (!coach || coach.paused) return; c.seq[coach.k++](); setTimeout(placeCoach, 60); coachSeq(); }, c.every);
+  coach.seqT = setTimeout(() => { if (!coach || coach.paused) return; c.seq[coach.k++](); setTimeout(placeCoach, 60); coachSeq(); }, c.every * COACH_PACE);
 }
 function coachTo(i) {
   coachStop();
@@ -2433,7 +2454,7 @@ function placeCoach() {
 }
 // the holes in the dimmed screen glide from where they were to where they're going
 function setHoles(want) {
-  const from = holes.map(h => ({ ...h })), t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420;
+  const from = holes.map(h => ({ ...h })), t0 = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420 * COACH_PACE;
   const draw = (list) => {
     const svg = (r) => `x="${r.left}" y="${r.top}" width="${r.width}" height="${r.height}" rx="16"`;
     $('#coachHoles').innerHTML = list.map(r => `<rect ${svg(r)} fill="#000"/>`).join('');
@@ -2669,7 +2690,7 @@ async function shareDesign() {
 // Remember the last design on this device, and bring it back next visit
 let saveT = null;
 function rememberDesign() {
-  if (showcase) return;                                     // (the welcome's own room and samples aren't their design)
+  if (showcase || EMBED) return;                                    // (the welcome's own room and samples aren't their design)
   clearTimeout(saveT);
   saveT = setTimeout(() => { if (showcase || morph) return; try { localStorage.setItem('cobo.last', designParams().toString()); } catch { /* storage blocked */ } }, 600);   // (checked again: the welcome may have started since)
 }
@@ -2760,7 +2781,7 @@ function paintDocs() {
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc${miss.has(i) ? ' miss' : ''}" data-i="${i}">
       <img alt=""><select aria-label="Document size">${opts}</select>
       <button class="ib" type="button" data-act="turn" title="Turn sideways" aria-label="Turn sideways"><svg class="i"><use href="#i-rotate"/></svg></button>
-      <button class="ib" type="button" data-act="remove" title="Remove" aria-label="Remove">×</button>
+      <button class="ib" type="button" data-act="remove" title="Remove" aria-label="Remove"><svg class="i"><use href="#i-x"/></svg></button>
       ${d.size === 'custom' ? `<span class="cust">W <input type="number" data-cw min="2" max="96" step="0.5" value="${d.cw}"> × H <input type="number" data-ch min="2" max="96" step="0.5" value="${d.ch}"> in</span>` : ''}
       ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
   $('#docList').querySelectorAll('.doc').forEach((li, i) => { li.querySelector('img').src = docs[i].thumb; li.querySelector('select').value = docs[i].size; });
@@ -3126,7 +3147,7 @@ function editCartItem(it) {
 /* ------------------------------------------------------------------ cart preview */
 // Inside Shopify, the store page sends the real cart in (see shopify/cobo-configurator-embed.liquid).
 // Opened on its own, the panel shows a pretend cart so the design can be tested.
-const embedded = window.parent !== window;
+const embedded = window.parent !== window && !EMBED;   // (the morph embed talks to no one)
 const localCart = [];
 let cartItems = [];
 function renderCart(cart) {
@@ -3161,7 +3182,7 @@ function renderCart(cart) {
     const th = (it.cfg && thumbs.get(JSON.stringify(it.cfg))) || it.image || '';
     li.innerHTML = `${th ? '<img class="th" alt="">' : '<span class="th"></span>'}<span class="nm"></span><span class="lp"></span>
       <span class="acts">${it.cfg ? `<button class="link" type="button" data-edit="${i}">Edit board</button>` : ''}<button class="link rm" type="button" data-rm="${i}">Remove</button></span>
-      <span class="qty" role="group" aria-label="Quantity"><button type="button" data-qd="-1" data-i="${i}" aria-label="One fewer">−</button><span></span><button type="button" data-qd="1" data-i="${i}" aria-label="One more">+</button></span>
+      <span class="qty" role="group" aria-label="Quantity"><button type="button" data-qd="-1" data-i="${i}" aria-label="One fewer"><svg class="i"><use href="#i-minus"/></svg></button><span></span><button type="button" data-qd="1" data-i="${i}" aria-label="One more"><svg class="i"><use href="#i-plus"/></svg></button></span>
       <details class="ci-d"><summary>Board details<svg class="i chev"><use href="#i-chev"/></svg></summary><dl class="spec"></dl></details>`;
     if (th) li.querySelector('img').src = th;
     li.querySelector('.nm').textContent = it.label;
@@ -3282,7 +3303,7 @@ const clock = new THREE.Clock();
 let dirty = true;
 // Phones: the 3D view is scaled down while scrolling; paint the space around it with the exact rendered wall color
 // (read from a corner of the image) so there's no visible box edge.
-let needBgSample = true;
+let needBgSample = !EMBED;
 function sampleBg() {
   needBgSample = false;
   const gl = renderer.getContext(), px = new Uint8Array(4);
@@ -3336,7 +3357,7 @@ renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + vo
 if (restoredDesign && !GUIDED) toast('Welcome back! We restored your last design.');
 if (LAYOUT === 'v4') wireGuide();
 if (LAYOUT === 'v5') wireTour();
-if (V6) wireCoach();
+if (V6 && !EMBED) wireCoach();
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
 if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED) scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)

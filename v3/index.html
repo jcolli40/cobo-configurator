@@ -5,6 +5,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compliance Boards Configurator (v3: All options, priced)</title>
+<!-- ?embed=morph (the store's home page): only the morphing board, see-through, no controls -->
+<script>if (/[?&]embed=morph(&|$)/.test(location.search)) document.documentElement.dataset.embed = 'morph';</script>
 <script type="importmap">
 { "imports": {
     "three": "../vendor/three.module.min.js",
@@ -295,6 +297,13 @@
   .side-h h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
   .x { border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 8px; color: var(--muted); border-radius: 8px; }
   .x:hover { background: var(--hover); color: var(--ink); }
+  .x { display: grid; place-items: center; }
+  .x .i { width: 20px; height: 20px; stroke-width: 2; }
+  .qty button { display: grid; place-items: center; padding: 0; }
+  .qty button .i { width: 15px; height: 15px; stroke-width: 2.2; }
+  .helpbtn .i { width: 22px; height: 22px; }
+  .up.docn .i { display: block; width: 12px; height: 12px; stroke-width: 3; }
+  .ib .i { width: 16px; height: 16px; }
   .lam-sel { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--tint); }
   .lam-sel img { width: 40px; height: 40px; border-radius: var(--sw); object-fit: cover; border: 1px solid rgba(0,0,0,.12); flex: none; }
   .lam-sel img:not([src]) { visibility: hidden; }
@@ -854,7 +863,7 @@
   [data-v6] .swc .sw.on { outline: 0; }
   [data-v6] .card.on { border-color: transparent; }
   /* "+$" on an option that can cost extra (Textures): a small light blue bubble, top right on phones */
-  [data-v6] .p-body .sec-h .up.plus { padding: 2px 8px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 11px; font-weight: 800; }
+  [data-v6] .p-body .sec-h .up.plus { padding: 1px 8px 3px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 11px; font-weight: 800; }
   .lamup { padding: 3px 10px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
   .lamup[hidden] { display: none; }
   [data-v6] .side-h img { height: 17px; }
@@ -877,7 +886,11 @@
   [data-v6] .quotenote:not([hidden]) { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; padding: 12px 14px; border: 1.5px solid #f0b44c; border-radius: 14px; background: #fff4e0; color: #6b4200; font-size: 13.5px; line-height: 1.4; animation: tIn .3s ease both; }
   [data-v6] .quotenote .qn-i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #e08a00; color: #fff; font-size: 15px; font-weight: 800; }
   [data-v6] .quotenote span > b { display: block; margin-bottom: 2px; font-size: 14.5px; color: #5a3700; }
-  [data-v6] .p-body .sec-h .up.docn.quote { padding: 1px 9px; border-radius: 999px; background: #fff0d4; color: #a35f00; box-shadow: inset 0 0 0 1.5px #f0b44c; }
+  /* the size and the document count (or +) sit in light blue bubbles, like the +$ on Textures */
+  [data-v6] .p-body .sec-h .up.size { padding: 2px 10px 4px; display: inline-grid; place-items: center; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-weight: 750; }
+  [data-v6] .p-body .sec-h .up.docn { min-width: 30px; text-align: center; }
+  [data-v6] .p-body .sec-h .up.docn:has(.i) { padding: 3px 10px; }   /* (a drawn +: no text nudge) */
+  [data-v6] .p-body .sec-h .up.docn.quote { padding: 2px 9px 4px; border-radius: 999px; background: #fff0d4; color: #a35f00; box-shadow: inset 0 0 0 1.5px #f0b44c; }
   /* Documents: the count (or +) on the right, like Size; a lone + reads as a button */
   [data-v6] .p-body .sec-h .up.docn { font-size: 13.5px; }
   [data-v6] .p-body .sec-h .up.docn:not(:empty) { min-width: 1ch; }
@@ -940,6 +953,13 @@
   @media (prefers-reduced-motion: reduce) { .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
   /* the white studio: a soft vignette at the edges for depth */
   #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
+  /* ?embed=morph: only the 3D board, filling the frame on a see-through background; nothing can be clicked */
+  [data-embed="morph"], [data-embed="morph"] body { background: transparent !important; overflow: hidden !important; }
+  [data-embed="morph"] body > :not(.app), [data-embed="morph"] .app > :not(#stageWrap), [data-embed="morph"] #stageWrap > :not(#stage) { display: none !important; }
+  [data-embed="morph"] .app { display: block !important; padding: 0 !important; height: 100vh; }
+  [data-embed="morph"] :is(#stageWrap, #stage) { position: fixed !important; inset: 0 !important; width: auto !important; height: auto !important; transform: none !important; clip-path: none !important; background: transparent !important; border-radius: 0 !important; }
+  [data-embed="morph"] #stageWrap::after, [data-embed="morph"] #stageWrap::before { display: none !important; }
+  [data-embed="morph"] * { pointer-events: none !important; }
   /* sketch icons (?icons=sketch) */
   [data-v6].sk .p-body .sec-h > .i.skx { width: 30px; height: 30px; color: inherit; }
   .colbuy { display: none; }
@@ -988,9 +1008,10 @@
     [data-v6] .buybar:not(:has(#cartCheckout:not([hidden]))) { display: none; }
     /* the open cart's two buttons side by side: View full cart | Checkout */
     [data-v6] .buybar:has(#cartView2:not([hidden])) { grid-template-columns: 1fr 1fr; gap: 10px; }
+    [data-v6] .buysheet :is(#cartView2, #cartCheckout) { height: 56px; min-height: 56px; border-radius: 14px; font-size: 15px; font-weight: 700; }
     [data-v6] .buysheet #cartCheckout { background: var(--accent); border-color: var(--accent); color: #fff; }
     [data-v6] .buysheet #cartCheckout:hover { filter: brightness(1.15); }
-    [data-v6] .buysheet #cartView2 { height: auto; min-height: 50px; }
+    [data-v6] .buysheet #cartView2 { height: 56px; }
     [data-v6] #cartView { display: none; }
     [data-v6] .buysheet.pop { animation: cartPop .5s ease; }
     @keyframes cartPop { 0% { transform: scale(.92); } 50% { transform: scale(1.03); } 100% { transform: none; } }
@@ -1054,6 +1075,11 @@
     [data-v6].pfolded .p-body { display: none; }      /* (the cart bar stays) */
     [data-v6] .p-body .sec-t { white-space: normal; }
     [data-v6] .buysheet .grab :is(.cic, .gamt) { display: none; }
+    [data-v6] .buybar:has(#cartCheckout:not([hidden])) { grid-template-columns: 1fr 1fr; gap: 10px; }
+    [data-v6] .buybar:has(#cartCheckout:not([hidden])) .tot { grid-column: 1 / -1; grid-template-columns: auto auto; justify-content: space-between; align-items: baseline; }
+    [data-v6] .buybar:has(#cartCheckout:not([hidden])) :is(#cta, #cartCheckout) { height: 56px; border-radius: 14px; font-size: 15.5px; font-weight: 700; padding: 0 10px; }
+    [data-v6] .buysheet #cartCheckout { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); }
+    [data-v6] .buysheet .grab .chev { top: auto; bottom: 2px; }   /* (level with "Your cart") */
     /* Style: Board | Edge | Caps; tapping Board opens Solid Colors and Textures & Patterns beside it */
     [data-v6] .p-body:not(.bopen) .sec:is([data-sec="color"], [data-sec="laminate"]) { display: none; }
     [data-v6] .p-body.bopen .sec:is([data-sec="color"], [data-sec="laminate"]) { animation: popIn .28s ease both; }
@@ -1122,6 +1148,10 @@
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke-linecap="round"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12" stroke-linecap="round"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><path d="M9 9.2a3 3 0 1 1 4.3 2.7c-.9.5-1.3 1.1-1.3 2v.5" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13" stroke-width="2.6" stroke-linecap="round"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
   <symbol id="i-tall" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="1.6"/></symbol>
@@ -1147,7 +1177,7 @@
       <button class="rn-arrow" id="roomNext" type="button" aria-label="Next room"><svg class="i"><use href="#i-right"/></svg></button>
     </div>
     <!-- v6: help, top left; plays the tutorial again at any time -->
-    <button class="helpbtn" id="helpBtn" type="button" aria-label="How it works (tutorial)" title="How it works" hidden>?</button>
+    <button class="helpbtn" id="helpBtn" type="button" aria-label="How it works (tutorial)" title="How it works" hidden><svg class="i"><use href="#i-help"/></svg></button>
     <!-- v6 phones: fold the options away so the board fills the screen -->
     <button class="pfold" id="panelFold" type="button" aria-expanded="true" hidden><svg class="i"><use href="#i-chev"/></svg><span>Collapse</span></button>
     <div class="viewbar pill" role="group" aria-label="View">
@@ -1218,7 +1248,7 @@
               <button class="primary camgo" type="button" data-snap aria-label="Snap your wall" title="Snap your wall"><svg class="i"><use href="#i-camera"/></svg></button></div>
             <div class="certcount">
               <div class="opt"><svg class="i"><use href="#i-cert"/></svg><span>How many certificates?</span>
-                <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer">−</button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more">+</button></span></div>
+                <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer"><svg class="i"><use href="#i-minus"/></svg></button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more"><svg class="i"><use href="#i-plus"/></svg></button></span></div>
               <p class="help" id="certAdvice">Tell us how many 8.5×11 documents you need to display, and we'll suggest the size that fits.</p>
               <div class="row scanrow">
                 <label class="upload"><input type="file" accept="image/*" capture="environment" id="scanCam"><svg class="i"><use href="#i-camera"/></svg>Snap your wall</label>
@@ -1561,7 +1591,7 @@
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
 <!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
 <aside id="optSheet" class="side" role="dialog" aria-labelledby="optTitle" hidden>
-  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close">×</button></header>
+  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
   <div class="side-body" id="optBody"></div>
 </aside>
 
@@ -1569,7 +1599,7 @@
   <header class="side-h">
     <img src="../img/wilsonart-logo.svg" alt="Wilsonart">
     <h2 id="lamTitle">Custom laminate</h2>
-    <button class="x" data-close aria-label="Close laminate picker">×</button>
+    <button class="x" data-close aria-label="Close laminate picker"><svg class="i"><use href="#i-x"/></svg></button>
   </header>
   <!-- the chosen laminate, with Rotate 90° and Remove, at the top of the swatches panel -->
   <div class="lam-sel" id="lamSelRow" hidden>
@@ -1604,7 +1634,7 @@
      iPhone/iPad and WebXR in Chrome on Android, with the board placed on a wall at real size. -->
 <div id="arModal" class="modal" hidden>
   <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
-    <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close">×</button></header>
+    <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
     <div class="ar-body">
       <!-- ar-scale="auto": starts at real size, pinch to resize while in AR -->
       <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="auto" camera-controls
@@ -1667,6 +1697,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610301533" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610301911" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
