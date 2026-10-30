@@ -205,6 +205,7 @@ export const SHOPIFY = {
     },
   },
   quoteEmail: 'support@complianceboards.com',
+  contactUrl: 'https://complianceboards.com/pages/contact',   // v6 cart: "Need more than 10 boards? Contact us" (PLACEHOLDER: check the real contact page)
 };
 
 // ---- Wilsonart laminate picker (custom boards) ----

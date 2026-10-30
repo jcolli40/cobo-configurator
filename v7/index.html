@@ -1,0 +1,1630 @@
+<!-- GENERATED from ../index.html by tools/make-versions.js. Edit index.html, not this file. -->
+<!doctype html>
+<html lang="en" data-layout="v5" data-v6="" data-v7="" data-step="intro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compliance Boards Configurator (v7: No popular designs)</title>
+<script type="importmap">
+{ "imports": {
+    "three": "../vendor/three.module.min.js",
+    "three/addons/controls/OrbitControls.js": "../vendor/OrbitControls.js",
+    "three/addons/environments/RoomEnvironment.js": "../vendor/RoomEnvironment.js",
+    "three/addons/exporters/GLTFExporter.js": "../vendor/GLTFExporter.js"
+} }
+</script>
+<style>
+  :root {
+    /* Colors. White panel with neutral greys (always light, even in dark mode); accent is COBO navy. */
+    --ink: #1c1c1e; --muted: #6e6e73; --faint: #9a9aa0; --line: #e6e6e9; --line-2: #d6d6db;
+    --panel: #ffffff; --card: #ffffff; --bg: #ffffff; --hover: #f5f5f7;
+    --accent: #1b3a6b; --accent-ink: #ffffff; --tint: #e8edf5; --tint-2: #c9d4e6;
+    --radius: 14px; --r-sm: 10px; --sw: 5px;              /* --sw = swatch corner radius */
+    --shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 4px 14px rgba(0, 0, 0, .05);
+    --pw: 400px;                                            /* width of the options panel */
+    color-scheme: light;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+  button { font: inherit; color: inherit; touch-action: manipulation; }   /* no double-tap zoom on quick taps */
+  svg.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) var(--pw); height: 100vh; min-height: 560px; }
+
+  /* ---------- 3D stage ---------- */
+  #stageWrap { position: relative; min-width: 0; }
+  #stage { position: absolute; inset: 0; }
+  #stage canvas { width: 100%; height: 100%; display: block; outline: none; }
+  .pill { background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow); }
+  /* one pill, lower left: Front / Angle / Back | View on your wall (the AR part only shows on phones that support it) */
+  .viewbar { position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 2px; padding: 4px; }
+  .viewbar button { border: 0; background: transparent; padding: 8px 16px; border-radius: 999px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .viewbar button.on { background: var(--accent); color: var(--accent-ink); }
+  .viewbar .ar-btn { display: inline-flex; gap: 7px; align-items: center; color: var(--accent); font-weight: 600; margin-left: 4px; position: relative; }
+  .viewbar .ar-btn::before { content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; border-left: 1px solid var(--line-2); }   /* divider */
+  .viewbar .ar-btn:hover { background: var(--tint); }
+  .hint { position: absolute; left: 16px; top: 14px; font-size: 12px; color: var(--muted); padding: 6px 12px; }
+
+  /* ---------- options panel ---------- */
+  .panel { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .p-head { padding: 16px 16px 12px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+  .p-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; display: grid; gap: 12px; align-content: start; }
+  .tabpane { display: grid; gap: 12px; }
+
+  /* collapsible section cards */
+  .sec { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); scroll-margin-top: 12px; }
+  .sec-h { width: 100%; display: flex; align-items: center; gap: 11px; border: 0; background: none; padding: 14px 16px; cursor: pointer; text-align: left; border-radius: var(--radius); }
+  .sec-h:hover { background: var(--hover); }
+  .sec-t { font-size: 15px; font-weight: 550; flex: none; }
+  .sec-v { flex: 1; min-width: 0; text-align: right; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sec-h .chev { color: var(--faint); transition: transform .2s; }
+  .sec-h[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .sec-h[aria-expanded="true"] .sec-v { visibility: hidden; }
+  .sec-b { padding: 2px 16px 16px; display: grid; gap: 14px; }
+  .sec.flash { animation: flash 1s ease; }
+  @keyframes flash { 0% { box-shadow: 0 0 0 3px var(--tint-2); } 100% { box-shadow: var(--shadow); } }
+
+  .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 600; margin: 0 0 -4px; }
+  hr.div { border: 0; border-top: 1px solid var(--line); margin: 0; }
+  .help { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin: 0; }
+  .lbl { font-size: 12px; color: var(--muted); }
+
+  /* a row: icon + label on the left, control on the right */
+  .opt { display: flex; align-items: center; gap: 11px; min-height: 36px; font-size: 14px; }
+  .opt > span:first-of-type { flex: 1; }
+  .opt .i { color: var(--muted); }
+
+  /* segmented control */
+  .seg { display: inline-flex; background: #f0f0f2; padding: 3px; border-radius: 10px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; border-radius: 8px; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* switch (checkbox) */
+  input.switch { appearance: none; width: 38px; height: 22px; border-radius: 11px; background: #d6d6db; position: relative; cursor: pointer; transition: background .2s; flex: none; margin: 0; }
+  input.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s; }
+  input.switch:checked { background: var(--accent); }
+  input.switch:checked::after { transform: translateX(16px); }
+  input.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* size tiles */
+  #sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile { border: 1.5px solid transparent; background: #f4f4f6; border-radius: 12px; padding: 8px 4px 7px; cursor: pointer; display: grid; justify-items: center; gap: 3px; }
+  .tile:hover { background: #ececef; }
+  .tile svg { width: 58px; height: 58px; }
+  .tile .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
+  .tile .sh { fill: #e9e9ec; }
+  .tile .cap { fill: #bdbdc2; }
+  .tile b { font-size: 13px; font-weight: 600; }
+  .tile small { font-size: 11px; color: var(--muted); }
+  .tile.on { border-color: var(--accent); background: var(--tint); }
+  .tile.on b { color: var(--accent); }
+  .tile.on .bd { stroke: var(--tint-2); }
+  .tile.on .sh { fill: var(--tint-2); }
+  .tile.on .cap { fill: var(--accent); }
+  .tile.custom .bd { stroke-dasharray: 3 2.5; fill: none; }
+  #customBox { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #customBox input { width: 72px; padding: 7px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; font: inherit; }
+  #customWarn { font-size: 12px; color: #b3261e; width: 100%; }
+
+  /* swatches: rounded squares */
+  .swgrid { display: grid; grid-template-columns: repeat(auto-fill, 34px); gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .sw { width: 34px; height: 34px; border-radius: var(--sw); border: 1px solid rgba(0,0,0,.12); background: var(--c); cursor: pointer; padding: 0; }
+  .sw:hover { transform: translateY(-1px); }
+  .sw.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .swgrid.dim .sw { opacity: .4; }                       /* edge swatches while "Match board color" is on */
+  .swgrid.dim .sw:hover { opacity: 1; }
+  .opt.dim { opacity: .4; } .opt.dim:hover { opacity: 1; }   /* custom edge color, likewise (picking one turns Match off) */
+  input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid var(--line-2); border-radius: var(--sw); background: none; cursor: pointer; flex: none; }
+  input[type=color]::-webkit-color-swatch-wrapper { padding: 3px; }
+  input[type=color]::-webkit-color-swatch { border: 0; border-radius: 3px; }
+  .chipbtn { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .chipbtn.on { border-color: var(--accent); background: var(--tint); color: var(--accent); font-weight: 600; }
+
+  /* Wilsonart call-out */
+  /* arrow on the left, pointing left: the laminate panel slides out to the left */
+  .wa { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 14px; width: 100%; text-align: left; border: 1.5px solid var(--line-2); background: linear-gradient(180deg, #fff, #fafafa); border-radius: 12px; padding: 14px 14px 13px 12px; cursor: pointer; }
+  .wa:hover { border-color: var(--accent); }
+  .wa:hover .go { transform: translateX(-3px); }
+  .wa .go svg { transition: transform .25s; }
+  .wa[aria-expanded="true"] .go svg { transform: rotate(180deg); }          /* panel open: arrow points back (close) */
+  .wa[aria-expanded="true"]:hover .go { transform: translateX(3px); }
+  .wa.on { border-color: var(--accent); background: var(--tint); }
+  .wa img.logo { height: 26px; width: auto; display: block; grid-column: 2; }
+  .wa b { font-size: 15px; font-weight: 650; grid-column: 2; }
+  .wa small { font-size: 12.5px; color: var(--muted); grid-column: 2; }
+  .wa .go { grid-column: 1; grid-row: 1 / span 3; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; transition: transform .2s; }
+  .wa .thumb { width: 38px; height: 38px; border-radius: var(--sw); object-fit: cover; grid-column: 3; grid-row: 1 / span 3; border: 1px solid rgba(0,0,0,.12); }
+
+  /* cap finish rows */
+  #fastSw { display: grid; gap: 6px; }
+  .fast { display: flex; gap: 11px; align-items: center; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 12px; font-size: 14px; cursor: pointer; text-align: left; }
+  .fast i { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 30% 28%, #fff, var(--c) 55%, #000 160%); border: 1px solid rgba(0,0,0,.2); flex: none; }
+  .fast span { flex: 1; }
+  .fast::after { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--line-2); }
+  .fast.on { border-color: var(--accent); background: var(--tint); }
+  .fast.on::after { background: var(--accent); border-color: var(--accent); }
+
+  .link { border: 0; background: none; color: var(--accent); font-size: 13px; cursor: pointer; padding: 4px 2px; text-decoration: underline; }
+  .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .rowsb { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .center { text-align: center; padding: 12px 0 4px; }
+
+  /* artwork upload controls */
+  .upload { position: relative; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-2); background: #fff; border-radius: 10px; padding: 8px 14px; font-size: 13.5px; cursor: pointer; }
+  .upload:hover { border-color: var(--accent); }
+  .upload:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fname { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .art-opts { display: grid; gap: 12px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+  .fld { display: grid; gap: 5px; font-size: 12.5px; color: var(--muted); }
+  .fld > span { display: flex; justify-content: space-between; }
+  .fld output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fld select { font: inherit; font-size: 13.5px; color: var(--ink); background: #fff; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .upload input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  /* share button (panel header) */
+  .p-head { position: relative; }
+  .share-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .share-btn .i { width: 15px; height: 15px; }
+  /* popular boards */
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .preset { display: grid; grid-template-columns: 40px 1fr; gap: 2px 10px; align-items: center; text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 8px; cursor: pointer; }
+  .preset:hover { border-color: var(--accent); }
+  .preset i { grid-row: 1 / span 2; width: 40px; height: 40px; border-radius: 8px; background: var(--swatch); border: 3px solid var(--edge, transparent); box-sizing: border-box; position: relative; }
+  .preset b { font-size: 13px; } .preset small { font-size: 11px; color: var(--muted); line-height: 1.25; }
+  /* the customer's own documents */
+  .doclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .doclist:empty { display: none; }
+  .doc { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 4px 8px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .doc.miss { border-color: #d9a441; background: #fff9ec; }
+  .doc img { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); grid-row: 1 / span 2; }
+  .doc select { font: inherit; font-size: 13px; border: 1px solid var(--line-2); border-radius: 8px; padding: 5px 6px; background: #fff; min-width: 0; }
+  .doc .cust { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+  .doc .cust input { width: 58px; padding: 4px 6px; border: 1px solid var(--line-2); border-radius: 6px; font: inherit; font-size: 13px; }
+  .doc .ib { border: 1px solid var(--line-2); background: #fff; border-radius: 8px; width: 32px; height: 30px; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+  .doc .ib .i { width: 16px; height: 16px; }
+  .doc .warn { grid-column: 2 / -1; font-size: 11.5px; color: #8a5a00; }
+  /* how many certificates */
+  .certcount { background: var(--tint); border-radius: 12px; padding: 4px 12px 10px; display: grid; gap: 2px; }
+  .certcount .help b { color: var(--accent); }
+  .scanrow { margin-top: 6px; }
+  .scanrow .upload { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .scanup { position: relative; cursor: pointer; font-size: 12.5px; }
+  .scanres { display: grid; gap: 6px; margin-top: 6px; }
+  .scanres canvas { width: 100%; height: auto; border-radius: 10px; display: block; }
+  .tile.rec { position: relative; border-color: #2e7d4f; }
+  .tile.rec::after { content: "Best fit"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #2e7d4f; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .tile.nofit { opacity: .45; }
+  /* cart totals */
+  .cart-sum { display: grid; gap: 4px; font-size: 13.5px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  .cart-sum .disc { color: #2e7d4f; font-weight: 600; }
+  .cart-sum .tot2 { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; font-size: 14.5px; }
+  .disc-hint { margin: 0; font-size: 12.5px; color: #2e7d4f; font-weight: 600; }
+  .disc-hint:empty { display: none; }
+  /* ---------- v2: Standard / Custom fork + simple rows ---------- */
+  /* v2/v3: one list (groups dissolved) so the order is: size, fork, main cards, then the simple rows last */
+  [data-layout="v2"] .tabpane, [data-layout="v3"] .tabpane { display: contents; }
+  .lines { order: 2; }
+  .preset-link { justify-self: start; font-size: 12.5px; }
+  .fork-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .forkc { display: grid; gap: 3px; justify-items: start; text-align: left; border: 1.5px solid var(--line-2); background: #fff; border-radius: 14px; padding: 14px; cursor: pointer; box-shadow: var(--shadow); }
+  .forkc .i { width: 24px; height: 24px; color: var(--accent); margin-bottom: 4px; }
+  .forkc b { font-size: 15px; } .forkc small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .forkc em { font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .forkc.on { border-color: var(--accent); background: var(--tint); box-shadow: 0 0 0 1.5px var(--accent) inset; }
+  .lines { display: grid; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .line { display: flex; align-items: center; gap: 11px; min-height: 52px; padding: 6px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; font-size: 14px; text-align: left; cursor: pointer; width: 100%; }
+  .line:last-child { border-bottom: 0; }
+  .line > .i:first-child { color: var(--muted); }
+  .line > span:first-of-type, .line .lt { flex: 1; }
+  .line .lt { border: 0; background: none; padding: 0; text-align: left; font-size: 14px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+  .line .v { margin-left: auto; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+  .line .lt .v { margin-left: 0; }
+  .line .go { color: var(--faint); }
+  .eye { border: 1px solid var(--line-2); background: #fff; border-radius: 10px; width: 40px; height: 34px; display: grid; place-items: center; cursor: pointer; color: var(--accent); flex: none; }
+  .eye[aria-pressed="false"] { color: var(--faint); background: var(--hover); }
+  .eye[aria-pressed="false"] .i { opacity: .6; }
+  .eye[disabled] { visibility: hidden; }
+  /* ---------- v3: price tags ---------- */
+  .up { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--tint); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .up.inc { color: #2e7d4f; background: #e8f4ec; }
+  .fast .up { margin-left: auto; margin-right: 8px; }
+  /* room picker */
+  .envgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .envt { border: 1.5px solid var(--line); border-radius: 12px; padding: 0; background: #fff; cursor: pointer; overflow: hidden; text-align: left; display: grid; }
+  .envt i { display: block; height: 52px; background: var(--swatch); }
+  .envt b { font-size: 12.5px; font-weight: 600; padding: 6px 8px 0; }
+  .envt small { font-size: 10.5px; color: var(--muted); padding: 1px 8px 8px; line-height: 1.25; }
+  .envt.on { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset; }
+
+  /* ---------- cart: the bottom panel (handle, cart lines, bar) ---------- */
+  .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(0,0,0,.08); display: flex; flex-direction: column; }
+  .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
+  .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d4d4d8; }
+  .grab :is(.cic, .gamt) { display: none; }                  /* (v6 computers: the cart chip) */
+  .grab .gtxt b { color: var(--accent); }
+  .grab .chev { position: absolute; right: 16px; top: 12px; transform: rotate(180deg); transition: transform .25s; }
+  .buysheet.open .grab .chev { transform: none; }
+  .sheet-body { overflow-y: auto; max-height: 0; transition: max-height .3s ease, padding .3s ease; padding: 0 14px; background: var(--panel); display: grid; gap: 10px; align-content: start; }
+  .buysheet.open .sheet-body { max-height: min(62vh, 600px); padding: 12px 14px 14px; }
+  .sheet-dim { display: none; }
+  #note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+  .cart { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .ci { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; }
+  .ci .th { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: var(--bg); grid-row: 1 / span 3; }
+  .ci .nm { font-weight: 600; align-self: center; }
+  .ci .lp { font-weight: 650; text-align: right; align-self: center; }
+  .ci .acts { display: flex; gap: 12px; align-items: center; }
+  .ci .acts .link { font-size: 12.5px; padding: 2px 0; }
+  .ci .rm { color: var(--muted); }
+  .ci .qty { grid-column: 3; grid-row: 2 / span 2; align-self: end; justify-self: end; }
+  .ci details { grid-column: 1 / -1; }
+  details.ci-d summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  details.ci-d summary::-webkit-details-marker { display: none; }
+  details.ci-d summary .i { width: 14px; height: 14px; transition: transform .2s; }
+  details.ci-d[open] summary .i { transform: rotate(180deg); }
+  dl.spec { display: grid; grid-template-columns: auto 1fr; margin: 8px 0 0; font-size: 12.5px; gap: 5px 12px; padding: 10px 12px; background: var(--panel); border-radius: 8px; }
+  dl.spec dt { color: var(--muted); }
+  dl.spec dd { margin: 0; text-align: right; }
+  .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; height: 30px; }
+  .qty button { border: 0; background: none; width: 26px; height: 100%; font-size: 16px; cursor: pointer; color: var(--muted); }
+  .qty span { min-width: 22px; text-align: center; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .cart-foot { font-size: 13px; }
+  .editbar { font-size: 12.5px; color: var(--accent); background: var(--tint); padding: 6px 16px; }
+  .buybar { padding: 6px 16px 14px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .tot { border: 0; background: none; text-align: left; cursor: pointer; padding: 0; display: grid; line-height: 1.15; }
+  .tot small { font-size: 12px; color: var(--muted); }
+  .tot b { font-size: 22px; font-weight: 700; }
+  .ghost { border: 1.5px solid var(--accent); color: var(--accent); background: #fff; border-radius: 10px; height: 48px; padding: 0 14px; font-weight: 650; font-size: 14px; cursor: pointer; }
+  .ghost:hover { background: var(--tint); }
+  #cta { display: grid; place-items: center; line-height: 1.15; white-space: nowrap; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; height: 48px; padding: 0 16px; font-weight: 650; font-size: 14.5px; cursor: pointer; }
+  #cta small { font-size: 11.5px; font-weight: 500; opacity: .85; }
+  #cta:hover { filter: brightness(1.12); }
+
+  /* ---------- Wilsonart side panel (slides out to the left of the options panel) ---------- */
+  .side { position: fixed; top: 0; bottom: 0; right: var(--pw); width: min(440px, calc(100vw - var(--pw))); background: var(--panel); border-left: 1px solid var(--line); box-shadow: -12px 0 32px rgba(0,0,0,.12); z-index: 15; display: flex; flex-direction: column; animation: slidein .22s ease; }
+  @keyframes slidein { from { transform: translateX(24px); opacity: 0; } }
+  .side-h { display: flex; align-items: center; gap: 12px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--line); }
+  .side-h img { height: 22px; width: auto; }
+  .side-h h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
+  .x { border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; padding: 2px 8px; color: var(--muted); border-radius: 8px; }
+  .x:hover { background: var(--hover); color: var(--ink); }
+  .lam-sel { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--tint); }
+  .lam-sel img { width: 40px; height: 40px; border-radius: var(--sw); object-fit: cover; border: 1px solid rgba(0,0,0,.12); flex: none; }
+  .lam-sel img:not([src]) { visibility: hidden; }
+  .lam-sel-nm { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
+  .lam-sel-nm small { font-size: 11px; color: var(--muted); }
+  .lam-sel-nm b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lam-sel .chipbtn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .lam-sel .chipbtn .i { width: 16px; height: 16px; }
+  .lam-sel .chipbtn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .lam-sel .link { font-size: 12.5px; }
+  /* search box + swatches-per-row buttons on one line */
+  .side-search { padding: 12px 16px 0; display: flex; align-items: center; gap: 8px; }
+  .side-search .sbox { position: relative; flex: 1; min-width: 0; }
+  .side-search .sbox .i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+  .side-search input { width: 100%; padding: 10px 10px 10px 36px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
+  .side-body { flex: 1; overflow-y: auto; padding: 12px 16px 20px; display: grid; gap: 12px; align-content: start; }
+  /* filters: one line of dropdowns (Design type, Color, Shade; + Cut, Match for woodgrains); the chips drop down below */
+  .ffilters { display: flex; flex-wrap: wrap; gap: 6px; position: relative; }
+  details.fgroup { flex: 1 1 0; min-width: 0; position: static; }
+  details.fgroup summary { list-style: none; display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 11px; cursor: pointer; font-size: 13px; font-weight: 550; background: var(--card); border: 1px solid var(--line-2); border-radius: 10px; white-space: nowrap; }
+  details.fgroup summary span { overflow: hidden; text-overflow: ellipsis; }
+  details.fgroup summary::-webkit-details-marker { display: none; }
+  details.fgroup summary em { font-style: normal; font-size: 11px; color: #fff; background: var(--accent); border-radius: 999px; padding: 0 6px; font-weight: 700; }
+  details.fgroup summary em:empty { display: none; }
+  details.fgroup summary .chev { margin-left: auto; width: 15px; height: 15px; color: var(--faint); transition: transform .2s; }
+  details.fgroup[open] summary { border-color: var(--accent); }
+  details.fgroup[open] summary .chev { transform: rotate(180deg); }
+  details.fgroup .chips { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; padding: 12px; background: #fff; border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 12px 30px rgba(0, 0, 0, .14); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); background: #fff; border-radius: 8px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
+  .chip em { font-style: normal; color: var(--muted); font-size: 11px; }
+  .chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .chip.on em { color: inherit; opacity: .8; }
+  .chip:disabled { opacity: .35; cursor: default; }
+  .dot { width: 12px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0,0,0,.2); }
+  .dot.multi { background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 10px; }   /* minmax(0,…): long names can't widen a column */
+  .grid[data-cols="1"] .card .nm { font-size: 15px; }
+  .grid[data-cols="1"] .card .no { font-size: 13px; }
+  .seg.cols button { padding: 5px 8px; display: grid; place-items: center; }
+  .seg.cols svg { width: 16px; height: 16px; fill: currentColor; }
+  .card .nm, .card .no { overflow-wrap: anywhere; }
+  .card { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 1.5px solid transparent; background: none; padding: 5px; border-radius: 10px; cursor: pointer; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); background: var(--tint); outline: none; }
+  .card.on { border-color: var(--accent); background: var(--tint); }
+  .card img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 7px; background: var(--bg); display: block; }
+  .card .nm { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .card .no { font-size: 11.5px; color: #c2182b; letter-spacing: .06em; }
+  .card .demo { position: absolute; top: 9px; left: 9px; background: #000; color: #fff; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; }
+  .nf { border: 1px dashed var(--line-2); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; background: #fff; }
+  .nf p { margin: 6px 0 10px; color: var(--muted); }
+
+  /* ---------- pop-ups (AR) ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(10, 12, 14, .55); z-index: 20; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .mpanel { background: var(--panel); width: min(560px, 100%); height: min(680px, 100%); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .mhead { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .mhead h2 { margin: 0; font-size: 15px; font-weight: 650; flex: 1; }
+  .ar-body { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0 18px 14px; }
+  #arViewer { flex: 1; width: 100%; min-height: 0; background: var(--bg); border-radius: 12px; margin-top: 14px; --poster-color: transparent; }
+  .ar-go { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 12px 20px; font-size: 15px; white-space: nowrap; }
+  #arMsg { margin: 10px 0 0; text-align: center; }
+
+  #toast { position: fixed; left: 50%; bottom: 100px; transform: translate(-50%, 20px); background: var(--ink); color: var(--panel); padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .25s; z-index: 30; max-width: 90vw; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 860px) {
+    /* phones: the 3D view is pinned to the top and shrinks as you scroll (js sets --stageH), so the board stays in sight */
+    .app { display: block; height: auto; padding-top: var(--stageMax, 56vh); padding-bottom: 150px; }   /* bottom: room to scroll the last option clear of the cart bar */
+    html, body { height: auto; }
+    .panel { border-left: 0; border-top: 1px solid var(--line); }
+    /* phones: the options are a grid of square buttons, 3 per row, scrolling up and down; tapping one opens its sheet */
+    .p-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; overflow: visible; padding: 12px 14px 18px; }
+    .tabpane { display: contents; }
+    .p-body .sec { aspect-ratio: 1; min-width: 0; scroll-margin-top: 40vh; }
+    .fork, .lines { grid-column: 1 / -1; }
+    [data-layout="v2"] .p-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* v2: fewer, larger squares */
+    [data-layout="v2"] .p-body .sec { aspect-ratio: 1.25; }
+    [data-layout="v2"] .p-body .sec-h > .i:first-child { width: 28px; height: 28px; }
+    [data-layout="v2"] .p-body .sec-t { font-size: 14px; }
+    .fork-cards { gap: 8px; } .forkc { padding: 12px; }
+    .p-body .sec-h { height: 100%; flex-direction: column; justify-content: center; align-items: center; gap: 4px; padding: 8px 6px; text-align: center; }
+    .p-body .sec-h > .i:first-child { width: 24px; height: 24px; color: var(--accent); }
+    .p-body .sec-t { font-size: 12px; line-height: 1.2; font-weight: 600; }
+    .p-body .sec-v { flex: none; max-width: 100%; text-align: center; font-size: 10.5px; }
+    .p-body .sec-h .chev { display: none; }
+    .p-body .sec.active { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent) inset, var(--shadow); background: var(--tint); }
+    .p-head { padding-bottom: 4px; border-bottom: 0; }
+    /* phones zoom into any text box under 16px when it's tapped or focused; keep them at 16px */
+    input[type=search], input[type=number], input[type=text], select { font-size: 16px !important; }
+    html, body { overflow-x: clip; }
+    .side { overflow-x: hidden; top: 44vh; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }   /* board stays visible above */
+    .side-body { padding-left: 12px; padding-right: 12px; }
+    .grid { gap: 8px; }
+    /* phones: the cart panel is fixed to the bottom of the screen */
+    .buysheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(0,0,0,.16); max-height: 90vh; }
+    .buysheet.open .sheet-body { max-height: 66vh; }
+    .buybar { padding: 6px 12px 12px; gap: 6px; }
+    .tot b { font-size: 19px; }
+    .ghost, #cta { height: 46px; padding: 0 12px; }
+    .sheet-dim { display: block; position: fixed; inset: 0; background: rgba(20,16,10,.3); z-index: 11; }
+    /* phones: the Front/Angle/Back buttons sit in their own row under the 3D view so they never cover the board */
+    /* The view never changes size (that would redraw the 3D canvas every frame and stutter). Instead the canvas is
+       scaled down (transform) and the bottom is trimmed off (clip-path); phones do both smoothly on the graphics chip. */
+    #stageWrap { position: fixed; top: 0; left: 0; right: 0; z-index: 6; height: var(--stageMax, 56vh); display: flex; flex-direction: column; background: var(--bg); will-change: clip-path; }
+    #stage { position: relative; inset: auto; flex: 1; min-height: 0; transform-origin: 50% 0; will-change: transform; }
+    #stageWrap.anim, #stageWrap.anim #stage { transition: clip-path .28s ease, transform .28s ease; }   /* sheets open/close only */
+    /* phones: options are a list; tapping one opens its controls in a pop-up sheet (like the Wilsonart picker) */
+    .p-body .sec-b { display: none !important; }
+    .sec-h .chev { transform: rotate(-90deg); }
+    .sec-h[aria-expanded="true"] .chev { transform: rotate(-90deg); }
+    .sec-h[aria-expanded="true"] .sec-v { visibility: visible; }
+    #optBody { display: grid; gap: 14px; align-content: start; }
+    #optBody .sec-b { display: grid !important; padding: 0; gap: 14px; }
+    .viewbar { position: static; order: -1; align-self: flex-start; margin: 10px 0 4px 12px; max-width: calc(100% - 24px); }   /* top of the screen, board below */
+    .viewbar button { padding: 7px 12px; }
+    .viewbar .ar-btn { gap: 5px; }
+    .hint { display: none; }
+    .side { left: 0; right: 0; width: auto; z-index: 25; }
+    .modal { padding: 0; }
+    .mpanel { height: 100%; border-radius: 0; }
+  }
+
+  /* ---------- v4: guided steps (<html data-step="intro | styles | custom">, set by js/main.js) ---------- */
+  .guide { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; display: grid; place-items: center; padding: 32px 20px; }
+  :root:not([data-step="intro"]) .guide { display: none; }
+  html[data-step="intro"], html[data-step="intro"] body { overflow: hidden; }
+  .g-in { width: min(520px, 100%); display: grid; gap: 18px; text-align: center; }
+  .g-kick { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .guide h1 { margin: 0; font-size: clamp(26px, 5vw, 34px); line-height: 1.15; letter-spacing: -.01em; text-transform: none; }
+  .g-steps { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 10px; text-align: left; }
+  .g-steps li { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .g-steps .i { grid-row: span 2; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: rgba(255, 255, 255, .14); color: #fff; }
+  .g-steps b { font-size: 15px; }
+  .g-steps span { font-size: 13px; color: var(--muted); }
+  .g-cam { position: relative; display: inline-flex; justify-content: center; align-items: center; gap: 10px; justify-self: center; background: var(--accent); color: #fff; border-radius: 999px; padding: 16px 30px; font-size: 17px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(27, 58, 107, .3); }
+  .g-cam .i { width: 22px; height: 22px; }
+  .g-cam:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .g-cam input, .vh { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .g-alt { font-size: 13px; color: var(--muted); }
+  .g-alt label.link { position: relative; }
+  .g-msg { margin: 0; color: #b3261e; font-size: 13.5px; }
+  .g-msg:empty { display: none; }
+  .g-or { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12px; }
+  .g-or::before, .g-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+  .g-alt2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ghostbtn { border: 1px solid var(--line-2); background: #fff; border-radius: 12px; padding: 12px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--accent); }
+  .ghostbtn:hover { border-color: var(--accent); }
+  .g-busy { display: none; margin: 0; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: var(--accent); }
+  .guide.busy .g-busy { display: flex; }
+  .guide.busy .g-cam, .guide.busy .g-alt, .guide.busy .g-alt2, .guide.busy .g-or { opacity: .35; pointer-events: none; }
+  .spin { width: 18px; height: 18px; border: 2.5px solid var(--tint-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* styles step: the board fills the screen, the look card sits under it; swipe or use the arrows */
+  .lookbar, .lookwall, .lookhint, .back-looks { display: none; }
+  [data-step="styles"] .app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; height: 100vh; height: 100dvh; padding: 0; }
+  [data-step="styles"] .panel, [data-step="styles"] .hint, [data-step="styles"] .viewbar { display: none; }
+  [data-step="styles"] .lookbar { display: grid; }
+  [data-step="styles"] .lookwall { display: flex; }
+  [data-step="styles"] .lookhint { display: block; }
+  [data-step="custom"] .back-looks { display: inline-flex; }
+  .lookbar { justify-items: center; gap: 10px; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); touch-action: pan-y; user-select: none; }
+  .lookrow { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; gap: 10px; align-items: center; width: min(560px, 100%); }
+  .lk-arrow { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-2); background: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow); color: var(--accent); padding: 0; }
+  .lk-arrow:hover { border-color: var(--accent); }
+  .lk-arrow .i { width: 22px; height: 22px; }
+  .lookcard { display: grid; gap: 2px; text-align: center; min-width: 0; }
+  .lk-top { display: flex; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  #lookPrice { font-weight: 700; color: var(--ink); }
+  #lookPrice::before { content: "·"; margin-right: 8px; color: var(--muted); font-weight: 400; }
+  .lookcard b { font-size: 20px; }
+  #lookSpec { font-size: 13px; color: var(--muted); }
+  #lookWhy { font-style: normal; font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .dots { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
+  .dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .2s; }
+  .dots i.on { background: var(--accent); width: 16px; }
+  .lookcard.in-r { animation: lkR .28s ease; }
+  .lookcard.in-l { animation: lkL .28s ease; }
+  @keyframes lkR { from { opacity: 0; transform: translateX(28px); } }
+  @keyframes lkL { from { opacity: 0; transform: translateX(-28px); } }
+  #lookCustomize { padding: 13px 30px; border-radius: 999px; font-size: 15px; box-shadow: 0 6px 18px rgba(27, 58, 107, .28); }
+  .lookmore { font-size: 13px; color: var(--faint); }
+  .lookwall { position: absolute; left: 16px; top: 14px; align-items: center; gap: 9px; padding: 4px 14px 4px 4px; font-size: 12.5px; z-index: 5; max-width: calc(100% - 32px); }
+  .lookwall img { width: 46px; height: 34px; object-fit: cover; border-radius: 999px; flex: none; }
+  .lookwall i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
+  .lookwall span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lookhint { position: absolute; right: 16px; top: 14px; font-size: 12px; color: var(--muted); padding: 6px 12px; z-index: 5; }
+  .back-looks { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); align-items: center; gap: 3px; border: 1px solid var(--line-2); background: #fff; border-radius: 999px; padding: 6px 11px 6px 6px; font-size: 12.5px; font-weight: 600; color: var(--accent); cursor: pointer; }
+  .back-looks .i { width: 15px; height: 15px; }
+  @media (max-width: 860px) {
+    [data-step="styles"] #stageWrap { position: relative; height: auto; clip-path: none !important; }
+    [data-step="styles"] #stage { position: absolute; inset: 0; transform: none !important; }
+    [data-step="styles"] .lookbar { padding-top: 12px; gap: 8px; }
+    [data-step="styles"] .lookhint { display: none; }
+    .lookwall { left: 10px; top: 10px; max-width: calc(100% - 20px); font-size: 12px; }
+    .lookcard b { font-size: 18px; }
+    .lookrow { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 6px; }
+    .lk-arrow { width: 44px; height: 44px; }
+  }
+
+  /* ---------- v5: Auto-suggest (<html data-step="intro | snap | styles | custom">, set by js/main.js) ---------- */
+  /* panel: Auto-suggest button instead of the heading; groups dissolved into one list of cards, then the simple rows */
+  [data-layout="v5"] .p-head h1 { display: none; }
+  [data-layout="v5"] .tabpane { display: contents; }
+  [data-layout="v5"] .lines [data-only="v2"] { display: none; }
+  /* header: My Wall on the left, styled like Share */
+  .share-btn.mw-btn { position: static; transform: none; justify-self: start; }
+  .mw-btn .v { font-weight: 500; color: var(--muted); }
+  [data-layout="v5"] .p-head { min-height: 58px; align-content: center; }
+  /* viewer: Auto-Suggest in place of Front / Angle / Back */
+  [data-layout="v5"] .viewbar [data-view] { display: none; }
+  .viewbar .vb-auto { display: inline-flex; align-items: center; gap: 7px; background: var(--accent); color: #fff; font-weight: 650; }
+  .viewbar .vb-auto .i { width: 16px; height: 16px; }
+  .viewbar .vb-auto:hover { background: #142d54; }
+  /* popular boards: a strip that scrolls sideways */
+  .popstrip { order: -1; display: grid; gap: 8px; min-width: 0; }
+  .pop-h { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .popstrip .presets { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; scrollbar-width: thin; }
+  .popstrip .preset { flex: 0 0 168px; scroll-snap-align: start; }
+  /* size: custom size as a full-width card, like the Wilsonart one */
+  #sizes .tile.wide { grid-column: 1 / -1; grid-template-columns: auto 1fr; justify-items: start; align-items: center; text-align: left; gap: 1px 12px; padding: 10px 14px; }
+  #sizes .tile.wide svg { grid-row: 1 / span 2; width: 44px; height: 44px; }
+  #sizes .tile.wide b { font-size: 14.5px; }
+  #sizes .tile.wide small { font-size: 12px; }
+  #sizes .tile.wide.on { border-color: var(--accent); background: var(--tint); }
+  /* sample certificates row, greyed out while their own documents are shown */
+  .line.off > .i, .line.off .lt { opacity: .45; }
+  .line.off .eye { visibility: hidden; }
+  .autorow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; background: var(--tint); border-radius: 12px; padding: 10px 10px 10px 12px; }
+  .camgo { width: 42px; height: 42px; border-radius: 50%; padding: 0; display: grid; place-items: center; }
+  .camgo .i { width: 20px; height: 20px; }
+  .autorow > .i { color: var(--accent); }
+  .autorow b { display: block; font-size: 14px; color: var(--accent); }
+  .autorow small { display: block; font-size: 12px; color: var(--muted); }
+  .snapbtn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 999px; padding: 9px 14px; font-size: 13px; }
+  .snapbtn .i { width: 16px; height: 16px; }
+  /* My wall: the scan results, the certificate count and their own documents (moved here by main.js) */
+  [data-layout="v5"] .certcount { background: none; padding: 0; gap: 8px; }
+  [data-layout="v5"] .certcount .scanrow, [data-layout="v5"] .certcount .scanrow + .help { display: none; }
+  .mw-empty { display: grid; gap: 10px; justify-items: start; }
+  .mw-sum { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+  .mw-sum i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
+  .mw-sum span { flex: 1; }
+  #mwSlot { display: grid; gap: 12px; }
+  #mwSlot .owndocs { display: grid; gap: 14px; }
+  .eye.turn[aria-pressed="true"] { background: var(--tint); }
+  .up.size { color: var(--ink); background: #f0f0f2; }
+  /* Textures: the board size the upcharge is for, left of it (phones: inside the corner bubble) */
+  .up-for { font-size: 11.5px; color: var(--muted); white-space: nowrap; margin-right: 6px; }
+
+  /* full-screen steps over the live 3D board (intro, snap) and the swipe bar (styles) */
+  .tour { position: fixed; inset: 0; z-index: 40; pointer-events: none; display: none; }
+  [data-layout="v5"]:is([data-step="intro"], [data-step="snap"], [data-step="styles"]) .tour { display: block; }
+  [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]), [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]) body { overflow: hidden; }
+  [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]) .app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 100vh; height: 100dvh; padding: 0; }
+  [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]) :is(.panel, .hint, .viewbar) { display: none; }
+  .t-bar { position: absolute; left: 0; right: 0; top: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 14px 16px; pointer-events: auto; }
+  .t-btn { justify-self: start; display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: color-mix(in srgb, #fff 90%, transparent); backdrop-filter: blur(8px); border-radius: 999px; padding: 8px 14px; font-size: 13.5px; font-weight: 600; color: var(--accent); cursor: pointer; box-shadow: var(--shadow); }
+  .t-btn .i { width: 16px; height: 16px; }
+  #tourBack { padding-left: 9px; }
+  #tourSkip { justify-self: end; }
+  .t-btn[hidden] { display: inline-flex !important; visibility: hidden; }
+  .t-dots { display: flex; gap: 6px; padding: 8px 12px; border-radius: 999px; background: color-mix(in srgb, #fff 90%, transparent); box-shadow: var(--shadow); }
+  .t-dots i { width: 7px; height: 7px; border-radius: 4px; background: var(--line-2); transition: width .25s, background .25s; }
+  .t-dots i.on { width: 22px; background: var(--accent); }
+  .t-dots i.done { background: var(--tint-2); }
+  .t-step { position: absolute; inset: 0; display: none; }
+  [data-step="intro"] .t-intro, [data-step="snap"] .t-snap { display: block; }
+  .t-step > * { pointer-events: auto; }
+  .g-kick { margin: 0; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  /* 1 welcome: a card bottom-left, the board turning gently on a real wall behind it */
+  .t-intro { background: linear-gradient(90deg, rgba(12, 18, 30, .35), transparent 55%); }
+  .t-card { position: absolute; left: clamp(16px, 5vw, 64px); bottom: clamp(16px, 7vh, 72px); width: min(430px, calc(100% - 32px)); display: grid; gap: 16px; justify-items: start; background: rgba(14, 22, 38, .72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; border-radius: 20px; padding: 26px 26px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .28); animation: tIn .45s ease both; }   /* the same see-through navy as the Step 2 tip */
+  .t-card .g-kick { color: #c9d4e6; }
+  .t-card #tourResume { color: #fff; }
+  .t-card h1 { margin: 0; font-size: clamp(26px, 3.2vw, 34px); line-height: 1.12; letter-spacing: -.01em; text-transform: none; text-align: left; color: #fff; }
+  .t-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .t-list li { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: center; font-size: 13px; color: rgba(255, 255, 255, .75); line-height: 1.35; }
+  .t-list .i { width: 38px; height: 38px; padding: 9px; border-radius: 50%; background: var(--tint); color: var(--accent); }
+  .t-list b { display: block; font-size: 15px; color: #fff; }
+  .t-go { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 999px; font-size: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
+  .t-card .t-go { background: #fff; color: var(--accent); }   /* white on the dark card */
+  .t-card .t-go:hover { background: var(--tint); }
+  /* computers: the welcome's Skip sits beside Get started (phones keep it top right) */
+  .t-acts { display: flex; align-items: center; gap: 10px; }
+  .t-skip { padding: 13px 24px; border-radius: 999px; border: 1.5px solid rgba(255, 255, 255, .55); background: transparent; color: #fff; font-size: 16px; font-weight: 650; cursor: pointer; }
+  .t-skip:hover { border-color: #fff; background: rgba(255, 255, 255, .1); }
+  @media (min-width: 861px) { [data-step="intro"] #tourSkip { visibility: hidden; } }
+  @keyframes tIn { from { opacity: 0; transform: translateY(16px); } }
+  /* 2 snap: live camera full screen (phones), instructions on top, shutter at the bottom */
+  #camFeed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; display: none; }
+  .t-snap.live #camFeed { display: block; }
+  .t-frame { position: absolute; left: 8%; right: 8%; top: 22%; bottom: 30%; display: none; pointer-events: none; }
+  .t-snap.live .t-frame { display: block; }
+  .t-frame i { position: absolute; width: 34px; height: 34px; border: 3px solid #fff; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .5)); }
+  .t-frame i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+  .t-frame i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+  .t-frame i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+  .t-frame i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+  .t-tip { position: absolute; left: 50%; top: 76px; transform: translateX(-50%); width: min(460px, calc(100% - 32px)); display: grid; gap: 4px; text-align: center; background: rgba(14, 22, 38, .72); backdrop-filter: blur(10px); color: #fff; border-radius: 16px; padding: 14px 18px; animation: tIn .4s ease both; }
+  .t-tip .g-kick { color: #c9d4e6; font-size: 11px; }
+  .t-tip b { font-size: 20px; }
+  .t-tip span { font-size: 13.5px; opacity: .9; line-height: 1.4; }
+  .t-low { position: absolute; left: 0; right: 0; bottom: 0; display: grid; justify-items: center; gap: 10px; padding: 40px 16px calc(22px + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgba(10, 14, 24, .6), transparent); }
+  .t-shoot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px; width: min(420px, 100%); }
+  .t-side { position: relative; display: grid; justify-items: center; gap: 4px; border: 0; background: none; color: #fff; font-size: 12.5px; font-weight: 600; cursor: pointer; text-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+  .t-side .i { width: 44px; height: 44px; padding: 11px; border-radius: 50%; background: rgba(255, 255, 255, .2); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, .45); }
+  .t-side:first-child { justify-self: end; } .t-side:last-child { justify-self: start; }
+  .t-side:focus-within, .t-side:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 8px; }
+  .t-shutter { width: 78px; height: 78px; border-radius: 50%; border: 5px solid #fff; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 0 0 3px rgba(27, 58, 107, .5), 0 10px 30px rgba(0, 0, 0, .35); padding: 0; }
+  .t-shutter .i { width: 30px; height: 30px; }
+  .t-shutter:active { transform: scale(.94); }
+  .t-snap.live .t-shutter { background: #fff; border-color: rgba(255, 255, 255, .55); background-clip: content-box; padding: 4px; }
+  .t-snap.live .t-shutter .i { display: none; }
+  .t-shutter .ic-up, .t-shutter span { display: none; }
+  /* computers without a live camera: the middle button is "Upload a photo" (the separate Upload button goes) */
+  .t-snap.desk:not(.live) .t-side:first-child { visibility: hidden; }
+  .t-snap.desk:not(.live) .t-shutter { width: auto; height: auto; gap: 9px; display: inline-flex; align-items: center; padding: 15px 26px; border-radius: 999px; border: 0; font-size: 16px; font-weight: 700; }
+  .t-snap.desk:not(.live) .t-shutter > .i:first-child { display: none; }
+  .t-snap.desk:not(.live) .t-shutter .ic-up { display: block; width: 22px; height: 22px; }
+  .t-snap.desk:not(.live) .t-shutter span { display: inline; }
+  /* a photo dragged over the screen */
+  .t-drop { position: absolute; inset: 12px; border: 3px dashed #fff; border-radius: 24px; background: rgba(27, 58, 107, .55); color: #fff; display: none; place-items: center; font-size: 24px; font-weight: 700; pointer-events: none; }
+  .t-snap.drag .t-drop { display: grid; }
+  .t-camlink { color: #fff; }
+  .t-msg { margin: 0; max-width: 420px; text-align: center; color: #fff; background: rgba(179, 38, 30, .9); padding: 8px 14px; border-radius: 10px; font-size: 13px; }
+  .t-msg:empty { display: none; }
+  .t-busy { display: none; margin: 0; align-items: center; gap: 10px; font-weight: 600; color: #fff; background: rgba(14, 22, 38, .75); padding: 8px 16px; border-radius: 999px; }
+  .t-snap.busy .t-busy { display: flex; }
+  .t-snap.busy .t-shoot { opacity: .35; pointer-events: none; }
+  /* 3 our picks: the swipe bar (v4's), with the step bar on top */
+  [data-layout="v5"][data-step="styles"] #toast { bottom: auto; top: 112px; z-index: 45; }
+  [data-layout="v5"] .lookwall { top: 66px; }
+  [data-layout="v5"] .lookhint { top: 66px; }
+  .lk-kick { display: none; }
+  [data-layout="v5"] .lk-kick { display: block; margin: 0 0 2px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  @media (max-width: 860px) {
+    [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]) #stageWrap { position: relative; height: auto; clip-path: none !important; }
+    [data-layout="v5"]:is([data-step="intro"], [data-step="snap"]) #stage { position: absolute; inset: 0; transform: none !important; }
+    .t-bar { padding: 10px 10px; }
+    .t-intro { background: linear-gradient(to top, rgba(12, 18, 30, .35), transparent 60%); }
+    .t-card { left: 10px; right: 10px; bottom: 10px; width: auto; padding: 20px 18px 16px; gap: 12px; border-radius: 18px; }
+    .t-card h1 { font-size: 25px; }
+    .t-list { gap: 9px; }
+    .t-acts { justify-self: stretch; }
+    .t-go { flex: 1; justify-content: center; }
+    .t-skip { display: none; }
+    .t-tip { top: 62px; }
+    .t-tip b { font-size: 18px; }
+    [data-layout="v5"] .lookwall { top: 58px; }
+    /* phones: 3 squares per row (Size, Colors, Textures, then Caps, My wall, Room); price bubble in the corner */
+    [data-layout="v5"] .p-body .sec { position: relative; }
+    [data-layout="v5"] .p-body .sec-h .up { position: absolute; top: 5px; right: 5px; font-size: 10px; padding: 1px 6px; margin: 0; }
+    [data-layout="v5"] .p-body .up-for { display: none; }
+    [data-layout="v5"] .p-body .sec-h .up[data-for]::before { content: attr(data-for) " · "; font-weight: 500; }
+    [data-layout="v5"] .popstrip { grid-column: 1 / -1; }
+
+  }
+
+  /* ---------- v6 (<html data-v6>, on top of v5): the options are icons in a dock floating at the bottom, each with its
+     price under it; tapping one opens its pop-up. Computers: the 3D view fills the window, dock bottom left, cart bottom
+     right, pop-ups float on the right. Phones: board on top, dock + cart below; pop-ups cover exactly the part below. */
+  .t-sub { display: none; }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .42); transform: scale(0); animation: ripple .6s ease-out; pointer-events: none; }
+  @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+  [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list) { display: none !important; }
+  /* v6 start card: the COBO icon on its top edge, the title, then two big tiles side by side (computers: left aligned) */
+  [data-v6] .t-card .g-kick { display: none; }
+  [data-v6] .t-card { padding-top: 42px; }
+  .t-logo { display: none; }
+  [data-v6] .t-logo { display: grid; place-items: center; position: absolute; top: -30px; left: 26px; width: 60px; height: 60px; border-radius: 50%; background: #fff; box-shadow: 0 8px 22px rgba(0, 0, 0, .28); }
+  [data-v6] .t-logo img { height: 38px; width: auto; }
+  [data-v6] .t-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; justify-self: stretch; }
+  [data-v6] .t-acts > :is(.t-go, .t-skip) { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 112px; padding: 16px 10px; border-radius: 18px; font-size: 16px; font-weight: 700; line-height: 1.2; text-align: center; white-space: normal; }
+  [data-v6] .t-acts .i { width: 30px; height: 30px; }
+  [data-v6] .t-card .t-skip { border-width: 1.5px; }
+  /* one way in: a big "Start ›" button (Build comes first) */
+  [data-v6] .t-acts { grid-template-columns: 1fr; }
+  [data-v6] .t-acts > .t-go { display: flex; justify-content: center; gap: 8px; min-height: 58px; padding: 12px 24px; border-radius: 999px; font-size: 18px; }
+  [data-v6] .t-acts > .t-go .i { width: 22px; height: 22px; }
+  [data-v6] .t-acts > .t-skip { display: none !important; }
+  [data-v6].dmini .popcall span { display: none; }
+  [data-v6] .t-card h1 { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
+  [data-v6] .t-sub { font-size: 17.5px; line-height: 1.4; color: #3d3d45; }
+  /* the start card: white, dark text, navy Start button */
+  [data-v6] .t-intro { background: none; }
+  [data-v6] .t-card { background: #fff; color: var(--ink); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 20px 56px rgba(15, 25, 45, .2); }
+  [data-v6] .t-card .t-go { background: var(--accent); color: #fff; box-shadow: 0 8px 22px rgba(27, 58, 107, .3); }
+  [data-v6] .t-card .t-go:hover { background: #24497f; }
+  [data-v6] .t-logo { box-shadow: 0 6px 18px rgba(15, 25, 45, .18), 0 0 0 1px #e6e8ee; }
+  @media (min-width: 861px) { [data-v6] .t-card { width: min(387px, calc(100% - 32px)); } }   /* 10% narrower than the old 430 */
+  /* "Continue where you left off": a red bubble just under the card (the card moves up to make room) */
+  .t-cont { display: none; }
+  [data-v6] .t-cont { position: absolute; left: 0; top: calc(100% + 12px); display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: 0; border-radius: 999px; background: #c1272d; color: #fff; font: inherit; font-size: 15px; font-weight: 700; box-shadow: 0 10px 26px rgba(193, 39, 45, .35); cursor: pointer; animation: tIn .45s .25s ease both; }
+  [data-v6] .t-cont:hover { filter: brightness(1.08); }
+  [data-v6] .t-cont .i { width: 18px; height: 18px; }
+  [data-v6] .t-cont[hidden] { display: none; }
+  [data-v6] .t-card.cont { bottom: calc(clamp(16px, 7vh, 72px) + 62px); }
+  [data-v6] .t-sub { display: block; margin: -2px 0 2px; }
+  [data-v6] #shareBtn { top: 14px; right: 16px; transform: none; z-index: 5; box-shadow: var(--shadow); }
+  [data-v6][data-step="intro"] #shareBtn { display: none; }
+  [data-v6] #toast { bottom: auto; top: 16px; }                 /* clear of the dock and the cart */
+  [data-v6] .app { grid-template-columns: minmax(0, 1fr); }
+  [data-v6] .tabpane { display: contents; }
+  [data-v6] .panel { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 12; flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 12px; background: none; border: 0; pointer-events: none; }
+  [data-v6] .panel > * { pointer-events: auto; }
+  [data-v6] .p-body { flex: none; display: flex; gap: 2px; padding: 6px; overflow: visible; background: color-mix(in srgb, #fff 94%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, .14); }
+  [data-v6] .p-body .sec { width: 84px; border: 0; background: none; box-shadow: none; border-radius: 12px; aspect-ratio: auto; }
+  [data-v6] .p-body .sec-h { height: 100%; flex-direction: column; justify-content: flex-start; align-items: center; gap: 3px; padding: 9px 4px 8px; text-align: center; border-radius: 12px; }
+  [data-v6] .p-body .sec-h:hover { background: var(--hover); }
+  [data-v6] .p-body .sec-h > .i:first-child { width: 24px; height: 24px; color: var(--accent); }
+  [data-v6] .p-body .sec-t { font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+  [data-v6] .p-body :is(.sec-v, .sec-h .chev, .up-for) { display: none; }
+  [data-v6] .p-body .sec-b { display: none !important; }
+  [data-v6] .p-body .sec-h .up { position: static; order: 9; margin: 0; padding: 0; background: none; font-size: 11px; font-weight: 650; color: var(--accent); }
+  [data-v6] .p-body .sec-h .up.size { color: var(--ink); }
+  [data-v6] .p-body .sec-h .up[data-for]::before { content: none; }
+  [data-v6] .p-body .sec.active { box-shadow: none; }
+  [data-v6] .p-body .sec.active .sec-h { background: var(--tint); }
+  [data-v6] #optBody { display: grid; gap: 14px; align-content: start; }
+  [data-v6] #optBody .sec-b { display: grid !important; padding: 0; gap: 14px; }
+  [data-v6] .buysheet { width: 380px; flex: none; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, .14); overflow: hidden; }
+  [data-v6] .buybar { padding: 4px 12px 12px; }
+  [data-v6] #cta { position: relative; overflow: hidden; padding: 0 22px; }
+  [data-v6] .certcount { background: var(--tint); padding: 4px 12px 10px; gap: 2px; }
+  [data-v6] .tile.nofit { opacity: 1; position: relative; }
+  [data-v6] .tile.nofit > * { opacity: .45; }
+  [data-v6] :is(.t-go, .t-skip) { white-space: nowrap; }
+  [data-v6] .hint { transition: opacity .6s ease; }
+  [data-v6] .hint.seen { opacity: 0; pointer-events: none; }
+  /* swatches with their names underneath */
+  [data-v6] .swgrid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 12px 6px; }
+  [data-v6] .swc { display: grid; justify-items: center; align-content: start; gap: 6px; }
+  [data-v6] .swc .sw { width: 40px; height: 40px; }
+  [data-v6] .swc span { font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; cursor: pointer; }
+  [data-v6] .swc:has(.sw.on) span { color: var(--ink); font-weight: 600; }
+  /* bigger − / + buttons (44 px is the minimum comfortable touch size) */
+  [data-v6] .qty { height: 40px; }
+  [data-v6] .qty button { width: 40px; font-size: 18px; }
+  /* the three steps: Build › Style › Preview, above the step's options; Next under them */
+  [data-v6] .stepbar { order: -2; display: flex; gap: 4px; padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--line); }
+  [data-v6] .stepbar button { flex: 1; display: grid; justify-items: center; gap: 3px; border: 0; background: none; padding: 6px 2px; border-radius: 10px; font: inherit; font-size: 11.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+  [data-v6] .stepbar button:hover { background: var(--hover); }
+  [data-v6] .stepbar b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: #ececef; color: var(--muted); }
+  [data-v6] .stepbar button.on { color: var(--accent); background: var(--tint); }
+  [data-v6] .stepbar button.on b { background: var(--accent); color: #fff; }
+  [data-v6] .stepbar button.done b { background: var(--tint-2); color: var(--accent); }
+  [data-v6] .p-body .sec[data-sec="certs"] { order: -1; }      /* Build: your documents come before the size */
+  [data-v6] .stepnext { order: 99; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 650; padding: 11px 12px; cursor: pointer; }
+  [data-v6] .stepnext .i { width: 16px; height: 16px; }
+  [data-v6] .stepnext[hidden] { display: none; }
+  /* size tiles: how many 8.5×11 documents each one holds */
+  [data-v6] .tile .fits { font-style: normal; font-size: 10.5px; color: var(--muted); }
+  [data-v6] .tile.rec .fits { color: #2e7d4f; font-weight: 650; }
+  /* Preview: the board's summary */
+  .sumlist { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 12px; }
+  .sumlist li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: 13.5px; border-top: 1px solid var(--line); }
+  .sumlist li:first-child { border-top: 0; }
+  .sumlist li span { color: var(--muted); }
+  .sumlist li b { font-weight: 600; text-align: right; }
+  .sumlist li.tot b { font-size: 15px; }
+  #sumAR, #sumShare { display: inline-flex; align-items: center; gap: 7px; }
+  /* top of the Style step (v6): "Start with a popular design" (full width, light blue) */
+  .popcall { display: none; font: inherit; }
+  [data-v6] .popcall:not([hidden]) { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-radius: 14px; text-align: left; cursor: pointer; }
+  [data-v6] .popcall { min-height: 52px; padding: 10px 14px; background: var(--tint); color: var(--accent); font-size: 14px; font-weight: 700; }
+  [data-v6] .popcall span { flex: 1; }
+  [data-v6] .popcall:hover { background: #dde5f1; }
+  [data-v6] .popcall .i { width: 20px; height: 20px; flex: none; color: var(--accent); }
+  /* v6 cart: a bold header, the volume discount in a green box, and a bulk-order line under it */
+  [data-v6] .buysheet .grab .gtxt { font-size: 15px; font-weight: 750; color: var(--accent); }
+  [data-v6] .tot b { font-weight: 500; }
+  [data-v6] .disc-hint { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #e6f4ea; color: #1e6b3c; font-size: 14.5px; font-weight: 750; line-height: 1.3; }
+  [data-v6] .disc-hint::before { content: "%"; flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 800; }
+  .bulk { display: none; }
+  [data-v6] .bulk:not([hidden]) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; font-weight: 600; }
+  .bulkbtn { flex: none; padding: 8px 16px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+  .bulkbtn:hover { filter: brightness(1.15); }
+  /* v6: the logo blue, a shade deeper (#1f7bb6, so white text passes 4.5:1): View it on your wall (a big button) and Next */
+  [data-v6] #sumAR { flex: 1 1 100%; justify-content: center; min-height: 50px; border: 0; border-radius: 14px; background: #1f7bb6; color: #fff; font-size: 16px; font-weight: 700; }
+  [data-v6] #sumAR .i { width: 22px; height: 22px; color: #fff; }
+  [data-v6] #sumAR:hover { background: #1a6ca1; }
+  [data-v6] :is(#sumShare, #sumSave) { flex: 1; justify-content: center; min-height: 44px; border-radius: 12px; }
+  [data-v6] .stepnext { background: #1f7bb6; }
+  [data-v6] .stepnext:hover { background: #1a6ca1; }
+  #sumSave { display: none; }
+  [data-v6] #sumSave { display: inline-flex; align-items: center; gap: 7px; }
+  .sumcta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .sumcta:hover { filter: brightness(1.12); }
+  .sumcta .i { width: 20px; height: 20px; }
+  .sumcta b { font-weight: 600; opacity: .85; }
+  .sumcta b:not(:empty)::before { content: "· "; }
+  /* the room picker on the 3D view: ‹ Room: Studio › */
+  .roomnav { position: absolute; display: flex; align-items: center; gap: 0; padding: 3px; z-index: 4; }
+  .roomnav[hidden] { display: none; }
+  .roombtn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; font: inherit; font-size: 13px; color: var(--ink); border: 0; background: none; border-radius: 999px; cursor: pointer; }
+  .roombtn:hover, .rn-arrow:hover { background: var(--hover); }
+  .roombtn .i { width: 18px; height: 18px; color: var(--accent); }
+  .roombtn span { color: var(--muted); }
+  .roombtn b { font-weight: 650; }
+  .rn-arrow { display: grid; place-items: center; width: 32px; height: 32px; border: 0; background: none; border-radius: 50%; color: var(--accent); cursor: pointer; }
+  [data-v6]:not([data-step="custom"]) .roomnav { display: none; }
+  .rn-icon { display: none; }
+  /* phones: Collapse (bottom right of the 3D view) folds the options away so the board gets the whole screen */
+  .pfold { display: none; }
+  [data-v6] #shareBtn { display: none !important; }              /* sharing lives in step 3, Preview */
+  /* Board style (Style step) */
+  .dockhead { display: none; }
+  /* Preview: share buttons */
+  .sharegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .sharegrid button { display: grid; justify-items: center; gap: 6px; padding: 12px 6px 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+  .sharegrid button:hover { border-color: var(--accent); background: var(--tint); }
+  .sharegrid .i { width: 24px; height: 24px; color: var(--accent); }
+  /* the AR pop-up's message: navy on light blue */
+  .arqr { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+  .arqr[hidden] { display: none; }
+  .arqr #arQrCode { flex: none; width: 132px; height: 132px; }
+  .arqr #arQrCode svg { display: block; width: 100%; height: 100%; }
+  .arqr p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+  .arqr p > b:first-child { display: block; color: var(--ink); font-size: 14.5px; margin-bottom: 2px; }
+  [data-v6] #arMsg { background: #e3ecfa; color: var(--accent); font-weight: 700; font-size: 14px; line-height: 1.45; padding: 12px 16px; border-radius: 14px; }
+  /* v6 pop-ups, styled like the steps panel: a bold navy title and subheadings, light grey rounded cards, more room */
+  [data-v6] .side-h { padding: 18px 16px 10px 18px; border-bottom: 0; gap: 12px; }
+  [data-v6] .side-h h2 { font-size: 19px; font-weight: 750; letter-spacing: -.01em; color: var(--accent); }
+  [data-v6] #optIcon { width: 38px; height: 38px; place-items: center; border-radius: 12px; background: var(--tint); color: var(--accent); flex: none; }
+  [data-v6] #optIcon .i { width: 22px; height: 22px; color: var(--accent); }
+  [data-v6] .side .x { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: #f4f4f6; font-size: 22px; }
+  [data-v6] .side-body { padding: 8px 16px 24px; gap: 18px; }
+  [data-v6] #optBody, [data-v6] #optBody .sec-b { gap: 16px; }
+  [data-v6] .side :is(.lab, .mixhead) { margin: 6px 0 -6px; font-size: 15px; font-weight: 750; letter-spacing: 0; text-transform: none; color: var(--accent); }
+  [data-v6] .side hr.div { display: none; }                      /* (the cards and spacing separate the groups) */
+  [data-v6] .side :is(.owndocs, .certcount) { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: #f4f4f6; }
+  [data-v6] .side .owndocs > .opt:first-of-type { font-size: 15px; font-weight: 750; color: var(--accent); }
+  [data-v6] .side .owndocs > .opt:first-of-type .i { color: var(--accent); }
+  [data-v6] .side .owndocs .help { margin-top: -6px !important; }
+  [data-v6] .side .opt:has(> .switch) { min-height: 50px; padding: 8px 14px; border-radius: 14px; background: #f4f4f6; }
+  [data-v6] .side .help { font-size: 13px; }
+  [data-v6] .side .upload { border-radius: 12px; padding: 10px 16px; }
+  [data-v6] .side .sumlist { border: 0; border-radius: 16px; background: #f4f4f6; }
+  [data-v6] .side .sumlist li { border-top-color: #e4e4e8; }
+  /* popular designs, solid colors and textures: no outlines; the chosen one sits on light blue */
+  [data-v6] .preset { border: 0; background: #f4f4f6; padding: 9px; }
+  [data-v6] .preset:hover { background: #ececf0; }
+  [data-v6] .preset.on { background: var(--tint); }
+  [data-v6] .swc { padding: 8px 2px 6px; border-radius: 12px; cursor: pointer; }
+  [data-v6] .swc:has(.sw.on) { background: var(--tint); }
+  [data-v6] .swc .sw.on { outline: 0; }
+  [data-v6] .card.on { border-color: transparent; }
+  /* "+$" on an option that can cost extra (Textures): a small light blue bubble, top right on phones */
+  [data-v6] .p-body .sec-h .up.plus { padding: 2px 8px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 11px; font-weight: 800; }
+  .lamup { padding: 3px 10px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .lamup[hidden] { display: none; }
+  [data-v6] .side-h img { height: 17px; }
+  /* Documents: "Or use sample certificates" with its Show switch; Take a photo / Upload as two big buttons */
+  .labrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+  [data-v6] .side .labrow .lab { margin: 0; }
+  [data-v6] .side .owndocs .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  [data-v6] .side .owndocs .row > :not(.upload) { grid-column: 1 / -1; justify-self: start; }
+  [data-v6] .side .owndocs .upload { justify-content: center; min-height: 50px; font-size: 15px; font-weight: 650; }
+  [data-v6] .side .owndocs .upload:has(#certCam) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [data-v6] .side .owndocs .upload .i { width: 20px; height: 20px; }
+  [data-v6] .side .certcount .opt:has(#sheetTurn) { min-height: 44px; padding: 4px 0 0; border-radius: 0; background: none; border-top: 1px solid #e4e4e8; }
+  /* sample certificates: how many of each paper size */
+  .mixhead { margin: 0; font-weight: 700; }
+  .mixrows { display: grid; gap: 6px; }
+  .mixrows[hidden] { display: none; }
+  .opt.mix { min-height: 40px; }
+  /* each size: upright | sideways, left of its counter */
+  .orseg { display: inline-flex; flex: none; padding: 2px; border-radius: 9px; background: #e6e6ea; }
+  .orseg button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--muted); cursor: pointer; }
+  .orseg button .i { width: 18px; height: 18px; }
+  .orseg button.on { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+  .ordiv { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+  .ordiv::before, .ordiv::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+  [data-v6] .side .certcount .labrow { margin-bottom: 2px; }
+  [data-v6] .side .certcount .mixhead { margin: -4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .opt.mix small { margin-left: 4px; font-size: 12.5px; color: var(--muted); }
+  .mixrows .warn { color: #b3261e; }
+  .mixrows .warn:empty { display: none; }
+  /* the animated tutorial: the screen dims except a spotlight on one control; the tip card sits beside it */
+  .coach { position: fixed; inset: 0; z-index: 60; }
+  .coach[hidden] { display: none; }
+  .coach.nospot { background: rgba(12, 20, 36, .3); }
+  .coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(12, 20, 36, .55); outline: 2px solid #fff; transition: left .45s ease, top .45s ease, width .45s ease, height .45s ease, opacity .3s; pointer-events: none; }
+  .coach.nospot .coach-spot { opacity: 0; }
+  .coach-tip { position: fixed; width: min(330px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 16px 16px 14px; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .32); transition: left .45s ease, top .45s ease; }
+  .coach-tip.swap > :not(.coach-prog) { animation: tIn .35s ease both; }
+  .coach-k { margin: 0; font-size: 11.5px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .coach-t { font-size: 19px; line-height: 1.2; color: var(--accent); }
+  .coach-s { font-size: 14px; line-height: 1.45; color: var(--ink); }
+  .coach-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .coach-dots { display: flex; gap: 5px; margin-right: auto; }
+  .coach-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .25s, background .25s; }
+  .coach-dots i.on { width: 18px; background: var(--accent); }
+  .coach-dots i.done { background: var(--tint-2); }
+  .coach-bar .skip { border: 0; background: none; padding: 9px 10px; border-radius: 999px; font: inherit; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .coach-bar .skip:hover { background: var(--hover); }
+  .coach-bar .next { border: 0; padding: 9px 18px; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .coach-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--tint-2); transform-origin: left; transform: scaleX(0); }
+  .coach-prog.run { animation: coachProg var(--d, 4s) linear forwards; }
+  @keyframes coachProg { to { transform: scaleX(1); } }
+  #coachReplay[hidden] { display: none; }
+  .t-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .t-card #coachReplay { color: #fff; }
+  [data-v6] .t-card #coachReplay { color: var(--accent); font-weight: 600; }
+  /* help: a round "?" at the top left that plays the tutorial again (computers: the drag hint moves over for it) */
+  .helpbtn { display: none; }
+  [data-v6][data-step="custom"] .helpbtn:not([hidden]) { position: absolute; left: 14px; top: 12px; z-index: 5; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: var(--accent); box-shadow: var(--shadow); font: inherit; font-size: 19px; font-weight: 800; cursor: pointer; }
+  [data-v6] .helpbtn:hover { background: var(--tint); }
+  [data-v6] .hint { left: 64px; top: 18px; }
+  .coach-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .coach-spot, .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
+  /* the white studio: a soft vignette at the edges for depth */
+  #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
+  /* sketch icons (?icons=sketch) */
+  [data-v6].sk .p-body .sec-h > .i.skx { width: 30px; height: 30px; color: inherit; }
+  .colbuy { display: none; }
+  [data-v6] .tile.nofit::after { content: "Too small"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8a8a90; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  @media (min-width: 861px) {
+    /* computers: the options stand in a column on the right (icon left of its name, price or size under the name);
+       their pop-ups open just left of the column, above the cart (bottom right) */
+    [data-v6] .viewbar { display: none; }
+    [data-v6] .panel { justify-content: flex-end; }
+    /* the options column: middle right (clear of the room picker above and the cart below) */
+    [data-v6] .p-body { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); width: 236px; flex-direction: column; max-height: calc(100vh - 152px); overflow-y: auto; transition: width .2s ease; }
+    [data-v6] .p-body .sec { width: auto; }
+    [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 9px 14px 9px 12px; text-align: left; }
+    [data-v6] .p-body .sec-h > .i:first-child { grid-row: 1; align-self: center; }
+    [data-v6] .p-body .sec-h:has(.up.size:not([hidden])) > .i:first-child { grid-row: 1 / span 2; }
+    [data-v6] .p-body .sec-t { font-size: 13.5px; line-height: 1.25; }
+    [data-v6] .p-body .sec-h .up { grid-column: 3; grid-row: 1; justify-self: end; font-size: 11.5px; }   /* upcharge: right of the name */
+    [data-v6] .p-body .sec-h .up.size { grid-column: 2; grid-row: 2; justify-self: start; }               /* the size: under it */
+    [data-v6] .dockhead { display: block; margin: 8px 12px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    [data-v6] .dockhead[hidden], [data-v6] .p-body .sec[data-sec="boardgrp"] { display: none !important; }
+    /* an option slides out to the left of the column, full height (like the Wilsonart panel) */
+    [data-v6] .side { top: 68px; bottom: 84px; right: 260px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); animation: slideOut .24s ease; }
+    @keyframes slideOut { from { transform: translateX(48px); opacity: 0; } }
+    [data-v6] #optSheet .side-body { min-height: 0; }
+    /* Add to cart sits at the foot of the column */
+    [data-v6] .colbuy { order: 100; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 6px 8px; margin-top: 6px; padding: 10px 6px 2px; border-top: 1px solid var(--line); }
+    [data-v6] .colbuy[hidden] { display: none; }
+    [data-v6] .colbuy .cb-l { font-size: 12px; color: var(--muted); }
+    [data-v6] .colbuy b { font-size: 17px; }
+    [data-v6] #colCta { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+    [data-v6] #colCta:hover { filter: brightness(1.12); }
+    [data-v6] #colCta .i { width: 18px; height: 18px; }
+    /* the cart: a one-line chip (cart icon + total) that opens full size on hover or click, and when a board is added */
+    [data-v6] .buysheet { width: max-content; border-radius: 999px; transition: border-radius .2s ease; z-index: 20; }
+    [data-v6] .buysheet .grab { flex-direction: row; gap: 8px; width: auto; padding: 10px 18px; font-size: 14px; color: var(--ink); }
+    [data-v6].sk .p-body .sec-h { grid-template-columns: 32px minmax(0, 1fr) auto; }
+    [data-v6].sk .p-body .sec-h > .i.skx { width: 32px !important; height: 32px !important; }
+    [data-v6] .buysheet .grab :is(.bar, .gtxt, .chev) { display: none; }
+    [data-v6] .buysheet .grab .cic { display: block; width: 20px; height: 20px; color: var(--accent); }
+    [data-v6] .buysheet .grab .gamt { display: inline; font-weight: 700; }
+    [data-v6] .buysheet:not(.open) :is(.buybar, .editbar, .sheet-body) { display: none; }
+    [data-v6] .buysheet.open { width: 380px; border-radius: 18px; }
+    [data-v6] .buysheet.open .grab { justify-content: flex-start; }
+    [data-v6] .buysheet.open .grab .gtxt { display: inline; color: var(--muted); font-size: 13px; margin-right: auto; }
+    [data-v6] .buybar { grid-template-columns: 1fr; padding: 0 12px 12px; }
+    [data-v6] .buybar :is(.tot, #cta) { display: none; }
+    [data-v6] .buybar:not(:has(#cartCheckout:not([hidden]))) { display: none; }
+    [data-v6] .buysheet.pop { animation: cartPop .5s ease; }
+    @keyframes cartPop { 0% { transform: scale(.92); } 50% { transform: scale(1.03); } 100% { transform: none; } }
+    /* collapse the column to icons */
+    [data-v6] .dockmini { display: flex; align-items: center; justify-content: center; gap: 3px; align-self: flex-end; order: -3; min-width: 28px; height: 24px; margin: -2px -2px 0 0; padding: 0 2px 0 8px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+    [data-v6].dmini .dockmini { padding: 0; }
+    [data-v6].dmini .dm-t { display: none; }
+    /* the column's foot: more room above "Your board"; the price in medium weight */
+    [data-v6] .colbuy { padding-top: 25px; }
+    [data-v6] .colbuy b { font-weight: 500; }
+    [data-v6] .buysheet.open .grab .gtxt { font-size: 16px; font-weight: 750; color: var(--accent); }
+    [data-v6] .dockmini:hover { background: var(--hover); color: var(--ink); }
+    [data-v6] .dockmini[hidden] { display: none; }
+    [data-v6].dmini .p-body { width: 68px; }
+    [data-v6].dmini .dockmini .i { transform: rotate(180deg); }
+    [data-v6].dmini .p-body .sec-h { grid-template-columns: 24px; justify-content: center; padding: 10px 0; }
+    [data-v6].dmini .p-body :is(.sec-t, .up, .dockhead, .cb-l, #colPrice, #colCtaLbl, #stepNextLbl) { display: none !important; }
+    [data-v6].dmini .stepbar { flex-direction: column; }
+    [data-v6].dmini .stepbar button { font-size: 0; }
+    [data-v6].dmini .stepbar b { font-size: 11px; }
+    [data-v6].dmini .colbuy { grid-template-columns: 1fr; padding: 8px 0 0; }
+    [data-v6].dmini .side { right: 92px; }
+    /* the room picker: top right */
+    [data-v6] .roomnav { top: 14px; right: 16px; }
+    [data-v6] .panel { z-index: 16; }        /* the column and the open cart sit over the slide-out options */
+  }
+  @media (max-width: 860px) {
+    [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
+    [data-v6] .app { padding: 0; }
+    [data-v6] #shareBtn { top: 10px; right: 10px; }
+    [data-v6] .viewbar { display: none; }    /* (View on your wall lives in step 3, Preview) */
+    [data-v6] .panel { top: var(--stageMax, 58vh); left: 0; right: 0; bottom: 0; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 10px 10px calc(var(--cartH, 84px) + 8px); background: var(--panel); border-top: 1px solid var(--line); pointer-events: auto; }
+    [data-v6] .p-body { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+    [data-v6] .p-body .sec { width: auto; background: #f4f4f6; }
+    [data-v6] .p-body .sec-h { padding: 12px 2px 10px; min-height: 76px; justify-content: center; }
+    [data-v6] .p-body .sec-t { font-size: 11.5px; }
+    [data-v6] .buysheet { width: auto; border-radius: 18px 18px 0 0; border-width: 1px 0 0; }
+    /* phones: a pop-up slides up over the bottom 2/3 of the screen, and the board shrinks into the top third */
+    [data-v6] .side { top: var(--sheetTop, 33.33vh); animation: slideUp .28s ease; }
+    /* an option's pop-up is only as tall as its content (up to 2/3 of the screen); the board fills the space above */
+    [data-v6] #optSheet { top: auto; max-height: calc(100% - var(--sheetTop, 33.33vh)); }
+    [data-v6] #optSheet .side-body { min-height: 0; }
+    [data-v6] .qty { height: 44px; }
+    [data-v6] .qty button { width: 44px; }
+    /* the step bar and Next span the row; the step's options share the row between them */
+    [data-v6] :is(.stepbar, .stepnext) { grid-column: 1 / -1; }
+    [data-v6] .stepbar button { display: flex; justify-content: center; align-items: center; gap: 7px; font-size: 13px; padding: 8px 2px; }
+    [data-v6] .p-body[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    [data-v6] .p-body[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    [data-v6] .roomnav { top: 10px; right: 10px; }
+    /* the room picker folds to a round icon (top right); tapping it opens ‹ Room: Studio ›, a tap elsewhere folds it */
+    [data-v6] .roomnav:not(.open) > :not(.rn-icon) { display: none; }
+    [data-v6] .roomnav:not(.open) .rn-icon { display: grid; place-items: center; width: 38px; height: 38px; border: 0; background: none; border-radius: 50%; color: var(--accent); cursor: pointer; }
+    [data-v6] .roomnav:not(.open) .rn-icon .i { width: 20px; height: 20px; }
+    [data-v6] .roomnav.open { animation: rnOpen .2s ease; transform-origin: right center; }
+    @keyframes rnOpen { from { opacity: 0; transform: scaleX(.6); } }
+    [data-v6][data-step="custom"] .pfold:not([hidden]) { position: absolute; right: 10px; bottom: 8px; z-index: 4; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px 5px 7px; border: 0; border-radius: 999px; background: color-mix(in srgb, #fff 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0, 0, 0, .12); font: inherit; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+    [data-v6] .pfold .i { width: 16px; height: 16px; color: var(--accent); transition: transform .2s ease; }
+    [data-v6].pfolded .pfold .i { transform: rotate(180deg); }
+    [data-v6].pfolded .p-body { display: none; }      /* (the cart bar stays) */
+    [data-v6] .p-body .sec-t { white-space: normal; }
+    [data-v6] .buysheet .grab :is(.cic, .gamt) { display: none; }
+    /* Style: Board | Edge | Caps; tapping Board opens Solid Colors and Textures & Patterns beside it */
+    [data-v6] .p-body:not(.bopen) .sec:is([data-sec="color"], [data-sec="laminate"]) { display: none; }
+    [data-v6] .p-body.bopen .sec:is([data-sec="color"], [data-sec="laminate"]) { animation: popIn .28s ease both; }
+    [data-v6] .p-body.bopen .sec[data-sec="laminate"] { animation-delay: .06s; }
+    @keyframes popIn { from { opacity: 0; transform: translateX(-14px) scale(.9); } }
+    [data-v6] .p-body.bopen .sec[data-sec="boardgrp"] .sec-h { background: var(--tint); }
+    /* ...and the three read as one group: one light-blue background behind Board, Solid Colors and Textures, outlined */
+    [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) { background: none; }
+    [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) .sec-h { background: none; }
+    [data-v6] .p-body.bopen .sec[data-sec="boardgrp"]::before { content: ""; position: absolute; z-index: -1; top: -4px; bottom: -4px; left: -4px; right: calc(-200% - 16px - 4px); border-radius: 16px; background: var(--tint); box-shadow: 0 0 0 1.5px var(--accent) inset; animation: grpIn .28s ease both; pointer-events: none; }
+    [data-v6] .p-body .sec-h .up.plus { position: absolute; top: 6px; right: 6px; }
+    /* a thin divider between Board and its two options */
+    [data-v6] .p-body.bopen .sec[data-sec="color"]::before { content: ""; position: absolute; left: -4.5px; top: 16px; bottom: 16px; width: 1.5px; border-radius: 1px; background: #a9bcd9; }
+    @keyframes grpIn { from { clip-path: inset(0 66% 0 0 round 16px); } to { clip-path: inset(0 0 0 0 round 16px); } }
+    [data-v6].sk .p-body .sec-h > .i.skx { width: 44px !important; height: 44px !important; }
+    [data-v6] .dockmini { display: none !important; }
+    [data-v6] .t-skip { display: grid; }
+    /* phones: the start card is centered */
+    [data-v6] .t-card { justify-items: center; text-align: center; }
+    [data-v6] .t-card h1 { text-align: center; }
+    [data-v6] .t-links { justify-content: center; }
+    [data-v6] .t-card h1 { font-size: 14px; }
+    [data-v6] .t-sub { font-size: 17px; }
+    [data-v6] .t-cont { left: 50%; transform: translateX(-50%); white-space: nowrap; animation-name: tInC; }
+    @keyframes tInC { from { opacity: 0; transform: translate(-50%, 16px); } }
+    [data-v6] .t-card.cont { bottom: 72px; }
+    [data-v6] .t-logo { left: 50%; transform: translateX(-50%); width: 56px; height: 56px; top: -28px; }
+    [data-v6] .t-logo img { height: 34px; }
+    @keyframes slideUp { from { transform: translateY(100%); } }
+  }
+</style>
+</head>
+<body>
+<!-- Icon set (used as <svg class="i"><use href="#i-name"/></svg>) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-board" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="8" cy="6" r=".6"/><circle cx="16" cy="6" r=".6"/><circle cx="8" cy="18" r=".6"/><circle cx="16" cy="18" r=".6"/></symbol>
+  <symbol id="i-design" viewBox="0 0 24 24"><path d="M12 3.5l1.9 4.6 4.6 1.9-4.6 1.9L12 16.5l-1.9-4.6L5.5 10l4.6-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12.5h-11z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10"/></symbol>
+  <symbol id="i-size" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-color" viewBox="0 0 24 24"><path d="M12 3.5s6 6.3 6 10.7a6 6 0 0 1-12 0C6 9.8 12 3.5 12 3.5z"/></symbol>
+  <symbol id="i-edge" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><rect x="7.5" y="7.5" width="9" height="9" rx="1"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 4l2.4 5 5.4.7-4 3.7 1.1 5.4L12 16.2 7.1 18.8l1.1-5.4-4-3.7 5.4-.7z"/></symbol>
+  <symbol id="i-cert" viewBox="0 0 24 24"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4M9.5 12h6M9.5 15.5h6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r=".7"/><circle cx="4.5" cy="12" r=".7"/><circle cx="4.5" cy="17.5" r=".7"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></symbol>
+  <symbol id="i-orient" viewBox="0 0 24 24"><rect x="4" y="7" width="9" height="13" rx="1.5"/><rect x="11" y="4" width="9" height="6" rx="1.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 12v7h14v-7"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></symbol>
+  <symbol id="i-room" viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11"/><circle cx="12" cy="11.5" r="2.5"/><path d="M12 6.8v2.2"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-wallpic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="6.5" y="7.5" width="4.5" height="5.5" rx=".6"/><rect x="13" y="7.5" width="4.5" height="5.5" rx=".6"/><path d="M6.5 16.5h11"/></symbol>
+  <symbol id="i-weave" viewBox="0 0 24 24"><path stroke-width="2.9" stroke-linecap="butt" d="M3.5 8.5h9.3M18.2 8.5h2.3M3.5 15.5h2.3M11.2 15.5h9.3M8.5 3.5v2.3M8.5 11.2v9.3M15.5 3.5v9.3M15.5 18.2v2.3"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 1.9-.8 1.9-1.7 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-.9.8-1.7 1.7-1.7h2a4.4 4.4 0 0 0 4.4-4.4C21 6.5 17 3.5 12 3.5z"/><circle cx="7.6" cy="11.6" r="1.2"/><circle cx="10.4" cy="7.6" r="1.2"/><circle cx="15" cy="7.8" r="1.2"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></symbol>
+  <symbol id="i-fb" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M14.5 8.5h-1.5a1.8 1.8 0 0 0-1.8 1.8V20.5M9.5 13h5"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.8" cy="7.2" r=".7"/></symbol>
+  <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <symbol id="i-tall" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="1.6"/></symbol>
+  <symbol id="i-wide" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1.6"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4.5 19.5l1-4.5L15.8 4.7a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L9 18.5z"/><path d="M13.8 6.7l3.5 3.5"/></symbol>
+  <!-- sketch icons (?icons=sketch): the part being edited highlighted in light blue -->
+  <symbol id="i-sk-board" viewBox="0 0 40 40"><rect x="9" y="5" width="22" height="30" rx="1.5" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="12.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="12.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/></symbol>
+  <symbol id="i-sk-caps" viewBox="0 0 40 40"><path d="M4 9h27v27" fill="none" stroke="#1b3a6b" stroke-width="1.4"/><path d="M31 9l4-3v27l-4 3" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><path d="M4 9l4-3h27" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><circle cx="21" cy="19" r="7" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="21" cy="19" r="3.6" fill="none" stroke="#1b3a6b" stroke-width="1"/></symbol>
+  <symbol id="i-sk-edge" viewBox="0 0 40 40"><path d="M6 10l20-5v30l-20-4z" fill="#fff" stroke="#1b3a6b" stroke-width="1.4"/><path d="M26 5l6 2v29l-6-1z" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><path d="M6 10l6 1.5 20-4.5" fill="none" stroke="#1b3a6b" stroke-width="1"/><circle cx="9.5" cy="12.5" r="1.3" fill="#fff" stroke="#1b3a6b" stroke-width=".9"/><circle cx="22" cy="9.6" r="1.3" fill="#fff" stroke="#1b3a6b" stroke-width=".9"/></symbol>
+  <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
+</svg>
+
+<div class="app">
+  <div id="stageWrap">
+    <div id="stage"></div>
+    <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
+    <!-- v6: the room picker stays on the 3D view through every step; the arrows step through the rooms -->
+    <div class="roomnav pill" id="roomNav" hidden>
+      <button class="rn-icon" id="roomIcon" type="button" aria-expanded="false" aria-label="Room"><svg class="i"><use href="#i-room"/></svg></button>
+      <button class="rn-arrow" id="roomPrev" type="button" aria-label="Previous room"><svg class="i"><use href="#i-left"/></svg></button>
+      <button class="roombtn" id="roomBtn" type="button"><svg class="i"><use href="#i-room"/></svg><span>Room</span><b id="roomName"></b></button>
+      <button class="rn-arrow" id="roomNext" type="button" aria-label="Next room"><svg class="i"><use href="#i-right"/></svg></button>
+    </div>
+    <!-- v6: help, top left; plays the tutorial again at any time -->
+    <button class="helpbtn" id="helpBtn" type="button" aria-label="How it works (tutorial)" title="How it works" hidden>?</button>
+    <!-- v6 phones: fold the options away so the board fills the screen -->
+    <button class="pfold" id="panelFold" type="button" aria-expanded="true" hidden><svg class="i"><use href="#i-chev"/></svg><span>Collapse</span></button>
+    <div class="viewbar pill" role="group" aria-label="View">
+      <button class="vb-auto lay-v5" id="autoBtn" type="button" hidden><svg class="i"><use href="#i-spark"/></svg>Auto-Suggest</button>
+      <button data-view="front">Front</button>
+      <button data-view="angle" class="on">Angle</button>
+      <button data-view="back">Back</button>
+      <button id="arBtn" class="ar-btn" type="button" hidden><svg class="i"><use href="#i-ar"/></svg>View on your wall</button>
+    </div>
+    <!-- v4: what we found in their photo (top left) while they browse looks -->
+    <div class="lookwall pill" id="lookWall" hidden><img id="lookShot" alt="Your wall photo"><i id="lookSw"></i><span id="lookWallTxt"></span></div>
+    <div class="lookhint pill">Swipe or use ← → · tap the board to change a part</div>
+  </div>
+
+  <!-- v4 step 2: swipe through looks suggested for their wall; the board stays in place -->
+  <div class="lookbar lay-v4 lay-v5" id="lookBar" hidden>
+    <div class="lookrow">
+      <button class="lk-arrow" type="button" id="lookPrev" aria-label="Previous look"><svg class="i"><use href="#i-left"/></svg></button>
+      <div class="lookcard" id="lookCard" aria-live="polite">
+        <p class="lk-kick" id="lookKick"></p>
+        <span class="lk-top"><span id="lookCount"></span><span id="lookPrice"></span></span>
+        <b id="lookName"></b>
+        <span id="lookSpec"></span>
+        <em id="lookWhy"></em>
+        <div class="dots" id="lookDots" aria-hidden="true"></div>
+      </div>
+      <button class="lk-arrow" type="button" id="lookNext" aria-label="Next look"><svg class="i"><use href="#i-right"/></svg></button>
+    </div>
+    <button class="primary" type="button" id="lookCustomize">Customize this look</button>
+    <div class="lookmore"><button class="link" type="button" id="lookScratch">Start from scratch</button> · <button class="link" type="button" id="lookRetake">Retake photo</button></div>
+  </div>
+
+  <div class="panel">
+    <div class="p-head">
+      <button class="back-looks lay-v4" id="backLooks" type="button" hidden><svg class="i"><use href="#i-left"/></svg>Looks</button>
+      <h1>Design Options</h1>
+      <!-- v5: in place of the heading, what we learned from their wall photo + their own documents -->
+      <button class="share-btn mw-btn lay-v5" id="myWallBtn" type="button" hidden><svg class="i"><use href="#i-wallpic"/></svg><span>My Wall<span class="v"></span></span></button>
+      <button class="share-btn" id="shareBtn" type="button" aria-label="Share this design"><svg class="i"><use href="#i-share"/></svg><span>Share</span></button>
+    </div>
+
+    <div class="p-body">
+      <!-- v6: three steps; the dock shows only the current step's options (main.js STEPS6) -->
+      <button class="dockmini" id="dockMini" type="button" aria-label="Collapse the options to icons" aria-pressed="false" hidden><span class="dm-t" aria-hidden="true">Collapse</span><svg class="i"><use href="#i-right"/></svg></button>
+      <nav class="stepbar" id="stepBar" aria-label="Steps" hidden>
+        <button type="button" data-st="build"><b>1</b>Build</button>
+        <button type="button" data-st="style"><b>2</b>Style</button>
+        <button type="button" data-st="preview"><b>3</b>Preview</button>
+      </nav>
+      <!-- All options in one panel, in three groups. Sections fold; clicking part of the board opens its section. -->
+      <!-- ====== BOARD ====== -->
+      <!-- v5: popular boards as a strip across the top (main.js moves #presetList in here) -->
+      <div class="popstrip lay-v5" id="popStrip" hidden><p class="pop-h">Popular Boards</p></div>
+      <div class="tabpane" data-pane="board">
+        <section class="sec" data-sec="presets">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-spark"/></svg><span class="sec-t">Popular boards</span><span class="sec-v" data-v="presets">Start here</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">One tap to start from a board other businesses order. You can change anything after.</p>
+            <div class="presets" id="presetList"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="size">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-size"/></svg><span class="sec-t">Size</span><span class="sec-v" data-v="size"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <!-- v5: the photo scan + certificate count, in one line (the count and results live under My wall) -->
+            <div class="autorow lay-v5" hidden><svg class="i"><use href="#i-spark"/></svg><span><b>Auto-Suggest</b><small>Snap your wall and we'll size a board to fit</small></span>
+              <button class="primary camgo" type="button" data-snap aria-label="Snap your wall" title="Snap your wall"><svg class="i"><use href="#i-camera"/></svg></button></div>
+            <div class="certcount">
+              <div class="opt"><svg class="i"><use href="#i-cert"/></svg><span>How many certificates?</span>
+                <span class="qty" role="group" aria-label="Number of certificates"><button type="button" data-cc="-1" aria-label="One fewer">−</button><span id="certNeed">—</span><button type="button" data-cc="1" aria-label="One more">+</button></span></div>
+              <p class="help" id="certAdvice">Tell us how many 8.5×11 documents you need to display, and we'll suggest the size that fits.</p>
+              <div class="row scanrow">
+                <label class="upload"><input type="file" accept="image/*" capture="environment" id="scanCam"><svg class="i"><use href="#i-camera"/></svg>Snap your wall</label>
+                <label class="link scanup"><input type="file" accept="image/*" id="scanFile" style="position:absolute;opacity:0;width:1px;height:1px">or upload a photo</label>
+                <button class="link scanup" type="button" id="scanDemo">see an example</button>
+              </div>
+              <p class="help" style="margin:0">Photograph the certificates you have up now. We'll count them, guess their sizes and fill a board with samples.</p>
+              <div class="scanres" id="scanResult" hidden><canvas id="scanCanvas"></canvas><p class="help" id="scanText"></p></div>
+            </div>
+            <div id="sizes"></div>
+            <div id="customBox" hidden>
+              <span class="lbl">Width</span><input id="cw" type="number" min="6" max="96" value="18">
+              <span class="lbl">Height</span><input id="ch" type="number" min="6" max="96" value="30">
+              <span class="lbl">in</span>
+              <div id="customWarn" role="status"></div>
+            </div>
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-orient"/></svg><span>Orientation</span>
+              <div class="seg"><button data-orient="portrait" class="on">Portrait</button><button data-orient="landscape">Landscape</button></div></div>
+            <button class="link preset-link lay-v2 lay-v3" type="button" data-open="presets" hidden>Not sure? Start from a popular board</button>
+          </div>
+        </section>
+
+        <!-- v2: after size, pick Standard (stock colors, priced) or Custom (laminate, any color, printing; quoted) -->
+        <div class="fork lay-v2" id="fork" hidden>
+          <div class="fork-cards">
+            <button class="forkc" type="button" data-path="standard"><svg class="i"><use href="#i-board"/></svg><b>Standard board</b><small>8 stock colors · priced online · ships fast</small><em id="forkStd"></em></button>
+            <button class="forkc" type="button" data-path="custom"><svg class="i"><use href="#i-layers"/></svg><b>Custom board</b><small>Wilsonart laminates, any color, logo &amp; printing</small><em>Quoted</em></button>
+          </div>
+        </div>
+
+        <!-- v2: the smaller choices as simple rows: toggles, eye icons (show/hide in the preview) and rows that open a panel -->
+        <!-- v5 uses the same rows, minus the ones marked data-only="v2" (v5 shows those as cards, or not at all) -->
+        <div class="lines lay-v2 lay-v5" id="lines" hidden>
+          <label class="line" data-only="v2"><svg class="i"><use href="#i-edge"/></svg><span>Edge matches board</span><input type="checkbox" class="switch" id="lnMatch"></label>
+          <button class="line" type="button" data-open="edge" id="lnEdge" data-only="v2"><svg class="i"><use href="#i-edge"/></svg><span>Edge color</span><span class="v" data-v="edge"></span><svg class="i go"><use href="#i-right"/></svg></button>
+          <button class="line" type="button" data-open="caps" data-path="custom" data-only="v2"><svg class="i"><use href="#i-cap"/></svg><span>Caps &amp; studs</span><span class="v" data-v="caps"></span><svg class="i go"><use href="#i-right"/></svg></button>
+          <div class="line" id="lnCerts"><svg class="i"><use href="#i-cert"/></svg><button class="lt" type="button" data-open="certs">Sample certificates <span class="v" data-v="certs"></span></button><button class="eye turn lay-v5" type="button" id="lnTurn" hidden aria-label="Rotate the certificates 90 degrees" title="Rotate 90°"><svg class="i"><use href="#i-rotate"/></svg></button><button class="eye" type="button" data-eye="sheets" aria-label="Show or hide the sample certificates"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <div class="line" data-path="custom" data-only="v2"><svg class="i"><use href="#i-logo"/></svg><button class="lt" type="button" data-open="logo">Logo <span class="v" data-v="logo"></span></button><button class="eye" type="button" data-eye="logo" aria-label="Show or hide the logo"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <div class="line" data-path="custom" data-only="v2"><svg class="i"><use href="#i-image"/></svg><button class="lt" type="button" data-open="bgimg">Background image <span class="v" data-v="bgimg"></span></button><button class="eye" type="button" data-eye="background" aria-label="Show or hide the background image"><svg class="i"><use href="#i-eye"/></svg></button></div>
+          <button class="line" type="button" data-open="wall" data-only="v2"><svg class="i"><use href="#i-room"/></svg><span>Room &amp; lighting</span><span class="v" data-v="wall"></span><svg class="i go"><use href="#i-right"/></svg></button>
+        </div>
+
+        <!-- v6 Style step: computers show a small "Board style" heading over Solid Colors and Textures & Patterns;
+             phones show a Board button that opens those two beside it -->
+        <!-- top of the Style step: v6 a full-width "start from a popular design" callout (v7: nothing) -->
+        <button class="popcall" id="popCall" type="button" hidden><svg class="i"><use href="#i-grid"/></svg><span>Start with a popular design, then customize</span><svg class="i"><use href="#i-right"/></svg></button>
+        <p class="dockhead" id="boardHead" hidden>Board style</p>
+        <section class="sec" data-sec="boardgrp" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-board"/></svg><span class="sec-t">Board</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
+        <section class="sec" data-sec="color">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-color"/></svg><span class="sec-t">Board color</span><span class="sec-v" data-v="color"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <div class="swgrid" id="faceSw"></div>
+            <div class="opt"><span>Any other color <span class="lbl">(matched on request)</span></span><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom board color"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="laminate">
+          <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-layers"/></svg><span class="sec-t">Custom laminate</span><span class="sec-v" data-v="laminate"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b">
+            <!-- the arrow points left (panel opens to the left) and flips to point right while the panel is open -->
+            <button id="lamBtn" class="wa" type="button" aria-haspopup="dialog" aria-controls="lamPanel" aria-expanded="false">
+              <span class="go"><svg class="i"><use href="#i-left"/></svg></span>
+              <img class="logo" src="../img/wilsonart-logo.svg" alt="Wilsonart">
+              <b id="lamBtnTitle">Browse Wilsonart designs</b>
+              <small id="lamBtnLabel">Woodgrains, stones, solids and more</small>
+              <img class="thumb" id="lamThumb" alt="" hidden>
+            </button>
+            <p class="help"><span data-quote="laminate">Laminate boards are custom-made, so they are quoted rather than priced online.</span></p>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="edge">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-edge"/></svg><span class="sec-t">Edge banding</span><span class="sec-v" data-v="edge"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <label class="opt"><span>Match board color</span><input type="checkbox" class="switch" id="edgeMatch" checked></label>
+            <div class="swgrid" id="edgeSw"></div>
+            <div class="opt"><span>Custom edge color</span><input type="color" id="edgeCustom" value="#555555" aria-label="Custom edge color"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="caps">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-cap"/></svg><span class="sec-t">Caps &amp; studs</span><span class="sec-v" data-v="caps"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <div id="fastSw"></div>
+            <p class="help">1" diameter caps with threaded studs</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====== DESIGN ====== -->
+      <div class="tabpane" data-pane="design">
+        <section class="sec" data-sec="bgimg">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-image"/></svg><span class="sec-t">Background image</span><span class="sec-v" data-v="bgimg"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">Printed across the board face, behind your logo and certificates. <span data-quote="background">Printed boards are made to order and quoted.</span></p>
+            <div id="bgArt"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="logo">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-logo"/></svg><span class="sec-t">Logo</span><span class="sec-v" data-v="logo"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">Printed on the board face, under your certificates. A PNG or SVG with a transparent background works best. <span data-quote="logo">Logo boards are made to order and quoted.</span></p>
+            <div id="logoArt"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="certs">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-cert"/></svg><span class="sec-t">Sample certificates</span><span class="sec-v" data-v="certs"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <label class="opt"><span>Show sample 8.5×11 certificates</span><input type="checkbox" class="switch" id="sheets" checked></label>
+            <label class="opt"><svg class="i"><use href="#i-rotate"/></svg><span>Rotate certificates 90°</span><input type="checkbox" class="switch" id="sheetTurn"></label>
+            <p class="help" id="sheetFit"></p>
+            <!-- v5 moves this whole block into My wall -->
+            <div class="owndocs" id="ownDocs">
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Show your own documents</span></div>
+            <p class="help" style="margin-top:-8px">Snap or upload your real permits, licenses and posters, any size, to see them on the board.</p>
+            <ul class="doclist" id="docList"></ul>
+            <div class="row">
+              <label class="upload"><input type="file" accept="image/*" capture="environment" id="certCam"><svg class="i"><use href="#i-camera"/></svg>Take a photo</label>
+              <label class="upload"><input type="file" accept="image/*" multiple id="certFiles"><svg class="i"><use href="#i-image"/></svg>Upload</label>
+              <button class="link" type="button" id="certClear" hidden>Back to samples</button>
+              <button class="link" type="button" id="docDemo">or try it with examples</button>
+            </div>
+            <div class="row" id="docTools" hidden><button class="link" type="button" id="docAuto">Auto-arrange</button><span class="lbl">or drag documents on the board to move them</span></div>
+            <p class="help" id="certOwnInfo" hidden></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- v5: what we learned from their wall photo (photo, wall color, each document and its size) + their own documents -->
+        <section class="sec lay-v5" data-sec="mywall" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-wallpic"/></svg><span class="sec-t">My wall</span><span class="sec-v" data-v="mywall"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <div class="mw-empty" id="mwEmpty">
+              <p class="help">Snap the certificates on your wall. We'll count them, guess each one's size, read your wall color and size a board to fit.</p>
+              <div class="row"><button class="primary snapbtn" type="button" data-snap><svg class="i"><use href="#i-camera"/></svg>Snap your wall</button>
+                <label class="upload"><input type="file" accept="image/*" data-wallup><svg class="i"><use href="#i-image"/></svg>Upload</label></div>
+            </div>
+            <div class="mw-got" id="mwGot" hidden>
+              <div class="mw-sum"><i id="mwSw"></i><span id="mwTxt"></span><button class="link" type="button" data-snap>Retake</button>
+                <label class="link"><input type="file" accept="image/*" class="vh" data-wallup>Upload</label></div>
+            </div>
+            <div id="mwSlot"></div>
+          </div>
+        </section>
+
+        <section class="sec" data-sec="wall">
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-room"/></svg><span class="sec-t">Room &amp; lighting</span><span class="sec-v" data-v="wall">Studio</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">See your board in a real setting. Preview only: it doesn't change the board you order. Studio shows true colors.</p>
+            <div class="envgrid" id="envGrid"></div>
+            <hr class="div">
+            <div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Your own wall</span></div>
+            <p class="help" style="margin-top:-8px">Snap the wall where the board will hang and design right on it.</p>
+            <div class="row">
+              <label class="upload"><input type="file" accept="image/*" capture="environment" id="wallCam"><svg class="i"><use href="#i-camera"/></svg>Take a photo</label>
+              <label class="upload"><input type="file" accept="image/*" id="wallFile"><svg class="i"><use href="#i-image"/></svg>Upload</label>
+              <button class="link" type="button" id="wallPhotoClear" hidden>Remove photo</button>
+            </div>
+            <div class="art-opts" id="wallPhotoOpts" hidden>
+              <label class="fld"><span>Width of the wall in your photo <output id="wallPhotoWOut"></output></span><input type="range" id="wallPhotoW" min="36" max="240" step="2"></label>
+              <label class="fld"><span>Move photo down / up <output id="wallPhotoYOut"></output></span><input type="range" id="wallPhotoY" min="-60" max="60" step="1"></label>
+            </div>
+            <div id="wallColorWrap">
+              <hr class="div" style="margin-bottom:14px">
+              <div class="lbl" style="margin-bottom:8px">Studio wall color</div>
+              <div class="swgrid" id="wallSw"></div>
+              <div class="opt"><span>Any wall color</span><input type="color" id="wallCustom" value="#ffffff" aria-label="Custom wall color"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- v6 step 3, Preview: see it on your wall (AR), share a link, and a summary of the board -->
+        <section class="sec" data-sec="arview" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-ar"/></svg><span class="sec-t">On your wall</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
+        <section class="sec" data-sec="sharelink" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-share"/></svg><span class="sec-t">Share</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">Send this design to a colleague, or post it.</p>
+            <div class="sharegrid">
+              <button type="button" data-share="email"><svg class="i"><use href="#i-mail"/></svg>Email</button>
+              <button type="button" data-share="facebook"><svg class="i"><use href="#i-fb"/></svg>Facebook</button>
+              <button type="button" data-share="instagram"><svg class="i"><use href="#i-ig"/></svg>Instagram</button>
+              <button type="button" data-share="tiktok"><svg class="i"><use href="#i-tt"/></svg>TikTok</button>
+              <button type="button" data-share="link"><svg class="i"><use href="#i-link"/></svg>Copy link</button>
+            </div>
+            <p class="help" id="shareMsg" role="status"></p>
+          </div>
+        </section>
+        <section class="sec" data-sec="saveit" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-save"/></svg><span class="sec-t">Save for later</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
+        <section class="sec" data-sec="summary" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-list"/></svg><span class="sec-t">Summary</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <ul class="sumlist" id="sumList"></ul>
+            <div class="row">
+              <button class="chipbtn" type="button" id="sumAR"><svg class="i"><use href="#i-ar"/></svg>View it on your wall</button>
+              <button class="chipbtn" type="button" id="sumShare"><svg class="i"><use href="#i-share"/></svg>Share</button>
+              <button class="chipbtn" type="button" id="sumSave"><svg class="i"><use href="#i-save"/></svg>Save for later</button>
+            </div>
+            <button class="sumcta" type="button" id="sumCta"><svg class="i"><use href="#i-bag"/></svg><span id="sumCtaLbl">Add to cart</span><b id="sumCtaPrice"></b></button>
+            <p class="help">You can come back and change anything, even after it's in your cart.</p>
+          </div>
+        </section>
+      </div>
+      <button class="stepnext" id="stepNext" type="button" hidden><span id="stepNextLbl">Next</span><svg class="i"><use href="#i-right"/></svg></button>
+      <!-- v6 computers: this board's price and Add to cart, at the foot of the options (the cart itself is a small chip) -->
+      <div class="colbuy" id="colBuy" hidden>
+        <span class="cb-l">Your board</span><b id="colPrice"></b>
+        <button id="colCta" type="button"><svg class="i"><use href="#i-bag"/></svg><span id="colCtaLbl">Add to cart</span></button>
+      </div>
+
+    </div>
+
+    <!-- Cart = the bottom panel (computers and phones). The bar always shows the cart total, Checkout and Add to cart;
+         tap or swipe the handle up to see each board in the cart. -->
+    <div class="buysheet" id="buysheet">
+      <button class="grab" id="sheetGrab" type="button" aria-expanded="false" aria-controls="sheetBody">
+        <span class="bar"></span><svg class="i cic" aria-hidden="true"><use href="#i-bag"/></svg><span class="gtxt">Your cart <b id="sheetCount"></b></span><b class="gamt" id="cartChipAmt">$0.00</b><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <div class="sheet-body" id="sheetBody">
+        <p class="help" id="cartEmpty">Nothing in your cart yet. Design a board and tap Add to cart.</p>
+        <ul id="cartList" class="cart"></ul>
+        <div class="cart-sum" id="cartSum" hidden>
+          <div class="rowsb"><span>Boards</span><span id="sumBoards"></span></div>
+          <div class="rowsb disc" id="sumDiscRow" hidden><span id="sumDiscLbl"></span><span id="sumDisc"></span></div>
+          <div class="rowsb tot2"><b>Estimated total</b><b id="sumTotal"></b></div>
+        </div>
+        <p class="disc-hint" id="discHint"></p>
+        <div class="bulk" id="bulk" hidden><span>Need to order more than 10 boards?</span><a class="bulkbtn" id="bulkLink" target="_top" rel="noopener">Contact us</a></div>
+        <div class="rowsb cart-foot" id="cartFoot" hidden><span id="cartCount" class="lbl"></span><button id="cartView" class="link" type="button">View full cart</button></div>
+        <p class="help" id="note"></p>
+      </div>
+      <div class="editbar" id="editBar" hidden>Editing a board in your cart · <button class="link" type="button" id="cancelEdit">Cancel</button></div>
+      <div class="buybar">
+        <button class="tot" id="cartTotBtn" type="button" aria-controls="sheetBody"><small>Cart total</small><b id="cartTotal">$0.00</b></button>
+        <button id="cartCheckout" class="ghost" type="button" hidden>Checkout</button>
+        <button id="cta" type="button"><span id="ctaLabel">Add to cart</span><small id="price"></small></button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="sheet-dim" id="sheetDim" hidden></div>
+
+<!-- v4 step 1: full screen. Snap the wall (or upload, see an example, browse without a photo, start from scratch). -->
+<section class="guide lay-v4" id="guide" hidden aria-labelledby="guideTitle">
+  <div class="g-in">
+    <p class="g-kick">Compliance board designer</p>
+    <h1 id="guideTitle">See your new board in under a minute</h1>
+    <ol class="g-steps">
+      <li><svg class="i"><use href="#i-camera"/></svg><b>Snap your wall</b><span>Take a photo of the certificates and permits you have up now.</span></li>
+      <li><svg class="i"><use href="#i-spark"/></svg><b>Swipe through looks</b><span>We count your documents, size a board to fit, and suggest styles that suit your room.</span></li>
+      <li><svg class="i"><use href="#i-design"/></svg><b>Make it yours</b><span>Change any part you like, then add it to your cart.</span></li>
+    </ol>
+    <label class="g-cam"><input type="file" accept="image/*" capture="environment" id="guideCam"><svg class="i"><use href="#i-camera"/></svg>Snap your wall</label>
+    <div class="g-alt"><label class="link"><input type="file" accept="image/*" id="guideFile" class="vh">Upload a photo</label> · <button class="link" type="button" id="guideDemo">See an example</button></div>
+    <p class="g-msg" id="guideMsg" role="status"></p>
+    <p class="g-busy"><span class="spin"></span>Looking at your wall…</p>
+    <div class="g-or">or</div>
+    <div class="g-alt2">
+      <button class="ghostbtn" type="button" id="guideBrowse">Browse looks without a photo</button>
+      <button class="ghostbtn" type="button" id="guideScratch">Start from scratch</button>
+    </div>
+    <button class="link" type="button" id="guideResume" hidden>Continue your last design</button>
+  </div>
+</section>
+
+<!-- v5: Auto-suggest, one full screen at a time over the live 3D board: 1 welcome, 2 snap your wall (live camera on
+     phones), 3 our picks (the swipe bar under the board). Back / Skip on every step. <html data-step="intro | snap | styles | custom"> -->
+<section class="tour lay-v5" id="tour" hidden aria-label="Auto-suggest">
+  <header class="t-bar">
+    <button class="t-btn" type="button" id="tourBack"><svg class="i"><use href="#i-left"/></svg>Back</button>
+    <div class="t-dots" aria-hidden="true"><i data-d="intro"></i><i data-d="snap"></i><i data-d="styles"></i></div>
+    <button class="t-btn" type="button" id="tourSkip">Skip</button>
+  </header>
+  <div class="t-step t-intro">
+    <div class="t-card">
+      <p class="g-kick">Step 1 of 3 · Compliance board designer</p>
+      <h1>A board made for your wall</h1>
+      <p class="t-sub">Start from a style, tell us how many certificates you have, then make it yours.</p>
+      <ol class="t-list">
+        <li><svg class="i"><use href="#i-camera"/></svg><span><b>Snap your wall</b>We count your certificates and size a board to fit.</span></li>
+        <li><svg class="i"><use href="#i-spark"/></svg><span><b>See our picks</b>Swipe through looks that suit your room.</span></li>
+        <li><svg class="i"><use href="#i-design"/></svg><span><b>Make it yours</b>Change any part, then add it to your cart.</span></li>
+      </ol>
+      <div class="t-acts"><button class="primary t-go" type="button" id="tourStart">Get started<svg class="i"><use href="#i-right"/></svg></button>
+        <button class="t-skip" type="button" id="tourSkipCard">Skip</button></div>
+      <button class="link" type="button" id="tourResume" hidden>Continue your last design</button>
+      <button class="link" type="button" id="coachReplay" hidden>How it works</button>
+    </div>
+  </div>
+  <div class="t-step t-snap" id="tourSnap">
+    <video id="camFeed" playsinline muted autoplay aria-hidden="true"></video>
+    <div class="t-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="t-drop" aria-hidden="true">Drop your photo here</div>
+    <div class="t-tip">
+      <p class="g-kick">Step 2 of 3</p>
+      <b>Snap your wall</b>
+      <span id="tourTip">Fit the certificates you have up now in the frame, with some wall showing around them.</span>
+    </div>
+    <div class="t-low">
+      <p class="t-msg" id="tourMsg" role="status"></p>
+      <p class="t-busy"><span class="spin"></span>Looking at your wall…</p>
+      <div class="t-shoot">
+        <label class="t-side"><input type="file" accept="image/*" id="tourFile" class="vh"><svg class="i"><use href="#i-image"/></svg>Upload</label>
+        <!-- phones: the camera shutter. Computers (no live camera): an "Upload a photo" button -->
+        <button class="t-shutter" type="button" id="tourShutter" aria-label="Take the photo"><svg class="i"><use href="#i-camera"/></svg><svg class="i ic-up"><use href="#i-image"/></svg><span>Upload a photo</span></button>
+        <button class="t-side" type="button" id="tourDemo"><svg class="i"><use href="#i-spark"/></svg>Example</button>
+      </div>
+      <button class="link t-camlink" type="button" id="tourLive" hidden>Use my webcam</button>
+      <input type="file" accept="image/*" capture="environment" id="tourCam" class="vh" tabindex="-1" aria-hidden="true">
+    </div>
+  </div>
+</section>
+
+<!-- v6: the animated tutorial. A dimmed screen with a "spotlight" on the control each step is about, and a tip card -->
+<div class="coach" id="coach" hidden>
+  <div class="coach-spot" aria-hidden="true"></div>
+  <div class="coach-tip" role="dialog" aria-modal="true" aria-labelledby="coachT">
+    <p class="coach-k" id="coachK"></p>
+    <b class="coach-t" id="coachT"></b>
+    <span class="coach-s" id="coachS" aria-live="polite"></span>
+    <div class="coach-bar"><span class="coach-dots" id="coachDots" aria-hidden="true"></span>
+      <button class="skip" type="button" id="coachSkip">Skip</button><button class="next" type="button" id="coachNext">Next</button></div>
+    <i class="coach-prog" aria-hidden="true"></i>
+  </div>
+</div>
+
+<!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
+<!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
+<aside id="optSheet" class="side" role="dialog" aria-labelledby="optTitle" hidden>
+  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close">×</button></header>
+  <div class="side-body" id="optBody"></div>
+</aside>
+
+<aside id="lamPanel" class="side" role="dialog" aria-labelledby="lamTitle" hidden>
+  <header class="side-h">
+    <img src="../img/wilsonart-logo.svg" alt="Wilsonart">
+    <h2 id="lamTitle">Custom laminate</h2>
+    <button class="x" data-close aria-label="Close laminate picker">×</button>
+  </header>
+  <!-- the chosen laminate, with Rotate 90° and Remove, at the top of the swatches panel -->
+  <div class="lam-sel" id="lamSelRow" hidden>
+    <img id="lamSelThumb" alt="">
+    <span class="lam-sel-nm"><small>Selected</small><b id="lamSelName"></b></span>
+    <button id="grainBtn" class="chipbtn" type="button" aria-pressed="false"><svg class="i"><use href="#i-rotate"/></svg>Rotate 90°</button>
+    <button id="lamClear" class="link" type="button">Remove</button>
+  </div>
+  <div class="side-search">
+    <label class="sbox"><svg class="i"><use href="#i-search"/></svg>
+      <input id="lamSearch" type="search" placeholder="Number or name (e.g. 5075)" autocomplete="off" aria-label="Search laminates by number or name"></label>
+      <div class="seg cols" id="lamCols" role="group" aria-label="Swatches per row">
+        <button type="button" data-cols="1" aria-label="1 per row" title="1 per row"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="12" rx="1.5"/></svg></button>
+        <button type="button" data-cols="2" aria-label="2 per row" title="2 per row"><svg viewBox="0 0 16 16"><rect x="1.5" y="3" width="6" height="10" rx="1.2"/><rect x="8.5" y="3" width="6" height="10" rx="1.2"/></svg></button>
+        <button type="button" data-cols="3" aria-label="3 per row" title="3 per row"><svg viewBox="0 0 16 16"><rect x="1" y="4" width="4" height="8" rx="1"/><rect x="6" y="4" width="4" height="8" rx="1"/><rect x="11" y="4" width="4" height="8" rx="1"/></svg></button>
+      </div>
+  </div>
+  <div class="side-body">
+    <div class="ffilters" id="lamFilters"></div>
+    <div class="rowsb"><span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span><span id="lamUp" class="lamup" hidden></span></div>
+    <div id="lamNotFound" class="nf" hidden>
+      <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
+      <p>You can still use it: we'll match the number when we quote your board. Pick a stand-in color for the preview:</p>
+      <div class="row"><input type="color" id="lamStand" value="#bdbdbd" aria-label="Stand-in preview color"><button id="lamUseNum" class="primary" type="button">Use this number</button></div>
+    </div>
+    <div id="lamGrid" class="grid"></div>
+    <div class="center"><button id="lamMore" class="link" type="button" hidden>Show more designs</button></div>
+  </div>
+</aside>
+
+<!-- Phone AR: Google's <model-viewer> (vendor/model-viewer.min.js, loaded on first use) opens Apple Quick Look on
+     iPhone/iPad and WebXR in Chrome on Android, with the board placed on a wall at real size. -->
+<div id="arModal" class="modal" hidden>
+  <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
+    <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close">×</button></header>
+    <div class="ar-body">
+      <!-- ar-scale="auto": starts at real size, pinch to resize while in AR -->
+      <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="auto" camera-controls
+        shadow-intensity="1" alt="Your compliance board in 3D">
+        <button slot="ar-button" class="primary ar-go" type="button">Open camera &amp; place on wall</button>
+      </model-viewer>
+      <p class="help" id="arMsg">Preparing your board…</p>
+      <!-- computers: scan this with a phone to open the same design there, then place it on the wall -->
+      <div class="arqr" id="arQr" hidden>
+        <div id="arQrCode" role="img" aria-label="QR code that opens this design on your phone"></div>
+        <p><b>Scan with your phone's camera</b>This design opens on your phone, ready to place on your wall at real size.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload + layout controls, used twice (background image and logo). Wired up in js/main.js (wireArt). -->
+<template id="artTpl">
+  <div class="art">
+    <div class="row">
+      <label class="upload"><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" data-r="file" style="position:absolute;opacity:0;width:1px;height:1px"><svg class="i"><use href="#i-image"/></svg><span data-r="pick">Upload image…</span></label>
+      <span class="lbl fname" data-r="name"></span>
+      <button class="link" type="button" data-r="clear" hidden>Remove</button>
+    </div>
+    <div class="art-opts" data-r="opts" hidden>
+      <label class="fld"><span>Layout</span><select data-r="layout"></select></label>
+      <label class="fld" data-r="sizeWrap"><span>Width of image <output data-r="sizeOut"></output></span><input type="range" data-r="size"></label>
+      <label class="fld" data-r="gapWrap"><span>Spacing between copies <output data-r="gapOut"></output></span><input type="range" data-r="gap"></label>
+      <div class="two">
+        <label class="fld"><span><span data-r="rotLbl">Rotation</span> <output data-r="rotOut"></output></span><input type="range" data-r="rot"></label>
+        <label class="fld"><span>Opacity <output data-r="opacityOut"></output></span><input type="range" data-r="opacity"></label>
+      </div>
+      <div class="two">
+        <label class="fld"><span>Move left / right <output data-r="offXOut"></output></span><input type="range" data-r="offX"></label>
+        <label class="fld"><span>Move down / up <output data-r="offYOut"></output></span><input type="range" data-r="offY"></label>
+      </div>
+      <div class="row"><button class="link" type="button" data-r="shuffle" hidden>Shuffle</button><button class="link" type="button" data-r="reset">Reset layout</button></div>
+    </div>
+  </div>
+</template>
+<div id="toast" role="status"></div>
+<!-- If the builder doesn't start (e.g. a phone mixed a fresh page with an old cached script right after an update),
+     show a Reload prompt instead of a blank board. -->
+<script>
+  (function () {
+    function fail(msg) {
+      if (window.__cobo || document.getElementById('bootFail')) return;
+      var d = document.createElement('div');
+      d.id = 'bootFail';
+      d.setAttribute('role', 'alert');
+      d.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:99;background:#1b3a6b;color:#fff;padding:14px 16px;border-radius:12px;font:14px system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center';
+      d.innerHTML = '<span style="flex:1">The board builder didn’t load completely. Please reload the page.</span><button style="border:0;border-radius:8px;padding:8px 14px;font:600 14px system-ui;background:#fff;color:#1b3a6b">Reload</button>';
+      d.querySelector('button').onclick = function () { location.reload(); };
+      document.body.appendChild(d);
+      if (msg && window.console) console.error('COBO builder failed to start:', msg);
+    }
+    window.addEventListener('error', function (e) { if (!window.__cobo) fail(e.message); });
+    window.addEventListener('unhandledrejection', function (e) { if (!window.__cobo) fail(e.reason && e.reason.message); });
+    window.addEventListener('load', function () { setTimeout(function () { if (!window.__cobo) fail('did not start'); }, 4000); });
+  })();
+</script>
+<!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
+<script type="module" src="../js/main.js?v=202610301333" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+</body>
+</html>

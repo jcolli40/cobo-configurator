@@ -668,7 +668,29 @@
   [data-v6] .t-acts > :is(.t-go, .t-skip) { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 112px; padding: 16px 10px; border-radius: 18px; font-size: 16px; font-weight: 700; line-height: 1.2; text-align: center; white-space: normal; }
   [data-v6] .t-acts .i { width: 30px; height: 30px; }
   [data-v6] .t-card .t-skip { border-width: 1.5px; }
-  [data-v6] .t-sub { display: block; margin: -2px 0 2px; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, .82); }
+  /* one way in: a big "Start ›" button (Build comes first) */
+  [data-v6] .t-acts { grid-template-columns: 1fr; }
+  [data-v6] .t-acts > .t-go { display: flex; justify-content: center; gap: 8px; min-height: 58px; padding: 12px 24px; border-radius: 999px; font-size: 18px; }
+  [data-v6] .t-acts > .t-go .i { width: 22px; height: 22px; }
+  [data-v6] .t-acts > .t-skip { display: none !important; }
+  [data-v6].dmini .popcall span { display: none; }
+  [data-v6] .t-card h1 { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
+  [data-v6] .t-sub { font-size: 17.5px; line-height: 1.4; color: #3d3d45; }
+  /* the start card: white, dark text, navy Start button */
+  [data-v6] .t-intro { background: none; }
+  [data-v6] .t-card { background: #fff; color: var(--ink); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 20px 56px rgba(15, 25, 45, .2); }
+  [data-v6] .t-card .t-go { background: var(--accent); color: #fff; box-shadow: 0 8px 22px rgba(27, 58, 107, .3); }
+  [data-v6] .t-card .t-go:hover { background: #24497f; }
+  [data-v6] .t-logo { box-shadow: 0 6px 18px rgba(15, 25, 45, .18), 0 0 0 1px #e6e8ee; }
+  @media (min-width: 861px) { [data-v6] .t-card { width: min(387px, calc(100% - 32px)); } }   /* 10% narrower than the old 430 */
+  /* "Continue where you left off": a red bubble just under the card (the card moves up to make room) */
+  .t-cont { display: none; }
+  [data-v6] .t-cont { position: absolute; left: 0; top: calc(100% + 12px); display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: 0; border-radius: 999px; background: #c1272d; color: #fff; font: inherit; font-size: 15px; font-weight: 700; box-shadow: 0 10px 26px rgba(193, 39, 45, .35); cursor: pointer; animation: tIn .45s .25s ease both; }
+  [data-v6] .t-cont:hover { filter: brightness(1.08); }
+  [data-v6] .t-cont .i { width: 18px; height: 18px; }
+  [data-v6] .t-cont[hidden] { display: none; }
+  [data-v6] .t-card.cont { bottom: calc(clamp(16px, 7vh, 72px) + 62px); }
+  [data-v6] .t-sub { display: block; margin: -2px 0 2px; }
   [data-v6] #shareBtn { top: 14px; right: 16px; transform: none; z-index: 5; box-shadow: var(--shadow); }
   [data-v6][data-step="intro"] #shareBtn { display: none; }
   [data-v6] #toast { bottom: auto; top: 16px; }                 /* clear of the dock and the cart */
@@ -732,6 +754,31 @@
   .sumlist li b { font-weight: 600; text-align: right; }
   .sumlist li.tot b { font-size: 15px; }
   #sumAR, #sumShare { display: inline-flex; align-items: center; gap: 7px; }
+  /* top of the Style step (v6): "Start with a popular design" (full width, light blue) */
+  .popcall { display: none; font: inherit; }
+  [data-v6] .popcall:not([hidden]) { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-radius: 14px; text-align: left; cursor: pointer; }
+  [data-v6] .popcall { min-height: 52px; padding: 10px 14px; background: var(--tint); color: var(--accent); font-size: 14px; font-weight: 700; }
+  [data-v6] .popcall span { flex: 1; }
+  [data-v6] .popcall:hover { background: #dde5f1; }
+  [data-v6] .popcall .i { width: 20px; height: 20px; flex: none; color: var(--accent); }
+  /* v6 cart: a bold header, the volume discount in a green box, and a bulk-order line under it */
+  [data-v6] .buysheet .grab .gtxt { font-size: 15px; font-weight: 750; color: var(--accent); }
+  [data-v6] .tot b { font-weight: 500; }
+  [data-v6] .disc-hint { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #e6f4ea; color: #1e6b3c; font-size: 14.5px; font-weight: 750; line-height: 1.3; }
+  [data-v6] .disc-hint::before { content: "%"; flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 800; }
+  .bulk { display: none; }
+  [data-v6] .bulk:not([hidden]) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; font-size: 13.5px; font-weight: 600; }
+  .bulkbtn { flex: none; padding: 8px 16px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+  .bulkbtn:hover { filter: brightness(1.15); }
+  /* v6: the logo blue, a shade deeper (#1f7bb6, so white text passes 4.5:1): View it on your wall (a big button) and Next */
+  [data-v6] #sumAR { flex: 1 1 100%; justify-content: center; min-height: 50px; border: 0; border-radius: 14px; background: #1f7bb6; color: #fff; font-size: 16px; font-weight: 700; }
+  [data-v6] #sumAR .i { width: 22px; height: 22px; color: #fff; }
+  [data-v6] #sumAR:hover { background: #1a6ca1; }
+  [data-v6] :is(#sumShare, #sumSave) { flex: 1; justify-content: center; min-height: 44px; border-radius: 12px; }
+  [data-v6] .stepnext { background: #1f7bb6; }
+  [data-v6] .stepnext:hover { background: #1a6ca1; }
+  #sumSave { display: none; }
+  [data-v6] #sumSave { display: inline-flex; align-items: center; gap: 7px; }
   .sumcta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
   .sumcta:hover { filter: brightness(1.12); }
   .sumcta .i { width: 20px; height: 20px; }
@@ -785,11 +832,42 @@
   [data-v6] .side .upload { border-radius: 12px; padding: 10px 16px; }
   [data-v6] .side .sumlist { border: 0; border-radius: 16px; background: #f4f4f6; }
   [data-v6] .side .sumlist li { border-top-color: #e4e4e8; }
+  /* popular designs, solid colors and textures: no outlines; the chosen one sits on light blue */
+  [data-v6] .preset { border: 0; background: #f4f4f6; padding: 9px; }
+  [data-v6] .preset:hover { background: #ececf0; }
+  [data-v6] .preset.on { background: var(--tint); }
+  [data-v6] .swc { padding: 8px 2px 6px; border-radius: 12px; cursor: pointer; }
+  [data-v6] .swc:has(.sw.on) { background: var(--tint); }
+  [data-v6] .swc .sw.on { outline: 0; }
+  [data-v6] .card.on { border-color: transparent; }
+  /* "+$" on an option that can cost extra (Textures): a small light blue bubble, top right on phones */
+  [data-v6] .p-body .sec-h .up.plus { padding: 2px 8px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 11px; font-weight: 800; }
+  .lamup { padding: 3px 10px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .lamup[hidden] { display: none; }
+  [data-v6] .side-h img { height: 17px; }
+  /* Documents: "Or use sample certificates" with its Show switch; Take a photo / Upload as two big buttons */
+  .labrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+  [data-v6] .side .labrow .lab { margin: 0; }
+  [data-v6] .side .owndocs .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  [data-v6] .side .owndocs .row > :not(.upload) { grid-column: 1 / -1; justify-self: start; }
+  [data-v6] .side .owndocs .upload { justify-content: center; min-height: 50px; font-size: 15px; font-weight: 650; }
+  [data-v6] .side .owndocs .upload:has(#certCam) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [data-v6] .side .owndocs .upload .i { width: 20px; height: 20px; }
+  [data-v6] .side .certcount .opt:has(#sheetTurn) { min-height: 44px; padding: 4px 0 0; border-radius: 0; background: none; border-top: 1px solid #e4e4e8; }
   /* sample certificates: how many of each paper size */
   .mixhead { margin: 0; font-weight: 700; }
   .mixrows { display: grid; gap: 6px; }
   .mixrows[hidden] { display: none; }
   .opt.mix { min-height: 40px; }
+  /* each size: upright | sideways, left of its counter */
+  .orseg { display: inline-flex; flex: none; padding: 2px; border-radius: 9px; background: #e6e6ea; }
+  .orseg button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--muted); cursor: pointer; }
+  .orseg button .i { width: 18px; height: 18px; }
+  .orseg button.on { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+  .ordiv { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+  .ordiv::before, .ordiv::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+  [data-v6] .side .certcount .labrow { margin-bottom: 2px; }
+  [data-v6] .side .certcount .mixhead { margin: -4px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
   .opt.mix small { margin-left: 4px; font-size: 12.5px; color: var(--muted); }
   .mixrows .warn { color: #b3261e; }
   .mixrows .warn:empty { display: none; }
@@ -818,6 +896,12 @@
   #coachReplay[hidden] { display: none; }
   .t-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
   .t-card #coachReplay { color: #fff; }
+  [data-v6] .t-card #coachReplay { color: var(--accent); font-weight: 600; }
+  /* help: a round "?" at the top left that plays the tutorial again (computers: the drag hint moves over for it) */
+  .helpbtn { display: none; }
+  [data-v6][data-step="custom"] .helpbtn:not([hidden]) { position: absolute; left: 14px; top: 12px; z-index: 5; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: var(--accent); box-shadow: var(--shadow); font: inherit; font-size: 19px; font-weight: 800; cursor: pointer; }
+  [data-v6] .helpbtn:hover { background: var(--tint); }
+  [data-v6] .hint { left: 64px; top: 18px; }
   .coach-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .coach-spot, .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
   /* the white studio: a soft vignette at the edges for depth */
@@ -872,7 +956,13 @@
     [data-v6] .buysheet.pop { animation: cartPop .5s ease; }
     @keyframes cartPop { 0% { transform: scale(.92); } 50% { transform: scale(1.03); } 100% { transform: none; } }
     /* collapse the column to icons */
-    [data-v6] .dockmini { display: grid; place-items: center; align-self: flex-end; order: -3; width: 28px; height: 24px; margin: -2px -2px 0 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+    [data-v6] .dockmini { display: flex; align-items: center; justify-content: center; gap: 3px; align-self: flex-end; order: -3; min-width: 28px; height: 24px; margin: -2px -2px 0 0; padding: 0 2px 0 8px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+    [data-v6].dmini .dockmini { padding: 0; }
+    [data-v6].dmini .dm-t { display: none; }
+    /* the column's foot: more room above "Your board"; the price in medium weight */
+    [data-v6] .colbuy { padding-top: 25px; }
+    [data-v6] .colbuy b { font-weight: 500; }
+    [data-v6] .buysheet.open .grab .gtxt { font-size: 16px; font-weight: 750; color: var(--accent); }
     [data-v6] .dockmini:hover { background: var(--hover); color: var(--ink); }
     [data-v6] .dockmini[hidden] { display: none; }
     [data-v6].dmini .p-body { width: 68px; }
@@ -934,6 +1024,9 @@
     [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) { background: none; }
     [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) .sec-h { background: none; }
     [data-v6] .p-body.bopen .sec[data-sec="boardgrp"]::before { content: ""; position: absolute; z-index: -1; top: -4px; bottom: -4px; left: -4px; right: calc(-200% - 16px - 4px); border-radius: 16px; background: var(--tint); box-shadow: 0 0 0 1.5px var(--accent) inset; animation: grpIn .28s ease both; pointer-events: none; }
+    [data-v6] .p-body .sec-h .up.plus { position: absolute; top: 6px; right: 6px; }
+    /* a thin divider between Board and its two options */
+    [data-v6] .p-body.bopen .sec[data-sec="color"]::before { content: ""; position: absolute; left: -4.5px; top: 16px; bottom: 16px; width: 1.5px; border-radius: 1px; background: #a9bcd9; }
     @keyframes grpIn { from { clip-path: inset(0 66% 0 0 round 16px); } to { clip-path: inset(0 0 0 0 round 16px); } }
     [data-v6].sk .p-body .sec-h > .i.skx { width: 44px !important; height: 44px !important; }
     [data-v6] .dockmini { display: none !important; }
@@ -942,6 +1035,11 @@
     [data-v6] .t-card { justify-items: center; text-align: center; }
     [data-v6] .t-card h1 { text-align: center; }
     [data-v6] .t-links { justify-content: center; }
+    [data-v6] .t-card h1 { font-size: 14px; }
+    [data-v6] .t-sub { font-size: 17px; }
+    [data-v6] .t-cont { left: 50%; transform: translateX(-50%); white-space: nowrap; animation-name: tInC; }
+    @keyframes tInC { from { opacity: 0; transform: translate(-50%, 16px); } }
+    [data-v6] .t-card.cont { bottom: 72px; }
     [data-v6] .t-logo { left: 50%; transform: translateX(-50%); width: 56px; height: 56px; top: -28px; }
     [data-v6] .t-logo img { height: 34px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
@@ -984,6 +1082,8 @@
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <symbol id="i-tall" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="16" rx="1.6"/></symbol>
+  <symbol id="i-wide" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1.6"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4.5 19.5l1-4.5L15.8 4.7a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L9 18.5z"/><path d="M13.8 6.7l3.5 3.5"/></symbol>
   <!-- sketch icons (?icons=sketch): the part being edited highlighted in light blue -->
@@ -1004,6 +1104,8 @@
       <button class="roombtn" id="roomBtn" type="button"><svg class="i"><use href="#i-room"/></svg><span>Room</span><b id="roomName"></b></button>
       <button class="rn-arrow" id="roomNext" type="button" aria-label="Next room"><svg class="i"><use href="#i-right"/></svg></button>
     </div>
+    <!-- v6: help, top left; plays the tutorial again at any time -->
+    <button class="helpbtn" id="helpBtn" type="button" aria-label="How it works (tutorial)" title="How it works" hidden>?</button>
     <!-- v6 phones: fold the options away so the board fills the screen -->
     <button class="pfold" id="panelFold" type="button" aria-expanded="true" hidden><svg class="i"><use href="#i-chev"/></svg><span>Collapse</span></button>
     <div class="viewbar pill" role="group" aria-label="View">
@@ -1047,7 +1149,7 @@
 
     <div class="p-body">
       <!-- v6: three steps; the dock shows only the current step's options (main.js STEPS6) -->
-      <button class="dockmini" id="dockMini" type="button" aria-label="Collapse the options to icons" aria-pressed="false" hidden><svg class="i"><use href="#i-right"/></svg></button>
+      <button class="dockmini" id="dockMini" type="button" aria-label="Collapse the options to icons" aria-pressed="false" hidden><span class="dm-t" aria-hidden="true">Collapse</span><svg class="i"><use href="#i-right"/></svg></button>
       <nav class="stepbar" id="stepBar" aria-label="Steps" hidden>
         <button type="button" data-st="build"><b>1</b>Build</button>
         <button type="button" data-st="style"><b>2</b>Style</button>
@@ -1120,6 +1222,8 @@
 
         <!-- v6 Style step: computers show a small "Board style" heading over Solid Colors and Textures & Patterns;
              phones show a Board button that opens those two beside it -->
+        <!-- top of the Style step: v6 a full-width "start from a popular design" callout (v7: nothing) -->
+        <button class="popcall" id="popCall" type="button" hidden><svg class="i"><use href="#i-grid"/></svg><span>Start with a popular design, then customize</span><svg class="i"><use href="#i-right"/></svg></button>
         <p class="dockhead" id="boardHead" hidden>Board style</p>
         <section class="sec" data-sec="boardgrp" hidden>
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-board"/></svg><span class="sec-t">Board</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
@@ -1281,6 +1385,7 @@
             <div class="row">
               <button class="chipbtn" type="button" id="sumAR"><svg class="i"><use href="#i-ar"/></svg>View it on your wall</button>
               <button class="chipbtn" type="button" id="sumShare"><svg class="i"><use href="#i-share"/></svg>Share</button>
+              <button class="chipbtn" type="button" id="sumSave"><svg class="i"><use href="#i-save"/></svg>Save for later</button>
             </div>
             <button class="sumcta" type="button" id="sumCta"><svg class="i"><use href="#i-bag"/></svg><span id="sumCtaLbl">Add to cart</span><b id="sumCtaPrice"></b></button>
             <p class="help">You can come back and change anything, even after it's in your cart.</p>
@@ -1311,6 +1416,7 @@
           <div class="rowsb tot2"><b>Estimated total</b><b id="sumTotal"></b></div>
         </div>
         <p class="disc-hint" id="discHint"></p>
+        <div class="bulk" id="bulk" hidden><span>Need to order more than 10 boards?</span><a class="bulkbtn" id="bulkLink" target="_top" rel="noopener">Contact us</a></div>
         <div class="rowsb cart-foot" id="cartFoot" hidden><span id="cartCount" class="lbl"></span><button id="cartView" class="link" type="button">View full cart</button></div>
         <p class="help" id="note"></p>
       </div>
@@ -1440,7 +1546,7 @@
   </div>
   <div class="side-body">
     <div class="ffilters" id="lamFilters"></div>
-    <div class="rowsb"><span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span></div>
+    <div class="rowsb"><span><span id="lamCount" class="lbl"></span> <button id="lamReset" class="link" type="button" hidden>Clear filters</button></span><span id="lamUp" class="lamup" hidden></span></div>
     <div id="lamNotFound" class="nf" hidden>
       <strong>Design <span id="lamNfNum"></span> isn't in our library yet.</strong>
       <p>You can still use it: we'll match the number when we quote your board. Pick a stand-in color for the preview:</p>
@@ -1518,6 +1624,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610301157" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610301333" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
