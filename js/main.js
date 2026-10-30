@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300747';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300747';
-import { wallTexture, wallSwatch } from './env.js?v=202610300747';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300857';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300857';
+import { wallTexture, wallSwatch } from './env.js?v=202610300857';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -34,6 +34,13 @@ const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
 //   v6 = v5 + <html data-v6>: the options are icons in a dock floating at the bottom (each opens a pop-up panel),
 //   style presets instead of popular boards, no wall photo scan (the certificate count sizes the board)
 const V6 = 'v6' in document.documentElement.dataset;
+// v6: three steps, Build › Style › Preview. Each shows only its own options in the dock (the room picker sits on the
+// 3D view the whole time). Build starts with the customer's documents because the size depends on them.
+// Style: computers list Solid Colors and Textures & Patterns under a "Board style" heading; phones show Board | Edge |
+// Caps, and Board opens those two beside it (boardgrp).
+const STEPS6 = { build: ['certs', 'size'], style: ['boardgrp', 'color', 'laminate', 'edge', 'caps'], preview: ['arview', 'sharelink', 'saveit', 'summary'] };
+const STEP_ORDER = Object.keys(STEPS6);
+let step6 = 'build';
 // an upcharge from UPCHARGES (config.js): one amount, or one per size
 const upAmt = (v) => (v && typeof v === 'object' ? (v[state.sizeId] ?? v.custom ?? 0) : (v || 0));
 
@@ -620,6 +627,10 @@ function buildBoard() {
   else if (E.wall.photo) {                       // v5 photo room: the photo's hang point sits behind the board's center
     const tex = roomTexture(E.wall.photo), pw = E.wall.widthIn, ph = pw / (tex.userData.aspect || 4 / 3);
     const x = (0.5 - E.wall.hang[0]) * pw, y = (E.wall.hang[1] - 0.5) * ph;
+    if (FLAT && tex.image) {                     // past the photo's edges (zoomed out, or framed beside a pop-up): its blurred colors
+      const fill = new THREE.Mesh(new THREE.PlaneGeometry(pw * BLUR_SPREAD, ph * BLUR_SPREAD), new THREE.MeshBasicMaterial({ map: photoBlurTexture({ img: tex.image, imgId: E.wall.photo }), toneMapped: false }));
+      fill.position.set(x, y, 0.01); wallG.add(fill);
+    }
     addPhoto(tex, pw, ph, x, y); setRect(pw, ph, x, y);
   }
   root.add(wallG);
@@ -659,9 +670,12 @@ const inset = { now: 0, target: 0 };
 // the part to the left of them
 const dockW = () => (V6 && !phone.matches && !fullStage() ? $('.p-body').offsetWidth + 16 : 0);
 const offX = (px) => (px + dockW()) / 2;
+// v6 phones: while a pop-up covers the bottom of the 3D view, only its top visH pixels show (0 = all of it)
+let visH = 0;
+const visFrac = () => (visH && stage.clientHeight ? Math.min(1, visH / stage.clientHeight) : 1);
 function applyInset() {
-  const W = stage.clientWidth, H = stage.clientHeight, x = offX(inset.now);
-  if (Math.abs(x) > 0.5 && W && H) camera.setViewOffset(W, H, x, 0, W, H);
+  const W = stage.clientWidth, H = stage.clientHeight, x = offX(inset.now), y = (1 - visFrac()) * H / 2;
+  if ((Math.abs(x) > 0.5 || y > 0.5) && W && H) camera.setViewOffset(W, H, x, y, W, H);
   else camera.clearViewOffset();
 }
 function setInset(px) {
@@ -674,7 +688,7 @@ function setInset(px) {
 function fitDist() {
   const { w, h } = dims();
   const aspect = camera.aspect * (1 - (inset.target + dockW()) / Math.max(1, stage.clientWidth));
-  return Math.max(h / 2, w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
+  return Math.max(h / 2 / visFrac(), w / 2 / aspect) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * 1.35 + 2;
 }
 // v5: zooming out stops before the edge of the room photo comes into view, at any left/right turn
 // (never closer than the distance that shows the whole board, so a very big custom board can still be seen)
@@ -717,7 +731,26 @@ function viewTarget(view) {
   else pos = new THREE.Vector3(dist * 0.42, dist * 0.18, dist * 0.9);
   return { pos, tgt };
 }
+// v6: opening Caps glides the camera in close to the top-right cap; opening Edge turns the board and moves in on
+// its top-right corner so the banding shows. Closing the option (or picking a view) glides back.
+let focus = null;   // 'caps' | 'edge' while the camera is in close
+function focusPart(part) {
+  const { w, h } = dims(), T = HW.boardT;
+  let tgt, dir, d;
+  if (part === 'caps') {
+    tgt = new THREE.Vector3(w / 2 - HW.inset, h / 2 - HW.inset, T + HW.acrylicT + HW.capT / 2);
+    dir = new THREE.Vector3(0.42, 0.3, 0.86); d = 11;
+  } else {                                               // the top-right corner, from above and to the side: both edges show
+    tgt = new THREE.Vector3(w / 2 - 1.5, h / 2 - 1.5, T / 2);
+    dir = new THREE.Vector3(0.7, 0.36, 0.62); d = 19;
+  }
+  focus = part;
+  unlockAngles();
+  tween = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: tgt.clone().add(dir.normalize().multiplyScalar(d)), t1: tgt };
+}
+function unfocus() { if (focus) setView(state.view); }
 function setView(view, instant = false) {
+  focus = null;
   state.view = view;
   const { pos, tgt } = viewTarget(view);
   const wall = root.getObjectByName('wall');
@@ -805,10 +838,15 @@ function renderSizes() {
 const phone = matchMedia('(max-width: 860px)');
 const SHEETS_ONLY = () => phone.matches || V6;   // options open one at a time in a pop-up (phones; v6 everywhere)
 function setSheet(open) {
-  if (open) { closeOptSheet(); if (phone.matches && !$('#lamPanel').hidden) closePicker(); }
+  if (open && (phone.matches || !V6)) { closeOptSheet(); if (phone.matches && !$('#lamPanel').hidden) closePicker(); }   // (v6 computers: the cart chip opens over the options)
   $('#buysheet').classList.toggle('open', open);
   $('#sheetGrab').setAttribute('aria-expanded', open);
   $('#sheetDim').hidden = !open || !phone.matches;
+}
+// a board went into the cart: open the cart (v6 computers: the chip pops open with a little bounce)
+function cartAdded() {
+  setSheet(true);
+  const b = $('#buysheet'); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
 }
 function wireSheet() {
   const g = $('#sheetGrab');
@@ -832,6 +870,8 @@ function setSec(sec, open) {
 function openSection(name) {
   const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
+  if (V6 && name === 'arview') { step6 = 'preview'; updateUI(); return openAR(); }   // (?open=arview: the QR code's link)
+  if (V6 && name === 'laminate') { $('.p-body').classList.add('bopen'); if (step6 !== 'style') { step6 = 'style'; updateUI(); } }   // (the textures picker isn't a sheet)
   if (SHEETS_ONLY()) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
   if (sec.hidden) return openOptSheet(sec);                          // v2/v3: options that aren't cards open in the side sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
@@ -842,6 +882,11 @@ function openSection(name) {
 let optOpen = null;   // { sec, body }
 function openOptSheet(sec) {
   closeOptSheet(true);
+  if (V6) {                                       // v6: an option from another step (say, a tap on a cap) moves to that step
+    const st = STEP_ORDER.find(k => STEPS6[k].includes(sec.dataset.sec));
+    if (st && st !== step6) { step6 = st; updateUI(); }
+    if (sec.dataset.sec === 'color') $('.p-body').classList.add('bopen');   // (phones: keep its button showing)
+  }
   if (!$('#lamPanel').hidden) closePicker();
   setSheet(false);
   const body = sec.querySelector('.sec-b');
@@ -856,6 +901,7 @@ function openOptSheet(sec) {
   markActive(sec.dataset.sec);
   updateStage(true);
   if (!phone.matches) setInset($('#optSheet').getBoundingClientRect().width);   // computers: slide the board clear of the sheet
+  if (V6) { if (sec.dataset.sec === 'caps' || sec.dataset.sec === 'edge') focusPart(sec.dataset.sec); else unfocus(); }
 }
 function closeOptSheet(switching) {
   if (!optOpen) return;
@@ -863,7 +909,7 @@ function closeOptSheet(switching) {
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
   optOpen = null;
-  if (!switching) { markActive(null); updateStage(true); if (!phone.matches && inset.target) setInset(0); }
+  if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
 // phones: highlight the option button whose sheet is open
 function markActive(name) {
@@ -876,7 +922,11 @@ const STAGE6 = { max: 0.58, min: 0.58, sheet: 1 / 3 };  // v6: no scrolling; a p
 let stageQueued = false, stageMax = 0, stageW = 0;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
-  if (!phone.matches || fullStage()) { root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0; return; }
+  if (!phone.matches || fullStage()) {
+    root.style.removeProperty('--stageMax'); w.style.clipPath = ''; st.style.transform = ''; stageMax = 0;
+    if (visH) { visH = 0; applyInset(); }
+    return;
+  }
   const S = V6 ? STAGE6 : STAGE;
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
   if (!stageMax || stageW !== innerWidth) {
@@ -891,7 +941,11 @@ function updateStage(animate) {
   const top = st.offsetTop;                                        // the Front/Angle/Back row above the 3D view
   const s = Math.max(0.2, (h - top) / (stageMax - top));
   if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 320); }
-  st.style.transform = s < 0.999 ? `scale(${s.toFixed(4)})` : '';
+  if (V6) {   // v6: the view keeps its full size (so the room fills it edge to edge); the camera frames the board in the visible part
+    st.style.transform = '';
+    const vis = Math.round(h - top) < Math.round(stageMax - top) - 1 ? Math.max(1, h - top) : 0;
+    if (Math.abs(vis - visH) > 1) { visH = vis; applyInset(); limitZoom(); if (focus) focusPart(focus); else setView(state.view); }
+  } else st.style.transform = s < 0.999 ? `scale(${s.toFixed(4)})` : '';
   w.style.clipPath = h < stageMax - 0.5 ? `inset(0 0 ${(stageMax - h).toFixed(1)}px 0)` : '';
 }
 
@@ -958,6 +1012,11 @@ function updateUI() {
   $('#price').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}${sp.quantity > 1 ? ` · ${sp.quantity} boards` : ''}` : 'Custom quote';
   if (V6) {                                       // v6: the bar shows this board's price as it's built (the cart total is in the cart)
     $('#cartTotBtn small').textContent = 'Your board';
+    paintSummary(sp);
+    $('#roomName').textContent = envNow().name;
+    $('#stageWrap').classList.toggle('vig', envNow().wall === 'color' && !state.wallPhoto.img);   // the white studio: soft vignette
+    $('#colPrice').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote';   // computers: the column's foot
+    $('#colCtaLbl').textContent = $('#ctaLabel').textContent;
     $('#cartTotal').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote';
   }  $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
@@ -1005,6 +1064,14 @@ function build() {
 
   // collapsible sections
   document.querySelectorAll('.sec-h').forEach(h => h.addEventListener('click', () => {
+    const k = h.closest('.sec').dataset.sec;
+    if (k === 'arview') return openAR();                                       // v6 Preview: these two act straight away
+    if (k === 'saveit') return saveForLater();
+    if (k === 'boardgrp') {                                                    // v6 phones: Board opens its two options beside it
+      const open = $('.p-body').classList.toggle('bopen');
+      h.setAttribute('aria-expanded', open);
+      return;
+    }
     if (SHEETS_ONLY() && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
     if (SHEETS_ONLY()) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
@@ -1221,8 +1288,46 @@ const MAIN = {
   v2: { none: ['size'], standard: ['size', 'color', 'caps'], custom: ['size', 'laminate', 'color', 'logo', 'bgimg'] },
   v3: ['size', 'color', 'laminate', 'edge', 'caps', 'logo', 'bgimg', 'certs', 'wall'],
   v5: ['size', 'color', 'laminate', 'edge', 'caps', 'wall'],       // phones: 3 per row, Size / Colors / Textures on top
-  v6: ['presets', 'size', 'color', 'laminate', 'edge', 'caps', 'certs', 'wall'],   // the icons in the dock, in order
 };
+// v6: show one step's options; Next goes on to the following step (Preview opens the summary)
+function goStep(s, open = true) {
+  step6 = s;
+  closeOptSheet();
+  updateUI();
+  if (open && s === 'preview') openOptSheet($('.sec[data-sec="summary"]'));
+}
+function paintSteps() {
+  const i = STEP_ORDER.indexOf(step6), next = STEP_ORDER[i + 1];
+  document.querySelectorAll('#stepBar [data-st]').forEach((b, k) => {
+    b.classList.toggle('on', k === i); b.classList.toggle('done', k < i);
+    if (k === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  $('#stepNext').hidden = !next;
+  if (next) $('#stepNextLbl').textContent = `Next: ${next[0].toUpperCase()}${next.slice(1)}`;
+  $('.p-body').dataset.n = step6 === 'style' ? 3 : STEPS6[step6].length;   // (phones: Board | Edge | Caps)
+  $('#boardHead').hidden = step6 !== 'style';
+}
+// Preview: the board as it stands, line by line
+function paintSummary(sp) {
+  const { w, h } = dims(), L = state.lamSel;
+  const own = state.myCerts.length, samples = state.sheets ? (lastSheets?.primary ? lastSheets.n : 0) : 0;
+  const rows = [
+    ['Size', `${fmt(w)}" × ${fmt(h)}" ${state.orient}`],
+    ['Surface', L ? `Wilsonart ${L.n}${L.name ? ` ${L.name}` : ''}` : sp.boardColor],
+    ['Edge banding', state.edge === 'match' ? 'Matches the board' : sp.edgeBanding],
+    ['Caps & studs', sp.fastenerFinish],
+    ['Documents', own ? `${own} of your own` : samples ? `${samples} sample certificate${samples === 1 ? '' : 's'} (preview only)` : 'None shown'],
+    ['Price', sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote'],
+  ];
+  const ul = $('#sumList');
+  ul.replaceChildren(...rows.map(([k, v], n) => {
+    const li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('b');
+    a.textContent = k; b.textContent = v;
+    if (n === rows.length - 1) li.className = 'tot';
+    li.append(a, b);
+    return li;
+  }));
+}
 function wireLayout() {
   document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });
   if (LAYOUT === 'v1') return;
@@ -1253,7 +1358,7 @@ function wireLayout() {
     for (const [k, t] of Object.entries(titles)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); if (el) el.textContent = t; }
     if (V6) {                                                    // short names under the dock icons; the pop-up says it in full
       const dock = { presets: 'Styles', edge: 'Edge', caps: 'Caps', certs: 'Certificates' };
-      $('.sec[data-sec="presets"] .sec-t').textContent = 'Popular Styles';
+      $('.sec[data-sec="presets"] .sec-t').textContent = 'Popular Designs';
       $('.sec[data-sec="wall"] .sec-t').textContent = 'Room';
       for (const [k, t] of Object.entries(dock)) { const el = $(`.sec[data-sec="${k}"] .sec-t`); el.dataset.full = el.textContent; el.textContent = t; }
     }
@@ -1277,6 +1382,7 @@ function wireLayout() {
     $('#ownDocs .opt span').textContent = 'Your Documents';
     $('#ownDocs .opt + .help').textContent = 'Each document we found, with its guessed size: change a size, turn one or remove extras. Or snap and upload your real permits and licenses to see them on the board.';
     $('#docTools .lbl').hidden = true;                         // (no dragging in v5)
+    if (V6) wireSteps();
     $('#myWallBtn').addEventListener('click', () => openOptSheet($('.sec[data-sec="mywall"]')));
     // rotate the certificates: the samples, or the documents found in their wall photo
     $('#lnTurn').addEventListener('click', () => {
@@ -1306,6 +1412,77 @@ function wireDock() {
   });
   $('.sec[data-sec="presets"] .help').textContent = 'Starter looks to build on. Pick one, then change anything you like. Your size and certificates stay as they are.';
 }
+// v6: the step bar and Next, the Documents option (your own first, then sample certificates), the room button on
+// the 3D view, Preview's buttons, and the welcome card's two ways to start
+function wireSteps() {
+  $('#stepBar').hidden = false;
+  $('#stepBar').addEventListener('click', (e) => { const b = e.target.closest('[data-st]'); if (b) goStep(b.dataset.st); });
+  $('#stepNext').addEventListener('click', () => goStep(STEP_ORDER[STEP_ORDER.indexOf(step6) + 1]));
+  // Documents: add your own; or use sample certificates for now (how many, then show / turn them)
+  const certs = $('.sec[data-sec="certs"]'), body = certs.querySelector('.sec-b'), own = $('#ownDocs');
+  const t = certs.querySelector('.sec-t'); t.textContent = 'Documents'; t.dataset.full = 'Your Documents';
+  own.querySelector(':scope > hr.div')?.remove();
+  own.querySelector('.opt span').textContent = 'Add your own';
+  own.querySelector('.opt + .help').textContent = 'Take a photo of, or upload, the permits, licenses and posters you need to display. We size the board around them.';
+  const hr = document.createElement('hr'), lab = document.createElement('p');
+  hr.className = 'div'; lab.className = 'lab'; lab.textContent = 'Or use sample certificates for now';
+  body.prepend(own, hr, lab, $('.certcount'));
+  // Style: Solid Colors (palette) and Textures & Patterns
+  const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
+  col.querySelector('.sec-t').textContent = 'Solid Colors'; col.querySelector('.sec-h .i use').setAttribute('href', '#i-palette');
+  lam.querySelector('.sec-t').textContent = 'Textures & Patterns'; $('#lamTitle').textContent = 'Textures & Patterns';
+  // ?icons=sketch: Board, Edge and Caps show a sketch of the board with that part in light blue
+  if (new URLSearchParams(location.search).get('icons') === 'sketch') {
+    document.documentElement.classList.add('sk');
+    for (const [k, id] of [['boardgrp', 'i-sk-board'], ['edge', 'i-sk-edge'], ['caps', 'i-sk-caps']]) {
+      const i = $(`.sec[data-sec="${k}"] .sec-h .i`); i.classList.add('skx'); i.setAttribute('viewBox', '0 0 40 40'); i.querySelector('use').setAttribute('href', `#${id}`);
+    }
+  }
+  // the room picker, on the 3D view in every step; the arrows step through the rooms without opening it
+  $('#roomNav').hidden = false;
+  $('#roomBtn').addEventListener('click', () => openOptSheet($('.sec[data-sec="wall"]')));
+  const stepRoom = (d) => {
+    const now = envNow().id, i = ROOMS.findIndex(e => e.id === now);
+    state.env = ROOMS[(Math.max(0, i) + d + ROOMS.length) % ROOMS.length].id;
+    refresh();
+  };
+  $('#roomPrev').addEventListener('click', () => stepRoom(-1));
+  $('#roomNext').addEventListener('click', () => stepRoom(1));
+  // Preview: view on your wall, share (email, Facebook, Instagram, TikTok, link), save for later
+  $('#sumAR').addEventListener('click', openAR);
+  $('#sumShare').addEventListener('click', () => openOptSheet($('.sec[data-sec="sharelink"]')));
+  $('.sharegrid').addEventListener('click', (e) => { const b = e.target.closest('[data-share]'); if (b) shareTo(b.dataset.share); });
+  // computers: Add to cart at the foot of the column (the cart is a small chip); the column can fold to icons
+  $('#colBuy').hidden = false;
+  $('#colCta').addEventListener('click', () => $('#cta').click());
+  $('#dockMini').hidden = false;
+  const mini = (on) => {
+    document.documentElement.classList.toggle('dmini', on);
+    $('#dockMini').setAttribute('aria-pressed', on);
+    $('#dockMini').setAttribute('aria-label', on ? 'Show the option names' : 'Collapse the options to icons');
+    setTimeout(() => setInset(inset.target), 220);                 // re-frame the board once the column has its new width
+  };
+  try { if (localStorage.getItem('cobo.mini') === '1') mini(true); } catch { /* storage blocked */ }
+  $('#dockMini').addEventListener('click', () => {
+    const on = !document.documentElement.classList.contains('dmini');
+    mini(on);
+    try { localStorage.setItem('cobo.mini', on ? '1' : '0'); } catch { /* storage blocked */ }
+  });
+  // computers: the cart chip opens on hover (closes when the pointer leaves) or click (stays open until a click outside)
+  let hoverOpen = false;
+  const desk = () => !phone.matches;
+  $('#buysheet').addEventListener('mouseenter', () => { if (desk() && !$('#buysheet').classList.contains('open')) { hoverOpen = true; setSheet(true); } });
+  $('#buysheet').addEventListener('mouseleave', () => { if (desk() && hoverOpen) { hoverOpen = false; setSheet(false); } });
+  $('#sheetGrab').addEventListener('click', () => { hoverOpen = false; });
+  document.addEventListener('pointerdown', (e) => {
+    if (desk() && $('#buysheet').classList.contains('open') && !e.target.closest('#buysheet, #colBuy')) { hoverOpen = false; setSheet(false); }
+  });
+  // the welcome card: start from a popular design, or from scratch (Build, with your documents first)
+  $('.t-intro .t-sub').textContent = 'Start from a popular design, or build your own from scratch. You can change anything as you go.';
+  $('#tourStart').firstChild.textContent = 'Popular designs';
+  $('#tourSkipCard').textContent = 'Start from scratch';
+  $('#tourSkipCard').addEventListener('click', () => { setStep('custom'); goStep('build', false); openOptSheet(certs); });
+}
 // v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted
 function setPath(p) {
   state.path = p;
@@ -1320,7 +1497,8 @@ function setPath(p) {
 }
 function paintLayout(sp) {
   if (LAYOUT === 'v1') return;
-  const main = V6 ? MAIN.v6 : LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
+  if (V6) paintSteps();
+  const main = V6 ? STEPS6[step6] : LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
   document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
   if (LAYOUT === 'v2') {
     document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
@@ -1763,9 +1941,9 @@ function tourStep(s) {
   $('#tourBack').hidden = i <= 0;
   $('#tourSkip').textContent = s === 'snap' ? 'Skip photo' : 'Skip';
   $('#tourMsg').textContent = '';
-  // welcome + snap: the board on a brick café wall (their own room comes back afterwards)
+  // welcome + snap: the board on a brick café wall (v6: the white studio, with a soft vignette); their own room comes back afterwards
   if (s === 'intro' || s === 'snap') {
-    if (!showcase && !wallInfo) { showcase = { env: state.env }; state.env = 'bistro'; refresh(); }
+    if (!showcase && !wallInfo) { showcase = { env: state.env }; state.env = V6 ? 'studio' : 'bistro'; refresh(); }
     sway = true;                                             // framed by setStep once the view has its full size
   } else {
     sway = null;
@@ -1991,11 +2169,37 @@ function readParams(q) {
 }
 // Share: phones open the share sheet (Messages, email...); computers copy the link.
 let parentPage = null;   // inside Shopify: the store page's address (sent by the embed snippet)
-async function shareDesign() {
+function shareUrl() {
   const p = designParams().toString();
-  const url = parentPage ? `${parentPage}?cobo=${encodeURIComponent(p)}` : `${location.origin}${location.pathname}?${p}`;
-  const { w, h } = dims();
-  const text = `My ${fmt(w)}" × ${fmt(h)}" compliance board design`;
+  return parentPage ? `${parentPage}?cobo=${encodeURIComponent(p)}` : `${location.origin}${location.pathname}?${p}`;
+}
+const shareText = () => { const { w, h } = dims(); return `My ${fmt(w)}" × ${fmt(h)}" compliance board design`; };
+// v6 Preview › Share: email, Facebook, Instagram, TikTok (no web share link: the link is copied to paste in the app), link
+async function shareTo(where) {
+  const url = shareUrl(), text = shareText(), msg = $('#shareMsg');
+  const copy = async (note) => {
+    try { await navigator.clipboard.writeText(url); msg.textContent = note; }
+    catch { prompt('Copy this link to share your design:', url); }
+  };
+  if (where === 'email') location.href = `mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(`${text}:\n${url}`)}`;
+  else if (where === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,width=620,height=560');
+  else if (where === 'instagram') await copy('Link copied. Paste it into an Instagram story or message.');
+  else if (where === 'tiktok') await copy('Link copied. Paste it into your TikTok bio, video caption or a message.');
+  else await copy('Link copied. Paste it anywhere to share this design.');
+}
+// v6 Preview › Save for later: keep this design on this device (the welcome screen offers it again next visit)
+function saveForLater() {
+  const p = designParams().toString();
+  try {
+    const list = JSON.parse(localStorage.getItem('cobo.saved') || '[]').filter(x => x.p !== p);
+    list.unshift({ p, name: shareText().replace(/^My /, ''), at: Date.now() });
+    localStorage.setItem('cobo.saved', JSON.stringify(list.slice(0, 12)));
+    localStorage.setItem('cobo.last', p);
+    toast('Saved for later. Open the designer again on this device to pick up where you left off.');
+  } catch { toast('This browser won\'t let us save. Use Share › Copy link to keep this design.'); }
+}
+async function shareDesign() {
+  const url = shareUrl(), text = shareText();
   if (navigator.share) { try { await navigator.share({ title: 'Compliance board design', text, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it into an email or message to share this design.'); }
   catch { prompt('Copy this link to share your design:', url); }
@@ -2021,7 +2225,8 @@ function wireExtras() {
     const p = PICKS[+b.dataset.p];
     applyDesign(V6 ? { ...p.cfg, lam: p.lam || null } : { ...p.cfg, lam: p.lam, env: p.room || state.env });
     closeOptSheet();
-    toast(`${p.name}: change anything you like from here.`);
+    if (V6) { goStep('build', false); openOptSheet($('.sec[data-sec="certs"]')); }   // the look is set: now the documents and size
+    toast(V6 ? `${p.name}. Next, add your documents.` : `${p.name}: change anything you like from here.`);
   });
   // how many certificates (v6: the board follows the best fit until they pick a size themselves)
   document.querySelectorAll('[data-cc]').forEach(b => b.addEventListener('click', () => {
@@ -2128,6 +2333,14 @@ function paintExtras() {
       t.classList.toggle('nofit', !!(n && s && fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a])) < n));
     });
   }
+  // v6: each size tile says how many 8.5×11 documents it holds (at the current orientation)
+  if (V6) document.querySelectorAll('#sizes .tile[data-k]').forEach(t => {
+    const s = SIZES.find(x => x.id === t.dataset.k); if (!s) return;
+    let em = t.querySelector('.fits');
+    if (!em) { em = document.createElement('em'); em.className = 'fits'; t.append(em); }
+    const k = fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a]));
+    em.textContent = docs ? '' : k ? `fits ${k}` : 'notices only';
+  });
   // own documents
   $('#certClear').hidden = !docs;
   $('#certOwnInfo').hidden = !docs;
@@ -2350,7 +2563,7 @@ function onCta() {
     if (hit) { hit.qty += sp.quantity; hit.line = hit.qty * hit.unit; }
     else localCart.push({ label: `${sp.size} board · ${sp.boardColor}`, rows: specRows(sp), qty: sp.quantity, unit: sp.price, line: sp.quantity * sp.price, cfg: sp.config });
     localCartChanged();
-    setSheet(true);
+    cartAdded();
     toast(ed ? 'Cart updated' : sp.variantId ? 'Added to the preview cart' : 'Added to the preview cart (no Shopify variant ID mapped yet for this combination)');
   }
   updateUI();
@@ -2439,6 +2652,8 @@ function renderCart(cart) {
   const next = DISCOUNTS.find(t => count < t.min);
   $('#discHint').textContent = !next ? '' : count ? `Add ${next.min - count} more board${next.min - count === 1 ? '' : 's'} to save ${next.pct}%.` : `Save ${DISCOUNTS[0].pct}% when you order ${DISCOUNTS[0].min} or more boards.`;
   if (!V6) $('#cartTotal').textContent = `$${total.toFixed(2)}`;      // the bar always shows the cart total (v6: the board's price)
+  $('#cartChipAmt').textContent = `$${total.toFixed(2)}`;             // v6 computers: the cart chip
+  $('#sheetGrab').setAttribute('aria-label', `Cart: ${count} board${count === 1 ? '' : 's'}, $${total.toFixed(2)}`);
   const list = $('#cartList'); list.innerHTML = '';
   cart.items.forEach((it, i) => {
     const li = document.createElement('li'); li.className = 'ci';
@@ -2482,7 +2697,7 @@ window.addEventListener('message', (e) => {
       };
     });
     renderCart({ items, total: (d.cart.total_price || 0) / 100, subtotal: (d.cart.original_total_price ?? d.cart.total_price ?? 0) / 100, discount: (d.cart.total_discount || 0) / 100 });
-    if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); setSheet(true); }
+    if (d.added) { toast(d.updated ? 'Cart updated' : 'Added to cart'); cartAdded(); }
   }
   if (d?.type === 'cobo:notice' && d.text) toast(String(d.text));
   if (d?.type === 'cobo:page' && /^https:\/\//.test(d.url || '')) parentPage = String(d.url);   // for share links
@@ -2512,6 +2727,7 @@ async function openAR() {
   const m = $('#arModal'), mv = $('#arViewer'), msg = $('#arMsg');
   m.hidden = false; document.body.style.overflow = 'hidden';
   msg.textContent = 'Preparing your board…';
+  $('#arQr').hidden = true;
   try {
     await import('../vendor/model-viewer.min.js');
     const glb = await exportBoardGLB();
@@ -2523,10 +2739,28 @@ async function openAR() {
     msg.textContent = mv.canActivateAR
       ? `Tap the button, then point your phone at a wall. Your ${fmt(w)}" × ${fmt(h)}" board appears at real size; pinch to resize it.`
       : 'Open this page on an iPhone, iPad or Android phone to place the board on your wall.';
+    if (!mv.canActivateAR) showQR();
   } catch (err) {
     console.error(err);
     msg.textContent = 'Sorry, the AR view could not be prepared on this device.';
   }
+}
+// computers: a QR code of this design's link, to open it on a phone (vendor/qrcode.min.js, qrcode-generator 1.4.4, MIT)
+function loadQR() {
+  return loadQR.p ||= new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = new URL('../vendor/qrcode.min.js', import.meta.url).href;
+    s.onload = () => res(window.qrcode); s.onerror = rej;
+    document.head.append(s);
+  });
+}
+async function showQR() {
+  try {
+    const qr = (await loadQR())(0, 'M');
+    qr.addData(parentPage ? shareUrl() : `${shareUrl()}&open=arview`); qr.make();   // (on its own: opens straight to the wall view)
+    $('#arQrCode').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+    $('#arQr').hidden = false;
+  } catch (err) { console.error(err); }
 }
 function closeAR() { $('#arModal').hidden = true; document.body.style.overflow = ''; $('#arBtn').focus(); }
 $('#arBtn').addEventListener('click', openAR);
@@ -2573,7 +2807,7 @@ function loop() {
     const k = tween.t < 0.5 ? 4 * tween.t ** 3 : 1 - Math.pow(-2 * tween.t + 2, 3) / 2;
     camera.position.lerpVectors(tween.p0, tween.p1, k);
     controls.target.lerpVectors(tween.t0, tween.t1, k);
-    if (tween.t >= 1) { tween = null; lockAngles(state.view); }
+    if (tween.t >= 1) { tween = null; if (!focus) lockAngles(state.view); }   // close-ups stay free to turn
   }
   if (inset.now !== inset.target) {      // slide the view while the laminate panel opens/closes
     inset.now += (inset.target - inset.now) * Math.min(1, dt * 9);

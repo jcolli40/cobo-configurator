@@ -245,6 +245,7 @@
   .buysheet { background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(0,0,0,.08); display: flex; flex-direction: column; }
   .grab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 8px 16px 2px; cursor: pointer; touch-action: none; color: var(--muted); font-size: 12.5px; }
   .grab .bar { width: 40px; height: 5px; border-radius: 3px; background: #d4d4d8; }
+  .grab :is(.cic, .gamt) { display: none; }                  /* (v6 computers: the cart chip) */
   .grab .gtxt b { color: var(--accent); }
   .grab .chev { position: absolute; right: 16px; top: 12px; transform: rotate(180deg); transition: transform .25s; }
   .buysheet.open .grab .chev { transform: none; }
@@ -657,7 +658,7 @@
   .t-sub { display: none; }
   .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .42); transform: scale(0); animation: ripple .6s ease-out; pointer-events: none; }
   @keyframes ripple { to { transform: scale(1); opacity: 0; } }
-  [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list, #tourSkipCard) { display: none !important; }
+  [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list) { display: none !important; }
   [data-v6] .t-card .g-kick { font-size: 0; }
   [data-v6] .t-card .g-kick::after { content: "Compliance board designer"; font-size: 12px; }
   [data-v6] .t-sub { display: block; margin: -2px 0 2px; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, .82); }
@@ -689,6 +690,7 @@
   [data-v6] .certcount { background: var(--tint); padding: 4px 12px 10px; gap: 2px; }
   [data-v6] .tile.nofit { opacity: 1; position: relative; }
   [data-v6] .tile.nofit > * { opacity: .45; }
+  [data-v6] :is(.t-go, .t-skip) { white-space: nowrap; }
   [data-v6] .hint { transition: opacity .6s ease; }
   [data-v6] .hint.seen { opacity: 0; pointer-events: none; }
   /* swatches with their names underneath */
@@ -700,21 +702,122 @@
   /* bigger − / + buttons (44 px is the minimum comfortable touch size) */
   [data-v6] .qty { height: 40px; }
   [data-v6] .qty button { width: 40px; font-size: 18px; }
+  /* the three steps: Build › Style › Preview, above the step's options; Next under them */
+  [data-v6] .stepbar { order: -2; display: flex; gap: 4px; padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--line); }
+  [data-v6] .stepbar button { flex: 1; display: grid; justify-items: center; gap: 3px; border: 0; background: none; padding: 6px 2px; border-radius: 10px; font: inherit; font-size: 11.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+  [data-v6] .stepbar button:hover { background: var(--hover); }
+  [data-v6] .stepbar b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: #ececef; color: var(--muted); }
+  [data-v6] .stepbar button.on { color: var(--accent); background: var(--tint); }
+  [data-v6] .stepbar button.on b { background: var(--accent); color: #fff; }
+  [data-v6] .stepbar button.done b { background: var(--tint-2); color: var(--accent); }
+  [data-v6] .p-body .sec[data-sec="certs"] { order: -1; }      /* Build: your documents come before the size */
+  [data-v6] .stepnext { order: 99; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 650; padding: 11px 12px; cursor: pointer; }
+  [data-v6] .stepnext .i { width: 16px; height: 16px; }
+  [data-v6] .stepnext[hidden] { display: none; }
+  /* size tiles: how many 8.5×11 documents each one holds */
+  [data-v6] .tile .fits { font-style: normal; font-size: 10.5px; color: var(--muted); }
+  [data-v6] .tile.rec .fits { color: #2e7d4f; font-weight: 650; }
+  /* Preview: the board's summary */
+  .sumlist { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 12px; }
+  .sumlist li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; font-size: 13.5px; border-top: 1px solid var(--line); }
+  .sumlist li:first-child { border-top: 0; }
+  .sumlist li span { color: var(--muted); }
+  .sumlist li b { font-weight: 600; text-align: right; }
+  .sumlist li.tot b { font-size: 15px; }
+  #sumAR, #sumShare { display: inline-flex; align-items: center; gap: 7px; }
+  /* the room picker on the 3D view: ‹ Room: Studio › */
+  .roomnav { position: absolute; display: flex; align-items: center; gap: 0; padding: 3px; z-index: 4; }
+  .roomnav[hidden] { display: none; }
+  .roombtn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; font: inherit; font-size: 13px; color: var(--ink); border: 0; background: none; border-radius: 999px; cursor: pointer; }
+  .roombtn:hover, .rn-arrow:hover { background: var(--hover); }
+  .roombtn .i { width: 18px; height: 18px; color: var(--accent); }
+  .roombtn span { color: var(--muted); }
+  .roombtn b { font-weight: 650; }
+  .rn-arrow { display: grid; place-items: center; width: 32px; height: 32px; border: 0; background: none; border-radius: 50%; color: var(--accent); cursor: pointer; }
+  [data-v6]:not([data-step="custom"]) .roomnav { display: none; }
+  [data-v6] #shareBtn { display: none !important; }              /* sharing lives in step 3, Preview */
+  /* Board style (Style step) */
+  .dockhead { display: none; }
+  /* Preview: share buttons */
+  .sharegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .sharegrid button { display: grid; justify-items: center; gap: 6px; padding: 12px 6px 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font: inherit; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+  .sharegrid button:hover { border-color: var(--accent); background: var(--tint); }
+  .sharegrid .i { width: 24px; height: 24px; color: var(--accent); }
+  /* the AR pop-up's message: navy on light blue */
+  .arqr { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+  .arqr[hidden] { display: none; }
+  .arqr #arQrCode { flex: none; width: 132px; height: 132px; }
+  .arqr #arQrCode svg { display: block; width: 100%; height: 100%; }
+  .arqr p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+  .arqr p > b:first-child { display: block; color: var(--ink); font-size: 14.5px; margin-bottom: 2px; }
+  [data-v6] #arMsg { background: #e3ecfa; color: var(--accent); font-weight: 700; font-size: 14px; line-height: 1.45; padding: 12px 16px; border-radius: 14px; }
+  /* the white studio: a soft vignette at the edges for depth */
+  #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
+  /* sketch icons (?icons=sketch) */
+  [data-v6].sk .p-body .sec-h > .i.skx { width: 30px; height: 30px; color: inherit; }
+  .colbuy { display: none; }
   [data-v6] .tile.nofit::after { content: "Too small"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8a8a90; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
   @media (min-width: 861px) {
     /* computers: the options stand in a column on the right (icon left of its name, price or size under the name);
        their pop-ups open just left of the column, above the cart (bottom right) */
     [data-v6] .viewbar { display: none; }
     [data-v6] .panel { justify-content: flex-end; }
-    [data-v6] .p-body { position: fixed; right: 16px; top: calc(50% - 60px); transform: translateY(-50%); flex-direction: column; }
-    [data-v6] .p-body .sec { width: 170px; }
-    [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 0 12px; padding: 9px 14px 9px 12px; text-align: left; }
-    [data-v6] .p-body .sec-h > .i:first-child { grid-row: span 2; }
-    [data-v6] .p-body .sec-t { font-size: 13.5px; }
-    [data-v6] .p-body .sec-h .up { grid-column: 2; font-size: 11.5px; }
-    [data-v6] .side { top: 16px; bottom: 136px; right: 204px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); }
-    [data-v6] #optSheet { bottom: auto; max-height: calc(100% - 152px); }   /* only as tall as the option needs */
+    /* the options column: top right, under the room picker */
+    [data-v6] .p-body { position: fixed; right: 16px; top: 68px; width: 236px; flex-direction: column; max-height: calc(100vh - 152px); overflow-y: auto; transition: width .2s ease; }
+    [data-v6] .p-body .sec { width: auto; }
+    [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 9px 14px 9px 12px; text-align: left; }
+    [data-v6] .p-body .sec-h > .i:first-child { grid-row: 1; align-self: center; }
+    [data-v6] .p-body .sec-h:has(.up.size:not([hidden])) > .i:first-child { grid-row: 1 / span 2; }
+    [data-v6] .p-body .sec-t { font-size: 13.5px; line-height: 1.25; }
+    [data-v6] .p-body .sec-h .up { grid-column: 3; grid-row: 1; justify-self: end; font-size: 11.5px; }   /* upcharge: right of the name */
+    [data-v6] .p-body .sec-h .up.size { grid-column: 2; grid-row: 2; justify-self: start; }               /* the size: under it */
+    [data-v6] .dockhead { display: block; margin: 8px 12px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    [data-v6] .dockhead[hidden], [data-v6] .p-body .sec[data-sec="boardgrp"] { display: none !important; }
+    /* an option slides out to the left of the column, full height (like the Wilsonart panel) */
+    [data-v6] .side { top: 68px; bottom: 84px; right: 260px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); animation: slideOut .24s ease; }
+    @keyframes slideOut { from { transform: translateX(48px); opacity: 0; } }
     [data-v6] #optSheet .side-body { min-height: 0; }
+    /* Add to cart sits at the foot of the column */
+    [data-v6] .colbuy { order: 100; display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 6px 8px; margin-top: 6px; padding: 10px 6px 2px; border-top: 1px solid var(--line); }
+    [data-v6] .colbuy[hidden] { display: none; }
+    [data-v6] .colbuy .cb-l { font-size: 12px; color: var(--muted); }
+    [data-v6] .colbuy b { font-size: 17px; }
+    [data-v6] #colCta { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+    [data-v6] #colCta:hover { filter: brightness(1.12); }
+    [data-v6] #colCta .i { width: 18px; height: 18px; }
+    /* the cart: a one-line chip (cart icon + total) that opens full size on hover or click, and when a board is added */
+    [data-v6] .buysheet { width: max-content; border-radius: 999px; transition: border-radius .2s ease; z-index: 20; }
+    [data-v6] .buysheet .grab { flex-direction: row; gap: 8px; width: auto; padding: 10px 18px; font-size: 14px; color: var(--ink); }
+    [data-v6].sk .p-body .sec-h { grid-template-columns: 32px minmax(0, 1fr) auto; }
+    [data-v6].sk .p-body .sec-h > .i.skx { width: 32px !important; height: 32px !important; }
+    [data-v6] .buysheet .grab :is(.bar, .gtxt, .chev) { display: none; }
+    [data-v6] .buysheet .grab .cic { display: block; width: 20px; height: 20px; color: var(--accent); }
+    [data-v6] .buysheet .grab .gamt { display: inline; font-weight: 700; }
+    [data-v6] .buysheet:not(.open) :is(.buybar, .editbar, .sheet-body) { display: none; }
+    [data-v6] .buysheet.open { width: 380px; border-radius: 18px; }
+    [data-v6] .buysheet.open .grab { justify-content: flex-start; }
+    [data-v6] .buysheet.open .grab .gtxt { display: inline; color: var(--muted); font-size: 13px; margin-right: auto; }
+    [data-v6] .buybar { grid-template-columns: 1fr; padding: 0 12px 12px; }
+    [data-v6] .buybar :is(.tot, #cta) { display: none; }
+    [data-v6] .buybar:not(:has(#cartCheckout:not([hidden]))) { display: none; }
+    [data-v6] .buysheet.pop { animation: cartPop .5s ease; }
+    @keyframes cartPop { 0% { transform: scale(.92); } 50% { transform: scale(1.03); } 100% { transform: none; } }
+    /* collapse the column to icons */
+    [data-v6] .dockmini { display: grid; place-items: center; align-self: flex-end; order: -3; width: 28px; height: 24px; margin: -2px -2px 0 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+    [data-v6] .dockmini:hover { background: var(--hover); color: var(--ink); }
+    [data-v6] .dockmini[hidden] { display: none; }
+    [data-v6].dmini .p-body { width: 68px; }
+    [data-v6].dmini .dockmini .i { transform: rotate(180deg); }
+    [data-v6].dmini .p-body .sec-h { grid-template-columns: 24px; justify-content: center; padding: 10px 0; }
+    [data-v6].dmini .p-body :is(.sec-t, .up, .dockhead, .cb-l, #colPrice, #colCtaLbl, #stepNextLbl) { display: none !important; }
+    [data-v6].dmini .stepbar { flex-direction: column; }
+    [data-v6].dmini .stepbar button { font-size: 0; }
+    [data-v6].dmini .stepbar b { font-size: 11px; }
+    [data-v6].dmini .colbuy { grid-template-columns: 1fr; padding: 8px 0 0; }
+    [data-v6].dmini .side { right: 92px; }
+    /* the room picker: top right */
+    [data-v6] .roomnav { top: 14px; right: 16px; }
+    [data-v6] .panel { z-index: 16; }        /* the column and the open cart sit over the slide-out options */
   }
   @media (max-width: 860px) {
     [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
@@ -734,6 +837,24 @@
     [data-v6] #optSheet .side-body { min-height: 0; }
     [data-v6] .qty { height: 44px; }
     [data-v6] .qty button { width: 44px; }
+    /* the step bar and Next span the row; the step's options share the row between them */
+    [data-v6] :is(.stepbar, .stepnext) { grid-column: 1 / -1; }
+    [data-v6] .stepbar button { display: flex; justify-content: center; align-items: center; gap: 7px; font-size: 13px; padding: 8px 2px; }
+    [data-v6] .p-body[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    [data-v6] .p-body[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    [data-v6] .roomnav { top: 10px; left: 10px; }
+    [data-v6] .p-body .sec-t { white-space: normal; }
+    [data-v6] .buysheet .grab :is(.cic, .gamt) { display: none; }
+    /* Style: Board | Edge | Caps; tapping Board opens Solid Colors and Textures & Patterns beside it */
+    [data-v6] .p-body:not(.bopen) .sec:is([data-sec="color"], [data-sec="laminate"]) { display: none; }
+    [data-v6] .p-body.bopen .sec:is([data-sec="color"], [data-sec="laminate"]) { animation: popIn .28s ease both; }
+    [data-v6] .p-body.bopen .sec[data-sec="laminate"] { animation-delay: .06s; }
+    @keyframes popIn { from { opacity: 0; transform: translateX(-14px) scale(.9); } }
+    [data-v6] .p-body.bopen .sec[data-sec="boardgrp"] .sec-h { background: var(--tint); }
+    [data-v6].sk .p-body .sec-h > .i.skx { width: 44px !important; height: 44px !important; }
+    [data-v6] .dockmini { display: none !important; }
+    [data-v6] .t-acts { flex-direction: column; align-items: stretch; }   /* the two ways to start, stacked */
+    [data-v6] .t-skip { display: block; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
 </style>
@@ -767,6 +888,17 @@
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-wallpic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="6.5" y="7.5" width="4.5" height="5.5" rx=".6"/><rect x="13" y="7.5" width="4.5" height="5.5" rx=".6"/><path d="M6.5 16.5h11"/></symbol>
   <symbol id="i-weave" viewBox="0 0 24 24"><path stroke-width="2.9" stroke-linecap="butt" d="M3.5 8.5h9.3M18.2 8.5h2.3M3.5 15.5h2.3M11.2 15.5h9.3M8.5 3.5v2.3M8.5 11.2v9.3M15.5 3.5v9.3M15.5 18.2v2.3"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 1.9-.8 1.9-1.7 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-.9.8-1.7 1.7-1.7h2a4.4 4.4 0 0 0 4.4-4.4C21 6.5 17 3.5 12 3.5z"/><circle cx="7.6" cy="11.6" r="1.2"/><circle cx="10.4" cy="7.6" r="1.2"/><circle cx="15" cy="7.8" r="1.2"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></symbol>
+  <symbol id="i-fb" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M14.5 8.5h-1.5a1.8 1.8 0 0 0-1.8 1.8V20.5M9.5 13h5"/></symbol>
+  <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.8" cy="7.2" r=".7"/></symbol>
+  <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <!-- sketch icons (?icons=sketch): the part being edited highlighted in light blue -->
+  <symbol id="i-sk-board" viewBox="0 0 40 40"><rect x="9" y="5" width="22" height="30" rx="1.5" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="12.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="12.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/></symbol>
+  <symbol id="i-sk-caps" viewBox="0 0 40 40"><path d="M4 9h27v27" fill="none" stroke="#1b3a6b" stroke-width="1.4"/><path d="M31 9l4-3v27l-4 3" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><path d="M4 9l4-3h27" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><circle cx="21" cy="19" r="7" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="21" cy="19" r="3.6" fill="none" stroke="#1b3a6b" stroke-width="1"/></symbol>
+  <symbol id="i-sk-edge" viewBox="0 0 40 40"><path d="M6 10l20-5v30l-20-4z" fill="#fff" stroke="#1b3a6b" stroke-width="1.4"/><path d="M26 5l6 2v29l-6-1z" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><path d="M6 10l6 1.5 20-4.5" fill="none" stroke="#1b3a6b" stroke-width="1"/><circle cx="9.5" cy="12.5" r="1.3" fill="#fff" stroke="#1b3a6b" stroke-width=".9"/><circle cx="22" cy="9.6" r="1.3" fill="#fff" stroke="#1b3a6b" stroke-width=".9"/></symbol>
   <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
 </svg>
 
@@ -774,6 +906,12 @@
   <div id="stageWrap">
     <div id="stage"></div>
     <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
+    <!-- v6: the room picker stays on the 3D view through every step; the arrows step through the rooms -->
+    <div class="roomnav pill" id="roomNav" hidden>
+      <button class="rn-arrow" id="roomPrev" type="button" aria-label="Previous room"><svg class="i"><use href="#i-left"/></svg></button>
+      <button class="roombtn" id="roomBtn" type="button"><svg class="i"><use href="#i-room"/></svg><span>Room</span><b id="roomName"></b></button>
+      <button class="rn-arrow" id="roomNext" type="button" aria-label="Next room"><svg class="i"><use href="#i-right"/></svg></button>
+    </div>
     <div class="viewbar pill" role="group" aria-label="View">
       <button class="vb-auto lay-v5" id="autoBtn" type="button" hidden><svg class="i"><use href="#i-spark"/></svg>Auto-Suggest</button>
       <button data-view="front">Front</button>
@@ -814,6 +952,13 @@
     </div>
 
     <div class="p-body">
+      <!-- v6: three steps; the dock shows only the current step's options (main.js STEPS6) -->
+      <button class="dockmini" id="dockMini" type="button" aria-label="Collapse the options to icons" aria-pressed="false" hidden><svg class="i"><use href="#i-right"/></svg></button>
+      <nav class="stepbar" id="stepBar" aria-label="Steps" hidden>
+        <button type="button" data-st="build"><b>1</b>Build</button>
+        <button type="button" data-st="style"><b>2</b>Style</button>
+        <button type="button" data-st="preview"><b>3</b>Preview</button>
+      </nav>
       <!-- All options in one panel, in three groups. Sections fold; clicking part of the board opens its section. -->
       <!-- ====== BOARD ====== -->
       <!-- v5: popular boards as a strip across the top (main.js moves #presetList in here) -->
@@ -879,6 +1024,13 @@
           <button class="line" type="button" data-open="wall" data-only="v2"><svg class="i"><use href="#i-room"/></svg><span>Room &amp; lighting</span><span class="v" data-v="wall"></span><svg class="i go"><use href="#i-right"/></svg></button>
         </div>
 
+        <!-- v6 Style step: computers show a small "Board style" heading over Solid Colors and Textures & Patterns;
+             phones show a Board button that opens those two beside it -->
+        <p class="dockhead" id="boardHead" hidden>Board style</p>
+        <section class="sec" data-sec="boardgrp" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-board"/></svg><span class="sec-t">Board</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
         <section class="sec" data-sec="color">
           <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-color"/></svg><span class="sec-t">Board color</span><span class="sec-v" data-v="color"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b">
@@ -1004,6 +1156,47 @@
             </div>
           </div>
         </section>
+
+        <!-- v6 step 3, Preview: see it on your wall (AR), share a link, and a summary of the board -->
+        <section class="sec" data-sec="arview" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-ar"/></svg><span class="sec-t">On your wall</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
+        <section class="sec" data-sec="sharelink" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-share"/></svg><span class="sec-t">Share</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <p class="help">Send this design to a colleague, or post it.</p>
+            <div class="sharegrid">
+              <button type="button" data-share="email"><svg class="i"><use href="#i-mail"/></svg>Email</button>
+              <button type="button" data-share="facebook"><svg class="i"><use href="#i-fb"/></svg>Facebook</button>
+              <button type="button" data-share="instagram"><svg class="i"><use href="#i-ig"/></svg>Instagram</button>
+              <button type="button" data-share="tiktok"><svg class="i"><use href="#i-tt"/></svg>TikTok</button>
+              <button type="button" data-share="link"><svg class="i"><use href="#i-link"/></svg>Copy link</button>
+            </div>
+            <p class="help" id="shareMsg" role="status"></p>
+          </div>
+        </section>
+        <section class="sec" data-sec="saveit" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-save"/></svg><span class="sec-t">Save for later</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden></div>
+        </section>
+        <section class="sec" data-sec="summary" hidden>
+          <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-list"/></svg><span class="sec-t">Summary</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
+          <div class="sec-b" hidden>
+            <ul class="sumlist" id="sumList"></ul>
+            <div class="row">
+              <button class="chipbtn" type="button" id="sumAR"><svg class="i"><use href="#i-ar"/></svg>View it on your wall</button>
+              <button class="chipbtn" type="button" id="sumShare"><svg class="i"><use href="#i-share"/></svg>Share</button>
+            </div>
+            <p class="help">Happy with it? Add it to your cart. You can come back and change anything.</p>
+          </div>
+        </section>
+      </div>
+      <button class="stepnext" id="stepNext" type="button" hidden><span id="stepNextLbl">Next</span><svg class="i"><use href="#i-right"/></svg></button>
+      <!-- v6 computers: this board's price and Add to cart, at the foot of the options (the cart itself is a small chip) -->
+      <div class="colbuy" id="colBuy" hidden>
+        <span class="cb-l">Your board</span><b id="colPrice"></b>
+        <button id="colCta" type="button"><svg class="i"><use href="#i-bag"/></svg><span id="colCtaLbl">Add to cart</span></button>
       </div>
 
     </div>
@@ -1012,7 +1205,7 @@
          tap or swipe the handle up to see each board in the cart. -->
     <div class="buysheet" id="buysheet">
       <button class="grab" id="sheetGrab" type="button" aria-expanded="false" aria-controls="sheetBody">
-        <span class="bar"></span><span class="gtxt">Your cart <b id="sheetCount"></b></span><svg class="i chev"><use href="#i-chev"/></svg>
+        <span class="bar"></span><svg class="i cic" aria-hidden="true"><use href="#i-bag"/></svg><span class="gtxt">Your cart <b id="sheetCount"></b></span><b class="gamt" id="cartChipAmt">$0.00</b><svg class="i chev"><use href="#i-chev"/></svg>
       </button>
       <div class="sheet-body" id="sheetBody">
         <p class="help" id="cartEmpty">Nothing in your cart yet. Design a board and tap Add to cart.</p>
@@ -1161,6 +1354,11 @@
         <button slot="ar-button" class="primary ar-go" type="button">Open camera &amp; place on wall</button>
       </model-viewer>
       <p class="help" id="arMsg">Preparing your board…</p>
+      <!-- computers: scan this with a phone to open the same design there, then place it on the wall -->
+      <div class="arqr" id="arQr" hidden>
+        <div id="arQrCode" role="img" aria-label="QR code that opens this design on your phone"></div>
+        <p><b>Scan with your phone's camera</b>This design opens on your phone, ready to place on your wall at real size.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1211,6 +1409,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610300747" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610300857" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
