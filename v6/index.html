@@ -823,8 +823,8 @@
     [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
     [data-v6] .app { padding: 0; }
     [data-v6] #shareBtn { top: 10px; right: 10px; }
-    [data-v6] .viewbar:not(:has(#arBtn:not([hidden]))) { display: none; }
-    [data-v6] .panel { top: var(--stageMax, 58vh); left: 0; right: 0; bottom: 0; flex-direction: column; justify-content: center; align-items: stretch; padding: 8px 10px calc(84px + env(safe-area-inset-bottom)); background: var(--panel); border-top: 1px solid var(--line); pointer-events: auto; }
+    [data-v6] .viewbar { display: none; }    /* (View on your wall lives in step 3, Preview) */
+    [data-v6] .panel { top: var(--stageMax, 58vh); left: 0; right: 0; bottom: 0; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 10px 10px calc(var(--cartH, 84px) + 8px); background: var(--panel); border-top: 1px solid var(--line); pointer-events: auto; }
     [data-v6] .p-body { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
     [data-v6] .p-body .sec { width: auto; background: #f4f4f6; }
     [data-v6] .p-body .sec-h { padding: 12px 2px 10px; min-height: 76px; justify-content: center; }
@@ -1409,6 +1409,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610300857" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610300902" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

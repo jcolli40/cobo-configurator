@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300857';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300857';
-import { wallTexture, wallSwatch } from './env.js?v=202610300857';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300902';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300902';
+import { wallTexture, wallSwatch } from './env.js?v=202610300902';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -919,7 +919,7 @@ function markActive(name) {
 // it fits the space above the sheet, so the whole board is always visible while you make changes.
 const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the screen height (sheet: matches .side top: 44vh)
 const STAGE6 = { max: 0.58, min: 0.58, sheet: 1 / 3 };  // v6: no scrolling; a pop-up takes the bottom 2/3 (top: --sheetTop)
-let stageQueued = false, stageMax = 0, stageW = 0;
+let stageQueued = false, stageMax = 0, stageW = 0, cartH = 84;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
   if (!phone.matches || fullStage()) {
@@ -928,16 +928,27 @@ function updateStage(animate) {
     return;
   }
   const S = V6 ? STAGE6 : STAGE;
+  if (V6) {   // v6: the board gets the height the step's options and the cart bar leave (40-62% of the screen)
+    if (!$('#buysheet').classList.contains('open')) cartH = $('#buysheet').offsetHeight || cartH;
+    root.style.setProperty('--cartH', `${cartH}px`);
+    const m = Math.round(Math.min(innerHeight * 0.62, Math.max(innerHeight * 0.4, innerHeight - $('.p-body').scrollHeight - cartH - 26)));
+    if (Math.abs(m - stageMax) > 2 || stageW !== innerWidth) {
+      stageW = innerWidth; stageMax = m;
+      root.style.setProperty('--stageMax', `${m}px`);
+      root.style.setProperty('--sheetTop', `${Math.round(innerHeight * S.sheet)}px`);
+      if (!visH) requestAnimationFrame(() => { resize(); if (focus) focusPart(focus); else setView(state.view); });   // re-frame for the new height
+    }
+  }
   // full height is measured once per screen width, so the address bar sliding in/out doesn't make the view jump
-  if (!stageMax || stageW !== innerWidth) {
+  else if (!stageMax || stageW !== innerWidth) {
     stageW = innerWidth; stageMax = Math.round(innerHeight * S.max);
     root.style.setProperty('--stageMax', `${stageMax}px`);
     root.style.setProperty('--sheetTop', `${Math.round(innerHeight * S.sheet)}px`);
   }
-  const H = stageMax / S.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
+  const H = V6 ? innerHeight : stageMax / S.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
   // v6: an option's pop-up is only as tall as its content, so the board gets all the room above it
   const sheetTop = V6 && !$('#optSheet').hidden ? Math.min(stageMax, innerHeight - $('#optSheet').offsetHeight) : H * S.sheet;
-  const h = sheet ? sheetTop : Math.max(H * S.min, stageMax - scrollY);   // visible height of the view
+  const h = sheet ? sheetTop : V6 ? stageMax : Math.max(H * S.min, stageMax - scrollY);   // visible height of the view
   const top = st.offsetTop;                                        // the Front/Angle/Back row above the 3D view
   const s = Math.max(0.2, (h - top) / (stageMax - top));
   if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 320); }
@@ -1070,7 +1081,7 @@ function build() {
     if (k === 'boardgrp') {                                                    // v6 phones: Board opens its two options beside it
       const open = $('.p-body').classList.toggle('bopen');
       h.setAttribute('aria-expanded', open);
-      return;
+      return updateStage(false);
     }
     if (SHEETS_ONLY() && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
     if (SHEETS_ONLY()) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
@@ -1294,6 +1305,7 @@ function goStep(s, open = true) {
   step6 = s;
   closeOptSheet();
   updateUI();
+  updateStage(false);                             // (phones: this step's options may need more or less room)
   if (open && s === 'preview') openOptSheet($('.sec[data-sec="summary"]'));
 }
 function paintSteps() {
