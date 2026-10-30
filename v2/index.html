@@ -689,6 +689,17 @@
   [data-v6] .certcount { background: var(--tint); padding: 4px 12px 10px; gap: 2px; }
   [data-v6] .tile.nofit { opacity: 1; position: relative; }
   [data-v6] .tile.nofit > * { opacity: .45; }
+  [data-v6] .hint { transition: opacity .6s ease; }
+  [data-v6] .hint.seen { opacity: 0; pointer-events: none; }
+  /* swatches with their names underneath */
+  [data-v6] .swgrid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 12px 6px; }
+  [data-v6] .swc { display: grid; justify-items: center; align-content: start; gap: 6px; }
+  [data-v6] .swc .sw { width: 40px; height: 40px; }
+  [data-v6] .swc span { font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; cursor: pointer; }
+  [data-v6] .swc:has(.sw.on) span { color: var(--ink); font-weight: 600; }
+  /* bigger − / + buttons (44 px is the minimum comfortable touch size) */
+  [data-v6] .qty { height: 40px; }
+  [data-v6] .qty button { width: 40px; font-size: 18px; }
   [data-v6] .tile.nofit::after { content: "Too small"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8a8a90; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
   @media (min-width: 861px) {
     /* computers: the options stand in a column on the right (icon left of its name, price or size under the name);
@@ -702,6 +713,8 @@
     [data-v6] .p-body .sec-t { font-size: 13.5px; }
     [data-v6] .p-body .sec-h .up { grid-column: 2; font-size: 11.5px; }
     [data-v6] .side { top: 16px; bottom: 136px; right: 204px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); }
+    [data-v6] #optSheet { bottom: auto; max-height: calc(100% - 152px); }   /* only as tall as the option needs */
+    [data-v6] #optSheet .side-body { min-height: 0; }
   }
   @media (max-width: 860px) {
     [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
@@ -716,6 +729,11 @@
     [data-v6] .buysheet { width: auto; border-radius: 18px 18px 0 0; border-width: 1px 0 0; }
     /* phones: a pop-up slides up over the bottom 2/3 of the screen, and the board shrinks into the top third */
     [data-v6] .side { top: var(--sheetTop, 33.33vh); animation: slideUp .28s ease; }
+    /* an option's pop-up is only as tall as its content (up to 2/3 of the screen); the board fills the space above */
+    [data-v6] #optSheet { top: auto; max-height: calc(100% - var(--sheetTop, 33.33vh)); }
+    [data-v6] #optSheet .side-body { min-height: 0; }
+    [data-v6] .qty { height: 44px; }
+    [data-v6] .qty button { width: 44px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
 </style>
@@ -1193,6 +1211,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202610292005" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202610300747" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

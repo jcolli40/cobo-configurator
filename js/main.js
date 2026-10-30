@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610292005';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610292005';
-import { wallTexture, wallSwatch } from './env.js?v=202610292005';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300747';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300747';
+import { wallTexture, wallSwatch } from './env.js?v=202610300747';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -738,7 +738,13 @@ function swatchRow(el, items, getActive, onPick, extra) {
     b.className = 'sw'; b.style.setProperty('--c', it.hex); b.title = it.name; b.setAttribute('aria-label', it.name);
     b.dataset.k = it.name;
     b.addEventListener('click', () => onPick(it.name));
-    el.appendChild(b);
+    if (!V6) { el.appendChild(b); continue; }
+    // v6: each swatch carries its name underneath (tapping the name picks it too)
+    const c = document.createElement('div'), n = document.createElement('span');
+    c.className = 'swc'; n.textContent = it.name; n.setAttribute('aria-hidden', 'true');
+    n.addEventListener('click', () => b.click());
+    c.append(b, n);
+    el.appendChild(c);
   }
 }
 function paintActive() {
@@ -879,7 +885,9 @@ function updateStage(animate) {
     root.style.setProperty('--sheetTop', `${Math.round(innerHeight * S.sheet)}px`);
   }
   const H = stageMax / S.max, sheet = !$('#optSheet').hidden || !$('#lamPanel').hidden;
-  const h = sheet ? H * S.sheet : Math.max(H * S.min, stageMax - scrollY);   // visible height of the view
+  // v6: an option's pop-up is only as tall as its content, so the board gets all the room above it
+  const sheetTop = V6 && !$('#optSheet').hidden ? Math.min(stageMax, innerHeight - $('#optSheet').offsetHeight) : H * S.sheet;
+  const h = sheet ? sheetTop : Math.max(H * S.min, stageMax - scrollY);   // visible height of the view
   const top = st.offsetTop;                                        // the Front/Angle/Back row above the 3D view
   const s = Math.max(0.2, (h - top) / (stageMax - top));
   if (animate) { w.classList.add('anim'); clearTimeout(updateStage.t); updateStage.t = setTimeout(() => w.classList.remove('anim'), 320); }
@@ -1009,8 +1017,8 @@ function build() {
     requestAnimationFrame(() => { stageQueued = false; updateStage(false); });
   }, { passive: true });
   addEventListener('resize', () => updateStage(false));
-  phone.addEventListener('change', () => { closeOptSheet(); updateStage(false); $('#cartCheckout').hidden = !cartItems.length && !phone.matches; });
-  $('#cartCheckout').hidden = !phone.matches;
+  phone.addEventListener('change', () => { closeOptSheet(); updateStage(false); $('#cartCheckout').hidden = !cartItems.length && (V6 || !phone.matches); });
+  $('#cartCheckout').hidden = V6 || !phone.matches;
   updateStage(false);
   wireBoardClicks();
   wireSheet();
@@ -2413,7 +2421,7 @@ function renderCart(cart) {
   const count = cart.items.reduce((s, it) => s + it.qty, 0);
   $('#cartEmpty').hidden = !!count;
   $('#cartFoot').hidden = !count;
-  $('#cartCheckout').hidden = !count && !phone.matches;     // phones: Checkout always sits beside Add to cart
+  $('#cartCheckout').hidden = !count && (V6 || !phone.matches);   // phones (v1-v5): Checkout always sits beside Add to cart; v6: only once the cart has a board
   $('#sheetCount').textContent = count ? `(${count})` : '';
   $('#cartCount').textContent = count ? `${count} board${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
   // price breakdown + volume discount. Preview cart: worked out here from DISCOUNTS; in Shopify: the store's own
@@ -2547,6 +2555,17 @@ function sampleBg() {
   stage.parentElement.style.background = `rgb(${px[0]}, ${px[1]}, ${px[2]})`;
 }
 controls.addEventListener('change', () => { dirty = true; });
+// v6: the "Drag to rotate" hint fades after the first drag or zoom, and stays hidden on later visits
+if (V6) {
+  let seen = false;
+  try { seen = localStorage.getItem('cobo.hintSeen') === '1'; } catch { /* storage blocked */ }
+  if (seen) $('.hint').classList.add('seen');
+  else controls.addEventListener('start', function hideHint() {
+    $('.hint').classList.add('seen');
+    controls.removeEventListener('start', hideHint);
+    try { localStorage.setItem('cobo.hintSeen', '1'); } catch { /* storage blocked: it just shows again next time */ }
+  });
+}
 function loop() {
   const dt = clock.getDelta();
   if (tween) {
