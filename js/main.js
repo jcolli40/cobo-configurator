@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610291943';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610291943';
-import { wallTexture, wallSwatch } from './env.js?v=202610291943';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610292005';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610292005';
+import { wallTexture, wallSwatch } from './env.js?v=202610292005';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -655,11 +655,10 @@ let tween = null;
 // When the Wilsonart side panel covers the right of the 3D view (desktop), the view slides left by half the panel
 // width and the board is framed to fit the part still visible. inset = covered width in pixels (animated).
 const inset = { now: 0, target: 0 };
-// v6 computers: the icon dock floats on the left, and its pop-ups open beside it, so the board is framed in the part
-// to the right of them (the view slides right instead of left)
-const LEFT = () => V6 && !phone.matches;
-const dockW = () => (LEFT() && !fullStage() ? $('.p-body').offsetWidth + 16 : 0);
-const offX = (px) => (LEFT() ? -(px + dockW()) / 2 : px / 2);
+// v6 computers: the options column floats on the right and its pop-ups open beside it, so the board is framed in
+// the part to the left of them
+const dockW = () => (V6 && !phone.matches && !fullStage() ? $('.p-body').offsetWidth + 16 : 0);
+const offX = (px) => (px + dockW()) / 2;
 function applyInset() {
   const W = stage.clientWidth, H = stage.clientHeight, x = offX(inset.now);
   if (Math.abs(x) > 0.5 && W && H) camera.setViewOffset(W, H, x, 0, W, H);
