@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610300902';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610300902';
-import { wallTexture, wallSwatch } from './env.js?v=202610300902';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610301157';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610301157';
+import { wallTexture, wallSwatch } from './env.js?v=202610301157';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -57,7 +57,8 @@ const state = {
   wall: 0,                  // index into WALLS, or -1 for wallCustom (Studio room only)
   wallCustom: '#ffffff',
   env: 'studio',            // room preset (ENVIRONMENTS in config.js)
-  certNeed: 0,              // "How many certificates?" (0 = not answered)
+  certNeed: 0,              // "How many certificates?" (0 = not answered); v6: how many Letter 8.5x11 samples
+  sampleMix: {},            // v6: how many samples of the other paper sizes, e.g. { legal: 2, tabloid: 1 }
   path: null,               // v2 only: 'standard' or 'custom' (null = not chosen yet)
   myCerts: [],              // the customer's own certificate photos, shown in place of the samples (in order)
   wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offX: 0, offY: 0 },   // photo of the customer's own wall
@@ -547,12 +548,13 @@ function buildBoard() {
 
   // documents between board face and acrylic: the customer's own (any sizes, packed or dragged), or the samples
   lastSheets = sheetLayout(w, h, state.sheetTurn);
-  lastDocs = state.myCerts.length ? packDocs(w, h, state.myCerts) : null;
+  const docs = curDocs();
+  lastDocs = docs.length ? packDocs(w, h, docs) : null;
   // (pulled toward the camera in the depth test, so they never flicker against the board face)
   const sheetMat = (map) => new THREE.MeshStandardMaterial({ map, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   if (state.sheets && lastDocs) {
     for (const r of lastDocs.places) {
-      const d = state.myCerts[r.i];   // a photo of their own document, or a sample sized from their wall photo
+      const d = docs[r.i];   // a photo of their own document, or a sample (sized from their wall photo, or from the size mix)
       const mat = sheetMat(d.sample ? certificateTexture(r.w, r.h, d.title) : ownCertTexture(d, r.w, r.h));
       const p = new THREE.Mesh(new THREE.PlaneGeometry(r.w, r.h), mat);
       p.position.set(r.x, r.y, T + 0.03); p.receiveShadow = true; p.userData.sec = 'certs'; p.userData.doc = r.i; root.add(p);
@@ -931,7 +933,8 @@ function updateStage(animate) {
   if (V6) {   // v6: the board gets the height the step's options and the cart bar leave (40-62% of the screen)
     if (!$('#buysheet').classList.contains('open')) cartH = $('#buysheet').offsetHeight || cartH;
     root.style.setProperty('--cartH', `${cartH}px`);
-    const m = Math.round(Math.min(innerHeight * 0.62, Math.max(innerHeight * 0.4, innerHeight - $('.p-body').scrollHeight - cartH - 26)));
+    const m = document.documentElement.classList.contains('pfolded') ? innerHeight - cartH   // options folded away: the board gets it all
+      : Math.round(Math.min(innerHeight * 0.62, Math.max(innerHeight * 0.4, innerHeight - $('.p-body').scrollHeight - cartH - 26)));
     if (Math.abs(m - stageMax) > 2 || stageW !== innerWidth) {
       stageW = innerWidth; stageMax = m;
       root.style.setProperty('--stageMax', `${m}px`);
@@ -1028,6 +1031,8 @@ function updateUI() {
     $('#stageWrap').classList.toggle('vig', envNow().wall === 'color' && !state.wallPhoto.img);   // the white studio: soft vignette
     $('#colPrice').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote';   // computers: the column's foot
     $('#colCtaLbl').textContent = $('#ctaLabel').textContent;
+    $('#sumCtaLbl').textContent = $('#ctaLabel').textContent;   // Preview › Summary ends with the same button
+    $('#sumCtaPrice').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : '';
     $('#cartTotal').textContent = sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote';
   }  $('#note').textContent = sp.price
     ? 'Ships with aluminum z-clip hanger, M6 studs and 1" caps. Prices shown are the standard-board prices; compliance sheets are not included.'
@@ -1053,8 +1058,10 @@ function updateUI() {
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
 
   // how many certificates fit
-  const S = lastSheets;
-  $('#sheetFit').textContent = !S
+  const S = lastSheets, mixN = state.myCerts.length ? 0 : curDocs().length;
+  $('#sheetFit').textContent = mixN   // v6 size mix: how many of the samples are on the board
+    ? `${lastDocs?.places.length || 0} of your ${mixN} sample certificates fit on this board.`
+    : !S
     ? 'No standard certificate fits on a board this small.'
     : S.primary
       ? `${S.n} × 8.5×11 certificate${S.n === 1 ? '' : 's'} fit${S.n === 1 ? 's' : ''} on this board (${S.cols} across, ${S.rows} down${S.sw > S.sh ? ', turned sideways' : ''}).`
@@ -1242,7 +1249,7 @@ function wireBoardClicks() {
     if (drag) {
       const d = drag;
       drag = null; controls.enabled = true;
-      if (d.moved) { const doc = state.myCerts[d.i]; doc.px = d.o.position.x; doc.py = d.o.position.y; refresh(); return; }
+      if (d.moved) { const doc = curDocs()[d.i]; doc.px = d.o.position.x; doc.py = d.o.position.y; refresh(); return; }
     }
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;   // it was a drag (rotate)
     if (step() === 'intro' || step() === 'snap') return;
@@ -1322,13 +1329,16 @@ function paintSteps() {
 // Preview: the board as it stands, line by line
 function paintSummary(sp) {
   const { w, h } = dims(), L = state.lamSel;
-  const own = state.myCerts.length, samples = state.sheets ? (lastSheets?.primary ? lastSheets.n : 0) : 0;
+  const own = state.myCerts.length, mix = !own && curDocs().length;
+  const samples = !state.sheets ? 0 : mix ? lastDocs?.places.length || 0 : lastSheets?.primary ? lastSheets.n : 0;
   const rows = [
     ['Size', `${fmt(w)}" × ${fmt(h)}" ${state.orient}`],
     ['Surface', L ? `Wilsonart ${L.n}${L.name ? ` ${L.name}` : ''}` : sp.boardColor],
     ['Edge banding', state.edge === 'match' ? 'Matches the board' : sp.edgeBanding],
     ['Caps & studs', sp.fastenerFinish],
-    ['Documents', own ? `${own} of your own` : samples ? `${samples} sample certificate${samples === 1 ? '' : 's'} (preview only)` : 'None shown'],
+    ['Documents', own ? `${own} of your own` : mix && samples
+      ? `Samples: ${[['Letter', state.certNeed], ...MIX_SIZES.map(id => [DOC_SIZES.find(x => x.id === id).name, state.sampleMix[id] || 0])].filter(([, n]) => n).map(([nm, n]) => `${n} ${nm}`).join(', ')} (preview only)`
+      : samples ? `${samples} sample certificate${samples === 1 ? '' : 's'} (preview only)` : 'None shown'],
     ['Price', sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote'],
   ];
   const ul = $('#sumList');
@@ -1439,6 +1449,23 @@ function wireSteps() {
   const hr = document.createElement('hr'), lab = document.createElement('p');
   hr.className = 'div'; lab.className = 'lab'; lab.textContent = 'Or use sample certificates for now';
   body.prepend(own, hr, lab, $('.certcount'));
+  // ...in any mix of paper sizes: Letter (the count), then Legal, Tabloid and Half letter
+  const cc = $('.certcount'), letter = cc.querySelector('.opt');
+  letter.querySelector(':scope > .i')?.remove();
+  letter.querySelector(':scope > span').innerHTML = 'Letter <small>8.5×11</small>';
+  letter.querySelector('.qty').setAttribute('aria-label', 'Letter 8.5×11 samples');
+  letter.classList.add('mix');
+  const head = document.createElement('p'); head.className = 'mixhead'; head.textContent = 'How many of each size?';
+  letter.before(head);
+  const rows = document.createElement('div'); rows.id = 'mixRows'; rows.className = 'mixrows';
+  rows.innerHTML = MIX_SIZES.map(id => {
+    const s = DOC_SIZES.find(x => x.id === id), name = `${s.name} ${fmt(s.w)}×${fmt(s.h)}`;
+    return `<div class="opt mix"><span>${s.name} <small>${fmt(s.w)}×${fmt(s.h)}</small></span><span class="qty" role="group" aria-label="${name} samples">`
+      + `<button type="button" data-mix="${id}" data-d="-1" aria-label="One fewer ${s.name}">−</button><span data-mixn="${id}">0</span>`
+      + `<button type="button" data-mix="${id}" data-d="1" aria-label="One more ${s.name}">+</button></span></div>`;
+  }).join('') + '<p class="help warn" id="mixMiss" role="status"></p>';
+  letter.after(rows);
+  $('#sheets').closest('.opt').querySelector('span').textContent = 'Show sample certificates';
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
   col.querySelector('.sec-t').textContent = 'Solid Colors'; col.querySelector('.sec-h .i use').setAttribute('href', '#i-palette');
@@ -1450,14 +1477,28 @@ function wireSteps() {
       const i = $(`.sec[data-sec="${k}"] .sec-h .i`); i.classList.add('skx'); i.setAttribute('viewBox', '0 0 40 40'); i.querySelector('use').setAttribute('href', `#${id}`);
     }
   }
-  // the room picker, on the 3D view in every step; the arrows step through the rooms without opening it
+  // phones: Collapse folds the options away so the board fills the screen; tap again (Expand) to bring them back
+  const fold = $('#panelFold');
+  fold.hidden = false;
+  fold.addEventListener('click', () => {
+    const on = document.documentElement.classList.toggle('pfolded');
+    fold.setAttribute('aria-expanded', !on);
+    fold.querySelector('span').textContent = on ? 'Expand' : 'Collapse';
+    updateStage(true);
+  });
+  // the room picker, on the 3D view in every step: a round icon (top right) that opens ‹ Room: Studio ›; the arrows
+  // step through the rooms without opening the room options; a tap anywhere else folds it back to the icon
   $('#roomNav').hidden = false;
-  $('#roomBtn').addEventListener('click', () => openOptSheet($('.sec[data-sec="wall"]')));
+  const roomOpen = (on) => { $('#roomNav').classList.toggle('open', on); $('#roomIcon').setAttribute('aria-expanded', on); };
+  $('#roomIcon').addEventListener('click', (e) => { roomOpen(true); if (!e.detail) $('#roomBtn').focus(); });   // (keyboard: focus moves into it)
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('#roomNav')) roomOpen(false); });
+  $('#roomNav').addEventListener('keydown', (e) => { if (e.key === 'Escape') { roomOpen(false); $('#roomIcon').focus(); } });
   const stepRoom = (d) => {
     const now = envNow().id, i = ROOMS.findIndex(e => e.id === now);
     state.env = ROOMS[(Math.max(0, i) + d + ROOMS.length) % ROOMS.length].id;
     refresh();
   };
+  $('#roomBtn').addEventListener('click', () => stepRoom(1));      // the name cycles too: no room panel in v6
   $('#roomPrev').addEventListener('click', () => stepRoom(-1));
   $('#roomNext').addEventListener('click', () => stepRoom(1));
   // Preview: view on your wall, share (email, Facebook, Instagram, TikTok, link), save for later
@@ -1467,6 +1508,7 @@ function wireSteps() {
   // computers: Add to cart at the foot of the column (the cart is a small chip); the column can fold to icons
   $('#colBuy').hidden = false;
   $('#colCta').addEventListener('click', () => $('#cta').click());
+  $('#sumCta').addEventListener('click', () => { closeOptSheet(); $('#cta').click(); });
   $('#dockMini').hidden = false;
   const mini = (on) => {
     document.documentElement.classList.toggle('dmini', on);
@@ -1490,9 +1532,14 @@ function wireSteps() {
     if (desk() && $('#buysheet').classList.contains('open') && !e.target.closest('#buysheet, #colBuy')) { hoverOpen = false; setSheet(false); }
   });
   // the welcome card: start from a popular design, or from scratch (Build, with your documents first)
-  $('.t-intro .t-sub').textContent = 'Start from a popular design, or build your own from scratch. You can change anything as you go.';
-  $('#tourStart').firstChild.textContent = 'Popular designs';
-  $('#tourSkipCard').textContent = 'Start from scratch';
+  // (the COBO icon sits on the card's top edge; the two ways to start are big tiles side by side)
+  const logo = document.createElement('span'), img = document.createElement('img');
+  logo.className = 't-logo'; img.src = new URL('../img/cobo-icon.svg', import.meta.url).href; img.alt = 'COBO';
+  logo.append(img); $('.t-intro .t-card').prepend(logo);
+  $('.t-intro h1').textContent = 'Compliance Board Designer';
+  $('.t-intro .t-sub').textContent = 'Start from a popular design or build your own. You can change anything as you go.';
+  $('#tourStart').innerHTML = '<svg class="i"><use href="#i-grid"/></svg><span>Popular designs</span>';
+  $('#tourSkipCard').innerHTML = '<svg class="i"><use href="#i-pencil"/></svg><span>Start from scratch</span>';
   $('#tourSkipCard').addEventListener('click', () => { setStep('custom'); goStep('build', false); openOptSheet(certs); });
 }
 // v2: Standard = stock colors, priced; Custom = laminate / any color / printing, quoted
@@ -1973,8 +2020,10 @@ function swayFrame() {
     return { tgt: new THREE.Vector3(0, 0, 0.5), d };
   }
   if (phone.matches || aspect < 1) {
-    const room = 0.42;                                       // top 42% of the screen is free
-    const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * 1.35 + 2;
+    // the part of the screen above the card is free (v6: measured, less the COBO icon on the card's edge; the board fills it)
+    const card = V6 && step() === 'intro' ? $('.t-intro .t-card').getBoundingClientRect() : null;
+    const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - 34 - r.top) / r.height)) : 0.42;
+    const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * (card?.height ? 1.14 : 1.35) + 2;
     return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room), 0.5), d };
   }
   const room = 0.62;                                         // right 62% of the screen is free
@@ -2076,6 +2125,98 @@ function wireTour() {
   firstStep('snap');
 }
 
+// ---- v6: the animated tutorial (plays on the first visit; "How it works" on the start card plays it again) ----
+// A short example run on the real configurator: each step lights up the control it's about, says what it does and
+// makes that change on the board. Afterwards the board goes back to how it was and the start card shows.
+const onScreen = (...sels) => sels.map(s => $(s)).find(el => el && el.getClientRects().length);   // the first one on screen
+const COACH = [
+  { k: 'How it works', t: 'Design your board in 3 steps', s: 'Here\'s a quick example. Tap Next to go faster, or Skip to start now.', ms: 3600, go: () => goStep('build', false) },
+  { el: () => onScreen('.sec[data-sec="certs"] .sec-h'), k: 'Step 1 · Build', t: 'Add your documents',
+    s: 'Snap or upload the permits and licenses you need to display, or pick sample certificates. We size the board to fit.',
+    go: () => { state.certNeed = 6; state.sampleMix = {}; useBestFit(); } },
+  { el: () => onScreen('.sec[data-sec="size"] .sec-h'), k: 'Step 1 · Build', t: 'Choose the size', s: 'The best fit for your documents is marked. Pick any size you like.', go: () => {} },
+  { el: () => onScreen('.sec[data-sec="boardgrp"] .sec-h', '.sec[data-sec="color"] .sec-h'), k: 'Step 2 · Style', t: 'Pick a color or texture',
+    s: 'Solid colors, or Wilsonart textures and patterns.', go: () => { goStep('style', false); state.face = 'Forest Green'; state.lamSel = null; refresh(); } },
+  { el: () => onScreen('.sec[data-sec="edge"] .sec-h'), k: 'Step 2 · Style', t: 'Edge banding', s: 'Match the board, or pick a contrasting edge.',
+    go: () => { state.edge = 'Black'; refresh(); focusPart('edge'); } },
+  { el: () => onScreen('.sec[data-sec="caps"] .sec-h'), k: 'Step 2 · Style', t: 'Caps', s: 'Brushed aluminum, brushed chrome or gloss black.',
+    go: () => { state.fastener = 'black'; refresh(); focusPart('caps'); } },
+  { el: () => onScreen('#roomNav'), k: 'Any time', t: 'See it in a room', s: 'Step through rooms and lighting to see it on a wall like yours.',
+    go: () => { unfocus(); $('#roomNav').classList.add('open'); $('#roomNext').click(); } },
+  { el: () => onScreen('#stepBar [data-st="preview"]'), k: 'Step 3 · Preview', t: 'Preview and order', s: 'See it on your own wall with your phone, share it, then add it to your cart.',
+    go: () => { $('#roomNav').classList.remove('open'); goStep('preview', false); } },
+];
+let coach = null;   // { i, timer, snap } while the tutorial runs
+function runCoach() {
+  if (coach || !V6) return;
+  document.documentElement.classList.remove('pfolded');
+  setStep('custom');                                       // (brings back their own room after the welcome's studio)
+  coach = { i: -1, snap: { p: designParams().toString(), env: state.env, need: state.certNeed, mix: { ...state.sampleMix }, step: step6, sized: sizePicked } };
+  $('#coach').hidden = false;
+  $('#coachDots').innerHTML = COACH.map(() => '<i></i>').join('');
+  coachTo(0);
+  $('#coachNext').focus();
+}
+function coachTo(i) {
+  clearTimeout(coach.timer);
+  if (i >= COACH.length) return endCoach();
+  coach.i = i;
+  const c = COACH[i];
+  c.go();
+  $('#coachK').textContent = c.k; $('#coachT').textContent = c.t; $('#coachS').textContent = c.s;
+  $('#coachNext').textContent = i === COACH.length - 1 ? 'Start designing' : 'Next';
+  $('#coachDots').querySelectorAll('i').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('done', k < i); });
+  const tip = $('.coach-tip'), bar = $('.coach-prog'), ms = c.ms || 4600;
+  tip.classList.remove('swap'); bar.classList.remove('run'); void tip.offsetWidth;
+  tip.classList.add('swap'); bar.style.setProperty('--d', `${ms}ms`); bar.classList.add('run');
+  setTimeout(placeCoach, 380);                             // (once the panel has changed for this step)
+  coach.timer = setTimeout(() => coachTo(i + 1), ms);
+}
+// the spotlight goes round the step's control; the tip card sits beside it (computers: left of the options column)
+function placeCoach() {
+  if (!coach) return;
+  const el = COACH[coach.i].el?.(), spot = $('.coach-spot').style, tip = $('.coach-tip'), tw = tip.offsetWidth, th = tip.offsetHeight;
+  $('#coach').classList.toggle('nospot', !el);
+  let x, y;
+  if (!el) { x = (innerWidth - tw) / 2; y = phone.matches ? innerHeight * 0.14 : innerHeight * 0.38; }
+  else {
+    const r = el.getBoundingClientRect(), p = 6;
+    Object.assign(spot, { left: `${r.left - p}px`, top: `${r.top - p}px`, width: `${r.width + 2 * p}px`, height: `${r.height + 2 * p}px` });
+    if (!phone.matches && r.left > innerWidth / 2 && r.top > 100) { x = r.left - tw - 22; y = r.top + r.height / 2 - th / 2; }
+    else { x = r.left + r.width / 2 - tw / 2; y = r.top > innerHeight / 2 ? r.top - th - 18 : r.bottom + 18; }
+  }
+  tip.style.left = `${Math.round(Math.max(12, Math.min(innerWidth - tw - 12, x)))}px`;
+  tip.style.top = `${Math.round(Math.max(12, Math.min(innerHeight - th - 12, y)))}px`;
+}
+function endCoach() {
+  if (!coach) return;
+  const s = coach.snap;
+  clearTimeout(coach.timer); coach = null;
+  $('#coach').hidden = true;
+  $('#roomNav').classList.remove('open');
+  state.certNeed = s.need; state.sampleMix = s.mix;
+  applyDesign({ ...readParams(new URLSearchParams(s.p)), env: s.env, certNeed: s.need, sampleMix: s.mix });   // the board as it was
+  sizePicked = s.sized;
+  goStep(s.step, false);
+  try { localStorage.setItem('cobo.tourSeen', '1'); } catch { /* storage blocked */ }
+  setStep('intro');
+  $('#tourStart').focus();
+}
+function wireCoach() {
+  $('#coachNext').addEventListener('click', () => coach && coachTo(coach.i + 1));
+  $('#coachSkip').addEventListener('click', endCoach);
+  document.addEventListener('keydown', (e) => { if (coach && e.key === 'Escape') endCoach(); });
+  addEventListener('resize', () => setTimeout(placeCoach, 50));
+  $('#coachReplay').hidden = false;
+  const links = document.createElement('div'); links.className = 't-links';   // "Continue your last design · How it works", one line
+  $('#tourResume').before(links); links.append($('#tourResume'), $('#coachReplay'));
+  $('#coachReplay').addEventListener('click', runCoach);
+  // first visit (or ?tour=1): play it before the start card
+  let seen = null; try { seen = localStorage.getItem('cobo.tourSeen'); } catch { /* storage blocked */ }
+  const q = new URLSearchParams(location.search);
+  if (step() === 'intro' && (q.get('tour') === '1' || (!seen && q.get('tour') !== '0'))) setTimeout(runCoach, 1400);
+}
+
 // "Try it with examples" (also ?docs=demo): a labor-law poster plus two permits, drawn on the spot
 function loadExampleDocs() {
   const make = (w, h, color, title, lines) => {
@@ -2096,7 +2237,26 @@ function loadExampleDocs() {
   docsKey = '';
   refresh();
 }
-const docsFit = (W, H) => packDocs(W, H, state.myCerts.map(d => ({ ...d, px: null }))).missing.length === 0;
+// v6 sample certificates in more than one paper size: Letter (the count above) plus these, packed like real documents
+const MIX_SIZES = ['legal', 'tabloid', 'half'];
+let mixCache = { key: '', docs: [] };
+function mixDocs() {
+  const m = state.sampleMix;
+  if (!V6 || state.myCerts.length || !MIX_SIZES.some(id => m[id])) return [];
+  const key = [state.certNeed, state.sheetTurn, ...MIX_SIZES.map(id => m[id] || 0)].join(',');
+  if (key !== mixCache.key) {   // (the same objects until the mix changes, so dragged samples stay put)
+    const docs = [];
+    for (const [id, n] of [['letter', state.certNeed], ...MIX_SIZES.map(id => [id, m[id] || 0])]) {
+      const s = DOC_SIZES.find(x => x.id === id);
+      for (let k = 0; k < n; k++) docs.push({ sample: true, title: SHEETS.titles[docs.length % SHEETS.titles.length], size: id, turn: state.sheetTurn, cw: s.w, ch: s.h, px: null, py: null, imgId: `m${docs.length}` });
+    }
+    mixCache = { key, docs };
+  }
+  return mixCache.docs;
+}
+const curDocs = () => (state.myCerts.length ? state.myCerts : mixDocs());   // what's packed on the board (none: the 8.5x11 grid)
+const sampleCount = () => state.certNeed + MIX_SIZES.reduce((s, id) => s + (state.sampleMix[id] || 0), 0);
+const docsFit = (W, H) => packDocs(W, H, curDocs().map(d => ({ ...d, px: null }))).missing.length === 0;
 // smallest board that holds all of the customer's documents
 function bestFitDocs() {
   let best = null;
@@ -2131,9 +2291,9 @@ function bestFit(n) {
   return { custom: true, w: Math.min(w, CUSTOM.maxShort), h: Math.min(h, CUSTOM.maxLong), fit: fitsOn(Math.min(w, CUSTOM.maxShort), Math.min(h, CUSTOM.maxLong)) };
 }
 function useBestFit() {
-  const b = state.myCerts.length ? bestFitDocs() : bestFit(state.certNeed);
+  const b = curDocs().length ? bestFitDocs() : bestFit(state.certNeed);
   if (b?.tooBig) return;
-  state.myCerts.forEach(d => { d.px = d.py = null; });
+  curDocs().forEach(d => { d.px = d.py = null; });
   if (!b) return;
   if (b.custom) Object.assign(state, { sizeId: 'custom', customA: Math.min(b.w, b.h), customB: Math.max(b.w, b.h), orient: b.w > b.h ? 'landscape' : 'portrait' });
   else Object.assign(state, { sizeId: b.size.id, orient: b.orient });
@@ -2144,6 +2304,7 @@ function useBestFit() {
 // Apply a whole design at once (popular boards, shared links, restored last design)
 function applyDesign(d, refit = true) {
   for (const k of ['sizeId', 'orient', 'face', 'edge', 'fastener', 'customA', 'customB', 'sheets', 'sheetTurn', 'env', 'certNeed']) if (d[k] !== undefined) state[k] = d[k];
+  if (d.sampleMix) state.sampleMix = { ...d.sampleMix };
   $('#sheets').checked = state.sheets; $('#sheetTurn').checked = state.sheetTurn;
   $('#cw').value = state.customA; $('#ch').value = state.customB;
   if (d.lam) { pendingLam = d.lam; if (libraryReady) { const it = findByNumber(d.lam) || unknownLam(d.lam, '#bdbdbd'); state.lamSel = it; pendingLam = null; } }
@@ -2162,6 +2323,8 @@ function designParams() {
   if (!state.sheets) p.set('sheets', '0');
   if (state.sheetTurn) p.set('turn', '1');
   if (state.certNeed) p.set('need', state.certNeed);
+  const mix = MIX_SIZES.filter(id => state.sampleMix[id]).map(id => `${id}:${state.sampleMix[id]}`).join(',');
+  if (mix) p.set('mix', mix);                       // v6: samples in other paper sizes, e.g. mix=legal:2,tabloid:1
   return p;
 }
 function readParams(q) {
@@ -2177,6 +2340,8 @@ function readParams(q) {
   if (q.get('turn') === '1') d.sheetTurn = true;
   if (+q.get('need') > 0) d.certNeed = Math.min(40, +q.get('need'));
   if (q.get('lam')) d.lam = q.get('lam');
+  if (q.get('mix')) d.sampleMix = Object.fromEntries((q.get('mix') || '').split(',').map(x => x.split(':'))
+    .filter(([id, n]) => MIX_SIZES.includes(id) && +n > 0).map(([id, n]) => [id, Math.min(40, Math.floor(+n))]));
   return d;
 }
 // Share: phones open the share sheet (Messages, email...); computers copy the link.
@@ -2243,9 +2408,18 @@ function wireExtras() {
   // how many certificates (v6: the board follows the best fit until they pick a size themselves)
   document.querySelectorAll('[data-cc]').forEach(b => b.addEventListener('click', () => {
     state.certNeed = Math.max(0, Math.min(40, state.certNeed + +b.dataset.cc));
-    if (V6 && !sizePicked && state.certNeed && !state.myCerts.length) return useBestFit(), rememberDesign();
-    updateUI(); rememberDesign();
+    if (V6 && !sizePicked && sampleCount() && !state.myCerts.length) return useBestFit(), rememberDesign();
+    if (V6) refresh(); else updateUI();             // (v6: a size mix is drawn as exactly these samples)
+    rememberDesign();
   }));
+  // v6: samples in the other paper sizes (Legal, Tabloid, Half letter)
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-mix]'); if (!b) return;
+    const id = b.dataset.mix, m = state.sampleMix;
+    m[id] = Math.max(0, Math.min(40 - (sampleCount() - (m[id] || 0)), (m[id] || 0) + +b.dataset.d));
+    if (!sizePicked && sampleCount() && !state.myCerts.length) useBestFit(); else refresh();
+    rememberDesign();
+  });
   $('#certAdvice').addEventListener('click', (e) => { if (e.target.closest('#useFit')) useBestFit(); });
   // own documents (any size)
   const addCerts = async (files) => {
@@ -2307,10 +2481,14 @@ function paintDocs() {
 function paintExtras() {
   paintDocs();
   // how many certificates (or: which of your documents) -> advice + highlight the best-fit size tile
-  const docs = state.myCerts.length;
-  document.querySelector('.certcount .opt').hidden = !!docs;
+  const own = state.myCerts.length, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)
+  document.querySelector('.certcount .opt').hidden = !!own;
+  if (V6) {
+    $('#mixRows').hidden = !!own;
+    document.querySelectorAll('[data-mixn]').forEach(el => { el.textContent = state.sampleMix[el.dataset.mixn] || 0; });
+  }
   const n = docs ? 0 : state.certNeed, b = docs ? bestFitDocs() : bestFit(n);
-  $('#certNeed').textContent = n || '—';
+  $('#certNeed').textContent = own ? '—' : state.certNeed || (docs ? '0' : '—');
   const { w, h } = dims(), here = fitsOn(w, h);
   let advice;
   if (docs) {
@@ -2318,10 +2496,10 @@ function paintExtras() {
       : state.sizeId === b.size.id && state.orient === b.orient;
     if (on && b.custom) b.custom = false, b.size = { a: b.w, b: b.h }, b.orient = state.orient;   // already on it: say so
     const fitsHere = !lastDocs?.missing.length;
-    advice = b.tooBig ? 'Your documents are bigger than our largest board (48 × 96). Contact us for oversize boards.'
-      : b.custom ? `Your ${docs} document${docs === 1 ? '' : 's'} need a custom <b>${b.w}" × ${b.h}"</b> board. <button class="link" id="useFit" type="button">Use it</button>`
-      : on ? `<b>${b.size.a} × ${b.size.b}</b> is the best fit for your ${docs} document${docs === 1 ? '' : 's'}.`
-      : `Best fit for your ${docs} document${docs === 1 ? '' : 's'}: <b>${b.size.a} × ${b.size.b}${b.orient === 'landscape' ? ' landscape' : ''}</b>. <button class="link" id="useFit" type="button">Use it</button>${fitsHere ? ' (They fit on your current size too.)' : ''}`;
+    advice = b.tooBig ? `Your ${word}s are bigger than our largest board (48 × 96). Contact us for oversize boards.`
+      : b.custom ? `Your ${docs} ${word}${docs === 1 ? '' : 's'} need a custom <b>${b.w}" × ${b.h}"</b> board. <button class="link" id="useFit" type="button">Use it</button>`
+      : on ? `<b>${b.size.a} × ${b.size.b}</b> is the best fit for your ${docs} ${word}${docs === 1 ? '' : 's'}.`
+      : `Best fit for your ${docs} ${word}${docs === 1 ? '' : 's'}: <b>${b.size.a} × ${b.size.b}${b.orient === 'landscape' ? ' landscape' : ''}</b>. <button class="link" id="useFit" type="button">Use it</button>${fitsHere ? ' (They fit on your current size too.)' : ''}`;
     $('#certAdvice').innerHTML = advice;
     document.querySelectorAll('#sizes .tile').forEach(t => {
       const s = SIZES.find(x => x.id === t.dataset.k);
@@ -2329,7 +2507,8 @@ function paintExtras() {
       t.classList.toggle('nofit', !!(s && !docsFit(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a]))));
     });
   }
-  else if (!n) advice = 'Tell us how many 8.5×11 documents you need to display, and we\'ll suggest the size that fits.';
+  else if (!n) advice = V6 ? 'Set how many of each paper size you need to display, and we\'ll suggest the board that fits.'
+    : 'Tell us how many 8.5×11 documents you need to display, and we\'ll suggest the size that fits.';
   else if (b?.custom) advice = `More than any standard board holds. A custom <b>${b.w}" × ${b.h}"</b> fits ${b.fit}. <button class="link" id="useFit" type="button">Use it</button>`;
   else {
     const name = `${b.size.a} × ${b.size.b}${b.orient === 'landscape' ? ' landscape' : ''}`;
@@ -2354,11 +2533,15 @@ function paintExtras() {
     em.textContent = docs ? '' : k ? `fits ${k}` : 'notices only';
   });
   // own documents
-  $('#certClear').hidden = !docs;
-  $('#certOwnInfo').hidden = !docs;
-  if (docs) {
-    const shown = lastDocs?.places.length || 0, miss = docs - shown;
-    $('#certOwnInfo').textContent = `${shown} of your ${docs} document${docs === 1 ? '' : 's'} on the board${miss ? `; ${miss} won't fit at this size` : ''}. Upload more to add them.`;
+  $('#certClear').hidden = !own;
+  $('#certOwnInfo').hidden = !own;
+  if (own) {
+    const shown = lastDocs?.places.length || 0, miss = own - shown;
+    $('#certOwnInfo').textContent = `${shown} of your ${own} document${own === 1 ? '' : 's'} on the board${miss ? `; ${miss} won't fit at this size` : ''}. Upload more to add them.`;
+  }
+  if (V6) {                                          // a size mix that doesn't all fit: say so
+    const miss = !own && docs ? lastDocs?.missing.length || 0 : 0;
+    $('#mixMiss').textContent = miss ? `${miss} of these won't fit on this size. Use the best fit above, or pick a bigger size.` : '';
   }
 }
 
@@ -2847,6 +3030,7 @@ renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + vo
 if (restoredDesign && !GUIDED) toast('Welcome back! We restored your last design.');
 if (LAYOUT === 'v4') wireGuide();
 if (LAYOUT === 'v5') wireTour();
+if (V6) wireCoach();
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
 if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED) scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)

@@ -658,8 +658,16 @@
   .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .42); transform: scale(0); animation: ripple .6s ease-out; pointer-events: none; }
   @keyframes ripple { to { transform: scale(1); opacity: 0; } }
   [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list) { display: none !important; }
-  [data-v6] .t-card .g-kick { font-size: 0; }
-  [data-v6] .t-card .g-kick::after { content: "Compliance board designer"; font-size: 12px; }
+  /* v6 start card: the COBO icon on its top edge, the title, then two big tiles side by side (computers: left aligned) */
+  [data-v6] .t-card .g-kick { display: none; }
+  [data-v6] .t-card { padding-top: 42px; }
+  .t-logo { display: none; }
+  [data-v6] .t-logo { display: grid; place-items: center; position: absolute; top: -30px; left: 26px; width: 60px; height: 60px; border-radius: 50%; background: #fff; box-shadow: 0 8px 22px rgba(0, 0, 0, .28); }
+  [data-v6] .t-logo img { height: 38px; width: auto; }
+  [data-v6] .t-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; justify-self: stretch; }
+  [data-v6] .t-acts > :is(.t-go, .t-skip) { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 112px; padding: 16px 10px; border-radius: 18px; font-size: 16px; font-weight: 700; line-height: 1.2; text-align: center; white-space: normal; }
+  [data-v6] .t-acts .i { width: 30px; height: 30px; }
+  [data-v6] .t-card .t-skip { border-width: 1.5px; }
   [data-v6] .t-sub { display: block; margin: -2px 0 2px; font-size: 15px; line-height: 1.45; color: rgba(255, 255, 255, .82); }
   [data-v6] #shareBtn { top: 14px; right: 16px; transform: none; z-index: 5; box-shadow: var(--shadow); }
   [data-v6][data-step="intro"] #shareBtn { display: none; }
@@ -724,6 +732,11 @@
   .sumlist li b { font-weight: 600; text-align: right; }
   .sumlist li.tot b { font-size: 15px; }
   #sumAR, #sumShare { display: inline-flex; align-items: center; gap: 7px; }
+  .sumcta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .sumcta:hover { filter: brightness(1.12); }
+  .sumcta .i { width: 20px; height: 20px; }
+  .sumcta b { font-weight: 600; opacity: .85; }
+  .sumcta b:not(:empty)::before { content: "· "; }
   /* the room picker on the 3D view: ‹ Room: Studio › */
   .roomnav { position: absolute; display: flex; align-items: center; gap: 0; padding: 3px; z-index: 4; }
   .roomnav[hidden] { display: none; }
@@ -734,6 +747,9 @@
   .roombtn b { font-weight: 650; }
   .rn-arrow { display: grid; place-items: center; width: 32px; height: 32px; border: 0; background: none; border-radius: 50%; color: var(--accent); cursor: pointer; }
   [data-v6]:not([data-step="custom"]) .roomnav { display: none; }
+  .rn-icon { display: none; }
+  /* phones: Collapse (bottom right of the 3D view) folds the options away so the board gets the whole screen */
+  .pfold { display: none; }
   [data-v6] #shareBtn { display: none !important; }              /* sharing lives in step 3, Preview */
   /* Board style (Style step) */
   .dockhead { display: none; }
@@ -750,6 +766,60 @@
   .arqr p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
   .arqr p > b:first-child { display: block; color: var(--ink); font-size: 14.5px; margin-bottom: 2px; }
   [data-v6] #arMsg { background: #e3ecfa; color: var(--accent); font-weight: 700; font-size: 14px; line-height: 1.45; padding: 12px 16px; border-radius: 14px; }
+  /* v6 pop-ups, styled like the steps panel: a bold navy title and subheadings, light grey rounded cards, more room */
+  [data-v6] .side-h { padding: 18px 16px 10px 18px; border-bottom: 0; gap: 12px; }
+  [data-v6] .side-h h2 { font-size: 19px; font-weight: 750; letter-spacing: -.01em; color: var(--accent); }
+  [data-v6] #optIcon { width: 38px; height: 38px; place-items: center; border-radius: 12px; background: var(--tint); color: var(--accent); flex: none; }
+  [data-v6] #optIcon .i { width: 22px; height: 22px; color: var(--accent); }
+  [data-v6] .side .x { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: #f4f4f6; font-size: 22px; }
+  [data-v6] .side-body { padding: 8px 16px 24px; gap: 18px; }
+  [data-v6] #optBody, [data-v6] #optBody .sec-b { gap: 16px; }
+  [data-v6] .side :is(.lab, .mixhead) { margin: 6px 0 -6px; font-size: 15px; font-weight: 750; letter-spacing: 0; text-transform: none; color: var(--accent); }
+  [data-v6] .side hr.div { display: none; }                      /* (the cards and spacing separate the groups) */
+  [data-v6] .side :is(.owndocs, .certcount) { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: #f4f4f6; }
+  [data-v6] .side .owndocs > .opt:first-of-type { font-size: 15px; font-weight: 750; color: var(--accent); }
+  [data-v6] .side .owndocs > .opt:first-of-type .i { color: var(--accent); }
+  [data-v6] .side .owndocs .help { margin-top: -6px !important; }
+  [data-v6] .side .opt:has(> .switch) { min-height: 50px; padding: 8px 14px; border-radius: 14px; background: #f4f4f6; }
+  [data-v6] .side .help { font-size: 13px; }
+  [data-v6] .side .upload { border-radius: 12px; padding: 10px 16px; }
+  [data-v6] .side .sumlist { border: 0; border-radius: 16px; background: #f4f4f6; }
+  [data-v6] .side .sumlist li { border-top-color: #e4e4e8; }
+  /* sample certificates: how many of each paper size */
+  .mixhead { margin: 0; font-weight: 700; }
+  .mixrows { display: grid; gap: 6px; }
+  .mixrows[hidden] { display: none; }
+  .opt.mix { min-height: 40px; }
+  .opt.mix small { margin-left: 4px; font-size: 12.5px; color: var(--muted); }
+  .mixrows .warn { color: #b3261e; }
+  .mixrows .warn:empty { display: none; }
+  /* the animated tutorial: the screen dims except a spotlight on one control; the tip card sits beside it */
+  .coach { position: fixed; inset: 0; z-index: 60; }
+  .coach[hidden] { display: none; }
+  .coach.nospot { background: rgba(12, 20, 36, .3); }
+  .coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 200vmax rgba(12, 20, 36, .55); outline: 2px solid #fff; transition: left .45s ease, top .45s ease, width .45s ease, height .45s ease, opacity .3s; pointer-events: none; }
+  .coach.nospot .coach-spot { opacity: 0; }
+  .coach-tip { position: fixed; width: min(330px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 16px 16px 14px; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(0, 0, 0, .32); transition: left .45s ease, top .45s ease; }
+  .coach-tip.swap > :not(.coach-prog) { animation: tIn .35s ease both; }
+  .coach-k { margin: 0; font-size: 11.5px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .coach-t { font-size: 19px; line-height: 1.2; color: var(--accent); }
+  .coach-s { font-size: 14px; line-height: 1.45; color: var(--ink); }
+  .coach-bar { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .coach-dots { display: flex; gap: 5px; margin-right: auto; }
+  .coach-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line-2); transition: width .25s, background .25s; }
+  .coach-dots i.on { width: 18px; background: var(--accent); }
+  .coach-dots i.done { background: var(--tint-2); }
+  .coach-bar .skip { border: 0; background: none; padding: 9px 10px; border-radius: 999px; font: inherit; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  .coach-bar .skip:hover { background: var(--hover); }
+  .coach-bar .next { border: 0; padding: 9px 18px; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .coach-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--tint-2); transform-origin: left; transform: scaleX(0); }
+  .coach-prog.run { animation: coachProg var(--d, 4s) linear forwards; }
+  @keyframes coachProg { to { transform: scaleX(1); } }
+  #coachReplay[hidden] { display: none; }
+  .t-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .t-card #coachReplay { color: #fff; }
+  .coach-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .coach-spot, .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
   /* the white studio: a soft vignette at the edges for depth */
   #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
   /* sketch icons (?icons=sketch) */
@@ -761,8 +831,8 @@
        their pop-ups open just left of the column, above the cart (bottom right) */
     [data-v6] .viewbar { display: none; }
     [data-v6] .panel { justify-content: flex-end; }
-    /* the options column: top right, under the room picker */
-    [data-v6] .p-body { position: fixed; right: 16px; top: 68px; width: 236px; flex-direction: column; max-height: calc(100vh - 152px); overflow-y: auto; transition: width .2s ease; }
+    /* the options column: middle right (clear of the room picker above and the cart below) */
+    [data-v6] .p-body { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); width: 236px; flex-direction: column; max-height: calc(100vh - 152px); overflow-y: auto; transition: width .2s ease; }
     [data-v6] .p-body .sec { width: auto; }
     [data-v6] .p-body .sec-h { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 12px; padding: 9px 14px 9px 12px; text-align: left; }
     [data-v6] .p-body .sec-h > .i:first-child { grid-row: 1; align-self: center; }
@@ -841,7 +911,17 @@
     [data-v6] .stepbar button { display: flex; justify-content: center; align-items: center; gap: 7px; font-size: 13px; padding: 8px 2px; }
     [data-v6] .p-body[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     [data-v6] .p-body[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    [data-v6] .roomnav { top: 10px; left: 10px; }
+    [data-v6] .roomnav { top: 10px; right: 10px; }
+    /* the room picker folds to a round icon (top right); tapping it opens ‹ Room: Studio ›, a tap elsewhere folds it */
+    [data-v6] .roomnav:not(.open) > :not(.rn-icon) { display: none; }
+    [data-v6] .roomnav:not(.open) .rn-icon { display: grid; place-items: center; width: 38px; height: 38px; border: 0; background: none; border-radius: 50%; color: var(--accent); cursor: pointer; }
+    [data-v6] .roomnav:not(.open) .rn-icon .i { width: 20px; height: 20px; }
+    [data-v6] .roomnav.open { animation: rnOpen .2s ease; transform-origin: right center; }
+    @keyframes rnOpen { from { opacity: 0; transform: scaleX(.6); } }
+    [data-v6][data-step="custom"] .pfold:not([hidden]) { position: absolute; right: 10px; bottom: 8px; z-index: 4; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px 5px 7px; border: 0; border-radius: 999px; background: color-mix(in srgb, #fff 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0, 0, 0, .12); font: inherit; font-size: 12.5px; color: var(--muted); cursor: pointer; }
+    [data-v6] .pfold .i { width: 16px; height: 16px; color: var(--accent); transition: transform .2s ease; }
+    [data-v6].pfolded .pfold .i { transform: rotate(180deg); }
+    [data-v6].pfolded .p-body { display: none; }      /* (the cart bar stays) */
     [data-v6] .p-body .sec-t { white-space: normal; }
     [data-v6] .buysheet .grab :is(.cic, .gamt) { display: none; }
     /* Style: Board | Edge | Caps; tapping Board opens Solid Colors and Textures & Patterns beside it */
@@ -850,10 +930,20 @@
     [data-v6] .p-body.bopen .sec[data-sec="laminate"] { animation-delay: .06s; }
     @keyframes popIn { from { opacity: 0; transform: translateX(-14px) scale(.9); } }
     [data-v6] .p-body.bopen .sec[data-sec="boardgrp"] .sec-h { background: var(--tint); }
+    /* ...and the three read as one group: one light-blue background behind Board, Solid Colors and Textures, outlined */
+    [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) { background: none; }
+    [data-v6] .p-body.bopen .sec:is([data-sec="boardgrp"], [data-sec="color"], [data-sec="laminate"]) .sec-h { background: none; }
+    [data-v6] .p-body.bopen .sec[data-sec="boardgrp"]::before { content: ""; position: absolute; z-index: -1; top: -4px; bottom: -4px; left: -4px; right: calc(-200% - 16px - 4px); border-radius: 16px; background: var(--tint); box-shadow: 0 0 0 1.5px var(--accent) inset; animation: grpIn .28s ease both; pointer-events: none; }
+    @keyframes grpIn { from { clip-path: inset(0 66% 0 0 round 16px); } to { clip-path: inset(0 0 0 0 round 16px); } }
     [data-v6].sk .p-body .sec-h > .i.skx { width: 44px !important; height: 44px !important; }
     [data-v6] .dockmini { display: none !important; }
-    [data-v6] .t-acts { flex-direction: column; align-items: stretch; }   /* the two ways to start, stacked */
-    [data-v6] .t-skip { display: block; }
+    [data-v6] .t-skip { display: grid; }
+    /* phones: the start card is centered */
+    [data-v6] .t-card { justify-items: center; text-align: center; }
+    [data-v6] .t-card h1 { text-align: center; }
+    [data-v6] .t-links { justify-content: center; }
+    [data-v6] .t-logo { left: 50%; transform: translateX(-50%); width: 56px; height: 56px; top: -28px; }
+    [data-v6] .t-logo img { height: 34px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
 </style>
@@ -894,6 +984,8 @@
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4.5 19.5l1-4.5L15.8 4.7a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L9 18.5z"/><path d="M13.8 6.7l3.5 3.5"/></symbol>
   <!-- sketch icons (?icons=sketch): the part being edited highlighted in light blue -->
   <symbol id="i-sk-board" viewBox="0 0 40 40"><rect x="9" y="5" width="22" height="30" rx="1.5" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="12.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="8.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="12.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/><circle cx="27.5" cy="31.5" r="1.6" fill="#fff" stroke="#1b3a6b" stroke-width="1"/></symbol>
   <symbol id="i-sk-caps" viewBox="0 0 40 40"><path d="M4 9h27v27" fill="none" stroke="#1b3a6b" stroke-width="1.4"/><path d="M31 9l4-3v27l-4 3" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><path d="M4 9l4-3h27" fill="none" stroke="#1b3a6b" stroke-width="1.2"/><circle cx="21" cy="19" r="7" fill="#cfe0f7" stroke="#1b3a6b" stroke-width="1.4"/><circle cx="21" cy="19" r="3.6" fill="none" stroke="#1b3a6b" stroke-width="1"/></symbol>
@@ -907,10 +999,13 @@
     <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
     <!-- v6: the room picker stays on the 3D view through every step; the arrows step through the rooms -->
     <div class="roomnav pill" id="roomNav" hidden>
+      <button class="rn-icon" id="roomIcon" type="button" aria-expanded="false" aria-label="Room"><svg class="i"><use href="#i-room"/></svg></button>
       <button class="rn-arrow" id="roomPrev" type="button" aria-label="Previous room"><svg class="i"><use href="#i-left"/></svg></button>
       <button class="roombtn" id="roomBtn" type="button"><svg class="i"><use href="#i-room"/></svg><span>Room</span><b id="roomName"></b></button>
       <button class="rn-arrow" id="roomNext" type="button" aria-label="Next room"><svg class="i"><use href="#i-right"/></svg></button>
     </div>
+    <!-- v6 phones: fold the options away so the board fills the screen -->
+    <button class="pfold" id="panelFold" type="button" aria-expanded="true" hidden><svg class="i"><use href="#i-chev"/></svg><span>Collapse</span></button>
     <div class="viewbar pill" role="group" aria-label="View">
       <button class="vb-auto lay-v5" id="autoBtn" type="button" hidden><svg class="i"><use href="#i-spark"/></svg>Auto-Suggest</button>
       <button data-view="front">Front</button>
@@ -1187,7 +1282,8 @@
               <button class="chipbtn" type="button" id="sumAR"><svg class="i"><use href="#i-ar"/></svg>View it on your wall</button>
               <button class="chipbtn" type="button" id="sumShare"><svg class="i"><use href="#i-share"/></svg>Share</button>
             </div>
-            <p class="help">Happy with it? Add it to your cart. You can come back and change anything.</p>
+            <button class="sumcta" type="button" id="sumCta"><svg class="i"><use href="#i-bag"/></svg><span id="sumCtaLbl">Add to cart</span><b id="sumCtaPrice"></b></button>
+            <p class="help">You can come back and change anything, even after it's in your cart.</p>
           </div>
         </section>
       </div>
@@ -1273,6 +1369,7 @@
       <div class="t-acts"><button class="primary t-go" type="button" id="tourStart">Get started<svg class="i"><use href="#i-right"/></svg></button>
         <button class="t-skip" type="button" id="tourSkipCard">Skip</button></div>
       <button class="link" type="button" id="tourResume" hidden>Continue your last design</button>
+      <button class="link" type="button" id="coachReplay" hidden>How it works</button>
     </div>
   </div>
   <div class="t-step t-snap" id="tourSnap">
@@ -1298,6 +1395,19 @@
     </div>
   </div>
 </section>
+
+<!-- v6: the animated tutorial. A dimmed screen with a "spotlight" on the control each step is about, and a tip card -->
+<div class="coach" id="coach" hidden>
+  <div class="coach-spot" aria-hidden="true"></div>
+  <div class="coach-tip" role="dialog" aria-modal="true" aria-labelledby="coachT">
+    <p class="coach-k" id="coachK"></p>
+    <b class="coach-t" id="coachT"></b>
+    <span class="coach-s" id="coachS" aria-live="polite"></span>
+    <div class="coach-bar"><span class="coach-dots" id="coachDots" aria-hidden="true"></span>
+      <button class="skip" type="button" id="coachSkip">Skip</button><button class="next" type="button" id="coachNext">Next</button></div>
+    <i class="coach-prog" aria-hidden="true"></i>
+  </div>
+</div>
 
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
 <!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
@@ -1408,6 +1518,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610300902" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202610301157" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
