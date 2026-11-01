@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011729';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011729';
-import { wallTexture, wallSwatch } from './env.js?v=202611011729';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011729';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011734';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011734';
+import { wallTexture, wallSwatch } from './env.js?v=202611011734';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011734';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1554,6 +1554,19 @@ function blankBoard() {
 // the 3D view, Preview's buttons, and the welcome card's two ways to start
 function wireSteps() {
   $('#stepBar').hidden = false;
+  // the size is worked out from the documents: a one-line hint under the steps (Build, before any documents), a note at the
+  // top of the Size pop-up, and a small tag on the Size button (Auto-fit / Your pick); see paintSizeAuto
+  const hint = document.createElement('p'); hint.id = 'stepHint'; hint.className = 'stephint'; hint.hidden = true;
+  hint.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span>Add your documents and we\'ll pick the size.</span>';
+  $('#stepBar').after(hint);
+  const sizeSec = $('.sec[data-sec="size"]'), sizeT = sizeSec.querySelector('.sec-t');
+  sizeT.dataset.full = 'Size'; sizeT.insertAdjacentHTML('beforeend', '<small class="autotag" id="sizeTag" hidden></small>');
+  const note = document.createElement('p'); note.id = 'sizeNote'; note.className = 'autonote'; note.setAttribute('role', 'status');
+  sizeSec.querySelector('.sec-b').prepend(note);
+  note.addEventListener('click', (e) => {
+    if (e.target.closest('[data-fit]')) { sizePicked = false; useBestFit(); rememberDesign(); }
+    if (e.target.closest('[data-adddocs]')) openOptSheet($('.sec[data-sec="certs"]'));
+  });
   $('#stepBar').addEventListener('click', (e) => { const b = e.target.closest('[data-st]'); if (b) goStep(b.dataset.st); });
   $('#stepNext').addEventListener('click', () => goStep(STEP_ORDER[STEP_ORDER.indexOf(step6) + 1]));
   // Documents: add your own; or use sample certificates for now (how many, then show / turn them)
@@ -1776,6 +1789,17 @@ function paintLayout(sp) {
   }
   if (PRICED) paintPrices();
 }
+// v6: the size follows the documents until they pick one themselves: say so on the Size button, in its pop-up, and (before any
+// documents) in a hint under the step bar
+function paintSizeAuto(n) {
+  const tag = $('#sizeTag'), note = $('#sizeNote'), hint = $('#stepHint'); if (!tag || !note || !hint) return;
+  tag.hidden = !n; tag.textContent = sizePicked ? 'Your pick' : 'Auto-fit';
+  tag.classList.toggle('auto', !sizePicked);
+  hint.hidden = !!n || step6 !== 'build';
+  note.innerHTML = !n ? 'Not sure what size? <button type="button" class="link" data-adddocs>Add your documents</button> and we\'ll pick the board that fits.'
+    : sizePicked ? 'You chose this size. <button type="button" class="link" data-fit>Back to best fit</button>'
+    : `Sized to fit your ${n} document${n === 1 ? '' : 's'}. Only change it if you want something different.`;
+}
 // v3: "Included" / "+$X" on each option. v5: only the extra costs ("+$X"), plus the board's price on Size.
 function paintPrices() {
   const U = UPCHARGES, v5 = LAYOUT === 'v5', tag = (n) => (n ? `+$${n}` : v5 ? '' : 'Included');
@@ -1823,6 +1847,7 @@ function paintPrices() {
     const up = badge($('.sec[data-sec="certs"] .sec-h')), n = (showOwn() ? state.myCerts.length : 0) || (state.sheets ? sampleCount() : 0);
     up.classList.add('size', 'docn'); if (n) up.textContent = n; else up.innerHTML = '<svg class="i"><use href="#i-plus"/></svg>'; up.hidden = false;
     up.setAttribute('aria-label', n ? `${n} document${n === 1 ? '' : 's'}` : 'None added yet');
+    paintSizeAuto(n);
   }
   document.querySelectorAll('#fastSw .fast').forEach(b => {
     let up = b.querySelector('.up');

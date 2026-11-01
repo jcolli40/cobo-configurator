@@ -851,6 +851,15 @@
   [data-v6] .stepnext { order: 99; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 650; padding: 11px 12px; cursor: pointer; }
   [data-v6] .stepnext .i { width: 16px; height: 16px; }
   [data-v6] .stepnext[hidden] { display: none; }
+  /* the size follows the documents: a hint under the steps, a tag on the Size button, a note in its pop-up */
+  .stephint, .autonote { display: none; }
+  [data-v6] .stephint:not([hidden]) { order: -1; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: -8px 0 12px; padding: 8px 12px; border-radius: 10px; background: var(--tint); color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1.3; }
+  [data-v6] .stephint .i { flex: none; width: 16px; height: 16px; }
+  [data-v6].dmini .stephint { display: none !important; }
+  [data-v6] .autotag { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 650; letter-spacing: .02em; color: var(--muted); }
+  [data-v6] .autotag.auto { color: #2e7d4f; }
+  [data-v6] .autotag[hidden] { display: none; }
+  [data-v6] .autonote { display: block; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--tint); color: var(--ink); font-size: 13.5px; line-height: 1.4; }
   /* size tiles: how many 8.5×11 documents each one holds */
   [data-v6] .tile .fits { font-style: normal; font-size: 10.5px; color: var(--muted); }
   [data-v6] .tile.rec .fits { color: #2e7d4f; font-weight: 650; }
@@ -1783,6 +1792,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611011729" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011734" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
