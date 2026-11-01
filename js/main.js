@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011457';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011457';
-import { wallTexture, wallSwatch } from './env.js?v=202611011457';
-import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011457';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011458';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011458';
+import { wallTexture, wallSwatch } from './env.js?v=202611011458';
+import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011458';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1541,7 +1541,8 @@ function wireSteps() {
     sr.querySelector('.upload').lastChild.textContent = 'Snap your wall';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
     $('#certCam').closest('label').lastChild.textContent = 'Photo of 1 document';
-    $('#certFiles').closest('label').lastChild.textContent = 'Upload documents';
+    $('#certFiles').closest('label').lastChild.textContent = 'From your photos';   // (images only, not PDFs)
+    $('#scanFile').closest('label').lastChild.textContent = 'or choose one from your photos';
     own.querySelector('.opt + .help').textContent = 'Or add your permits, licenses and posters one at a time: a close photo or a file of each.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
