@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011809';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011809';
-import { wallTexture, wallSwatch } from './env.js?v=202611011809';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011809';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011820';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011820';
+import { wallTexture, wallSwatch } from './env.js?v=202611011820';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011820';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1555,7 +1555,7 @@ function wireSteps() {
   // the size is worked out from the documents: a one-line hint under the steps (Build, before any documents), a note at the
   // top of the Size pop-up, and a small tag on the Size button (Auto-fit / Your pick); see paintSizeAuto
   const hint = document.createElement('p'); hint.id = 'stepHint'; hint.className = 'stephint'; hint.hidden = true;
-  hint.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span>Add your documents and we\'ll pick the size.</span>';
+  hint.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span>Add your documents and we\'ll pick the size you need.</span>';
   $('#stepBar').after(hint);
   const sizeSec = $('.sec[data-sec="size"]'), sizeT = sizeSec.querySelector('.sec-t');
   sizeT.dataset.full = 'Size'; sizeT.insertAdjacentHTML('beforeend', '<small class="autotag" id="sizeTag" hidden></small>');
