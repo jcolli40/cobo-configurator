@@ -1096,8 +1096,9 @@
   @keyframes coachProg { to { transform: scaleX(1); } }
   #coachReplay[hidden] { display: none; }
   .t-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .t-links[hidden] { display: none; }
   .t-card #coachReplay { color: #fff; }
-  [data-v6] .t-card #coachReplay { color: var(--accent); font-weight: 600; }
+  [data-v6] .t-card .t-resume { color: var(--accent); font-weight: 600; }
   /* help: a round "?" at the top left that plays the tutorial again (computers: the drag hint moves over for it) */
   .helpbtn { display: none; }
   [data-v6][data-step="custom"] .helpbtn:not([hidden]) { position: absolute; left: 14px; top: 12px; z-index: 5; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: var(--accent); box-shadow: var(--shadow); font: inherit; font-size: 19px; font-weight: 800; cursor: pointer; }
@@ -1852,6 +1853,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611011830" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011833" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

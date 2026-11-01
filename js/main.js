@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011830';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011830';
-import { wallTexture, wallSwatch } from './env.js?v=202611011830';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011830';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011833';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011833';
+import { wallTexture, wallSwatch } from './env.js?v=202611011833';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011833';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2652,18 +2652,16 @@ function wireCoach() {
   $('#coachPause').addEventListener('click', () => coach && coachPause(!coach.paused));
   document.addEventListener('keydown', (e) => { if (coach && e.key === 'Escape') endCoach(); });
   addEventListener('resize', () => setTimeout(placeCoach, 50));
-  $('#coachReplay').hidden = false;
-  const links = document.createElement('div'); links.className = 't-links';
-  $('#tourResume').before(links); links.append($('#coachReplay'));
-  // their last design: a red "Continue where you left off" bubble under the card (in place of the text link)
+  $('#coachReplay').remove();                                // (no "How it works" link: the ? button and the first visit play the tutorial)
+  const links = document.createElement('div'); links.className = 't-links'; links.hidden = !restoredDesign;
+  $('#tourResume').before(links);
+  // their last design: a "Continue where you left off" link under Start (only when this device has one saved)
   $('#tourResume').remove();
   const cont = document.createElement('button');
-  cont.type = 'button'; cont.className = 't-cont'; cont.hidden = !restoredDesign;
-  cont.innerHTML = 'Continue where you left off<svg class="i"><use href="#i-right"/></svg>';
+  cont.type = 'button'; cont.className = 'link t-resume';
+  cont.textContent = 'Continue where you left off';
   cont.addEventListener('click', () => setStep('custom'));
-  $('.t-intro .t-card').append(cont);
-  $('.t-intro .t-card').classList.toggle('cont', restoredDesign);
-  $('#coachReplay').addEventListener('click', runCoach);
+  links.append(cont);
   $('#helpBtn').hidden = false;
   $('#helpBtn').addEventListener('click', runCoach);
   // first visit (or ?tour=1): play it before the start card
