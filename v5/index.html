@@ -774,7 +774,7 @@
   @media (prefers-reduced-motion: reduce) { [data-v6] .t-acts > .t-go .i { animation: none; } }
   [data-v6] .t-acts > .t-skip { display: none !important; }
   [data-v6].dmini .popcall span { display: none; }
-  [data-v6] .t-card h1 { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
+  [data-v6] .t-card h1 { font-size: 15px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
   [data-v6] .t-sub { font-size: 17.5px; line-height: 1.4; color: #3d3d45; }
   /* the start card: white, dark text, navy Start button */
   [data-v6] .t-intro { background: none; }
@@ -790,11 +790,12 @@
   [data-v6] .t-cont .i { width: 18px; height: 18px; }
   [data-v6] .t-cont[hidden] { display: none; }
   [data-v6] .t-card.cont { bottom: calc(clamp(16px, 7vh, 72px) + 62px); }
-  [data-v6] .t-sub { display: block; margin: -2px 0 2px; }
+  [data-v6] .t-sub { display: block; margin: -2px 0 17px; }   /* (15px more before the Start button) */
+  @media (min-width: 861px) { [data-v6] .t-card { padding-left: 38px; padding-right: 38px; } }   /* (3% of the card, more room at the sides) */
   /* phones: a shorter start card, so the board turning above it can be bigger */
   @media (max-width: 860px) {
-    [data-v6] .t-card { padding: 36px 16px 12px; gap: 8px; }
-    [data-v6] .t-sub { margin: 0; font-size: 15px; line-height: 1.35; }
+    [data-v6] .t-card { padding: 36px calc(16px + 3%) 12px; gap: 8px; }
+    [data-v6] .t-sub { margin: 0 0 15px; font-size: 15px; line-height: 1.35; }
     [data-v6] .t-acts > .t-go { min-height: 48px; padding: 8px 24px; font-size: 17px; }
     [data-v6] .t-logo { top: -26px; width: 52px; height: 52px; }
     [data-v6] .t-logo img { height: 33px; }
