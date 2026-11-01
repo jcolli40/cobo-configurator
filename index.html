@@ -884,9 +884,9 @@
   [data-v6] #faceSw .swc .sw { width: 100%; height: auto; aspect-ratio: 1; border-radius: 7px; }
   [data-v6] #faceSw .swc span { font-size: 12.5px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: left; }
   [data-v6] #faceSw[data-cols="1"] .swc span { font-size: 15px; }
-  /* phones, 1 per row: the swatches are 20% shorter (4:5 instead of square) */
+  /* phones, 1 or 2 per row: the swatches are 20% shorter (4:5 instead of square) */
   @media (max-width: 860px) {
-    [data-v6] #faceSw[data-cols="1"] .swc .sw, [data-v6] #lamGrid[data-cols="1"] .card img { aspect-ratio: 1.25; }
+    [data-v6] #faceSw:is([data-cols="1"], [data-cols="2"]) .swc .sw, [data-v6] #lamGrid:is([data-cols="1"], [data-cols="2"]) .card img { aspect-ratio: 1.25; }
   }
   [data-v6] #tabTex .rowsb { margin-top: 3px; }
   /* 1 / 2 / 3 per row: simple line icons on white, like the filter dropdowns beside them */
