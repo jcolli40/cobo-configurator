@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011458';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011458';
-import { wallTexture, wallSwatch } from './env.js?v=202611011458';
-import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011458';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011509';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011509';
+import { wallTexture, wallSwatch } from './env.js?v=202611011509';
+import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011509';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -503,7 +503,32 @@ function roomTexture(path) {
   roomTex.set(path, t);
   return t;
 }
+// PDFs (v8, Add your own): the first page, drawn as an image. PDF.js (vendor/pdfjs) loads only the first time
+// someone picks a PDF, so nobody else downloads it.
+const isPdf = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+let pdfjs = null;
+async function pdfFirstPage(file, maxPx) {
+  if (!pdfjs) {
+    pdfjs = await import('../vendor/pdfjs/pdf.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL('../vendor/pdfjs/pdf.worker.min.mjs', import.meta.url).href;
+  }
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()),
+    standardFontDataUrl: new URL('../vendor/pdfjs/standard_fonts/', import.meta.url).href }).promise;
+  try {
+    const page = await doc.getPage(1), v1 = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: maxPx / Math.max(v1.width, v1.height) });
+    const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);   // (PDF pages can be see-through)
+    await page.render({ canvasContext: g, viewport: vp, intent: 'print' }).promise;   // (print: the page as printed, and it doesn't wait on animation frames, which pause in a hidden tab)
+    return { canvas: c, pages: doc.numPages };
+  } finally { doc.destroy(); }
+}
 async function loadArt(L, file) {
+  if (isPdf(file)) {
+    const p = await pdfFirstPage(file, ARTWORK.maxUploadPx);
+    L.img = p.canvas; L.aspect = p.canvas.width / p.canvas.height; L.name = file.name; L.imgId = (L.imgId || 0) + 1; L.pages = p.pages;
+    return;
+  }
   const url = URL.createObjectURL(file);
   try {
     const img = new Image();
@@ -1541,9 +1566,10 @@ function wireSteps() {
     sr.querySelector('.upload').lastChild.textContent = 'Snap your wall';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
     $('#certCam').closest('label').lastChild.textContent = 'Photo of 1 document';
-    $('#certFiles').closest('label').lastChild.textContent = 'From your photos';   // (images only, not PDFs)
+    $('#certFiles').closest('label').lastChild.textContent = 'Photos or PDFs';
+    $('#certFiles').accept = 'image/*,application/pdf,.pdf';
     $('#scanFile').closest('label').lastChild.textContent = 'or choose one from your photos';
-    own.querySelector('.opt + .help').textContent = 'Or add your permits, licenses and posters one at a time: a close photo or a file of each.';
+    own.querySelector('.opt + .help').textContent = 'Or add your permits, licenses and posters one at a time: a close photo of each, or the PDF if you have one.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     box.append(sr, res);
@@ -2781,7 +2807,8 @@ function wireExtras() {
       t.width = Math.round(own.img.width * k); t.height = Math.round(own.img.height * k);
       t.getContext('2d').drawImage(own.img, 0, 0, t.width, t.height); own.thumb = t.toDataURL('image/jpeg', 0.7);
       state.myCerts.push(own);
-      if (V8 && files.length === 1) checkWallPhoto(own, f);
+      if (V8 && files.length === 1 && !isPdf(f)) checkWallPhoto(own, f);
+      if (own.pages > 1) toast(`Added page 1 of ${own.pages} from ${f.name}.`);
     }
     docsKey = '';
     refresh();
