@@ -76,6 +76,7 @@ export function handoff(items, photo, meta = {}) {
   return {
     format: 'cobo-detect/1', created: new Date().toISOString(), model: meta.model || null,
     photo: { width: photo.width, height: photo.height, notes: meta.photo_notes || '' },
+    location: meta.location || null,   // where the business is, if the documents show it (Part B checks by state)
     certificates: items.map((it, i) => ({
       n: i + 1, types: it.types, confidence: it.confidence, heading: it.heading || '', issuer: it.issuer || '',
       on_board: !!it.onBoard, checked_by_customer: !!it.edited, closer_photo: it.closer_photo || 'none',

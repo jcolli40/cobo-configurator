@@ -45,6 +45,9 @@ Rules:
   certificate); a food protection manager certificate (letter size, a person's name) vs food handler cards (wallet
   size); a fire operational permit vs fire extinguisher or sprinkler inspection paperwork.
 - If the photo is blurry, too far away or has glare, still return what you can and say so in photo_notes.
+- location: where the business is, if the documents show it (an issuing state agency, a state seal, a county or city
+  name). state = its 2-letter US postal code (e.g. "NC"); county and city if shown; evidence = which document showed it
+  (e.g. "liquor license"). Use "" for anything not shown. Don't guess from the style of the room.
 
 Catalog (id: name. Also called ... Looks: ...):
 ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}. Looks: ${t.looks}`).join('\n')}
@@ -71,6 +74,11 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
         },
       },
       photo_notes: { type: 'string' },
+      location: {
+        type: 'object',
+        properties: { state: { type: 'string' }, county: { type: 'string' }, city: { type: 'string' }, evidence: { type: 'string' } },
+        required: ['state'],
+      },
     },
     required: ['items'],
   };
@@ -136,7 +144,9 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
       confidence: ['high', 'medium', 'low'].includes(i.confidence) ? i.confidence : 'low', reason: String(i.reason || ''),
       closer_photo: ISSUES.includes(i.closer_photo) ? i.closer_photo : 'none',
     })).map(i => (i.types.length ? i : { ...i, types: ['other'], confidence: 'low' }));
-    return { items, photo_notes: String(out.photo_notes || ''), model: body.model || settings.model, settings, usage: body.usage || null, ms: Date.now() - t0 };
+    const L = out.location || {}, st = String(L.state || '').trim().toUpperCase();
+    const location = { state: /^[A-Z]{2}$/.test(st) ? st : '', county: String(L.county || ''), city: String(L.city || ''), evidence: String(L.evidence || '') };
+    return { items, photo_notes: String(out.photo_notes || ''), location, model: body.model || settings.model, settings, usage: body.usage || null, ms: Date.now() - t0 };
   }
 
   return { detect, CHOICES };
@@ -171,7 +181,9 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: ok ? 204 : 403, headers: cors });
     if (!ok) return send(403, { error: 'This site isn\'t allowed to use the wall reader.', code: 'origin' });
-    if (request.method === 'GET') return send(200, { ready: !!env.GEMINI_API_KEY, model: 'gemini-3.6-flash' });
+    // (Cloudflare tells us roughly where the visitor is: a fallback guess for "Your business is in")
+    const where = { country: request.cf?.country || '', region: request.cf?.country === 'US' ? request.cf?.regionCode || '' : '' };
+    if (request.method === 'GET') return send(200, { ready: !!env.GEMINI_API_KEY, model: 'gemini-3.6-flash', ...where });
     if (request.method !== 'POST') return send(405, { error: 'POST a photo' });
 
     if (Number(request.headers.get('Content-Length') || 0) > MAX_BYTES) return send(413, { error: 'Photo too large', code: 'too-large' });

@@ -27,7 +27,9 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: ok ? 204 : 403, headers: cors });
     if (!ok) return send(403, { error: 'This site isn\'t allowed to use the wall reader.', code: 'origin' });
-    if (request.method === 'GET') return send(200, { ready: !!env.GEMINI_API_KEY, model: 'gemini-3.6-flash' });
+    // (Cloudflare tells us roughly where the visitor is: a fallback guess for "Your business is in")
+    const where = { country: request.cf?.country || '', region: request.cf?.country === 'US' ? request.cf?.regionCode || '' : '' };
+    if (request.method === 'GET') return send(200, { ready: !!env.GEMINI_API_KEY, model: 'gemini-3.6-flash', ...where });
     if (request.method !== 'POST') return send(405, { error: 'POST a photo' });
 
     if (Number(request.headers.get('Content-Length') || 0) > MAX_BYTES) return send(413, { error: 'Photo too large', code: 'too-large' });

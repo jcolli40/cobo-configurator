@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011517';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011517';
-import { wallTexture, wallSwatch } from './env.js?v=202611011517';
-import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011517';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011535';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011535';
+import { wallTexture, wallSwatch } from './env.js?v=202611011535';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus } from './detect.js?v=202611011535';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -37,6 +37,17 @@ const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
 const V6 = 'v6' in document.documentElement.dataset;
 const V7 = 'v7' in document.documentElement.dataset;   // v7 = v6 without popular designs
 const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wall in the Documents step (Gemini)
+// v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
+let CAT = null;
+if (V8) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
+const US_STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware',
+  DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas',
+  KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi',
+  MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York',
+  NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island',
+  SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
+  WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming' };
+const escHtml = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // ?embed=morph: only the welcome's morphing board, for the store's home page (no controls, no saving, no messages)
 const EMBED = new URLSearchParams(location.search).get('embed') === 'morph';
 // v6: three steps, Build › Style › Preview. Each shows only its own options in the dock (the room picker sits on the
@@ -1141,7 +1152,7 @@ function updateUI() {
     logo: sp.logo ? sp.logo.file : 'None',
     certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
     wall: `${envNow().name}${state.wallPhoto.img ? ' · your wall' : ''}`,
-    certs: state.myCerts.length ? `${state.myCerts.length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
+    certs: showOwn() ? `${state.myCerts.length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
     mywall: state.myCerts.length ? `${state.myCerts.length} document${state.myCerts.length === 1 ? '' : 's'}` : wallInfo ? 'Photo' : 'Snap it',
   };
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
@@ -1264,6 +1275,7 @@ function build() {
   $('#sheets').addEventListener('change', (e) => {
     state.sheets = e.target.checked;
     if (V6 && state.sheets && !sampleCount()) { state.certNeed = 1; if (!sizePicked && !state.myCerts.length) { useBestFit(); return rememberDesign(); } }   // (on with nothing counted: one Letter)
+    if (V8 && state.myCerts.length && !sizePicked) { useBestFit(); return rememberDesign(); }   // (v8: samples <-> their own: size for whichever shows)
     refresh(); if (V6) { updateUI(); rememberDesign(); }
   });
   $('#sheetTurn').addEventListener('change', (e) => { state.sheetTurn = e.target.checked; refresh(); });
@@ -1569,12 +1581,28 @@ function wireSteps() {
     $('#certFiles').closest('label').lastChild.textContent = 'Photos or PDFs';
     $('#certFiles').accept = 'image/*,application/pdf,.pdf';
     $('#scanFile').closest('label').lastChild.textContent = 'or choose one from your photos';
-    own.querySelector('.opt + .help').textContent = 'Or add your permits, licenses and posters one at a time: a close photo of each, or the PDF if you have one.';
+    own.querySelector('.opt + .help').textContent = 'Snap your whole wall in one photo, or add your documents one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     box.append(sr, res);
-    or2.className = 'ordiv'; or2.innerHTML = '<span>OR</span>';
-    body.prepend(box, or2);
+    // "Your business is in ___": guessed from the photo (or their connection), confirmed by them (Part B checks by state)
+    box.insertAdjacentHTML('beforeend', '<div class="staterow" id="stateRow" hidden><label for="bizState">Your business is in</label>'
+      + '<div class="stctl"><select id="bizState"><option value="">Choose your state</option>'
+      + Object.entries(US_STATES).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}">${n}</option>`).join('')
+      + '</select><button type="button" class="stok" id="stateOk">Confirm</button></div><p class="help" id="stateWhy"></p></div>');
+    own.querySelector('.opt + .help').after(box);                     // (inside "Add your own", right under its title)
+    or2.remove();
+    // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
+    $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
+    $('#certCam').closest('.row').insertAdjacentHTML('beforebegin', '<p class="help onebyone">One at a time: a close photo of each, or the PDF if you have one.</p>');
+    $('#certClear').textContent = 'Remove all';
+    $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
+    $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
+    $('#stateOk').addEventListener('click', () => {
+      if (state.bizStateOk) state.bizStateOk = false; else if (state.bizState) state.bizStateOk = true; else $('#bizState').focus();
+      paintState();
+    });
+    detectStatus().then(s => { if (s?.country === 'US' && s.region) guessState({ state: s.region }, 'ip'); });   // (the Worker knows the visitor's state)
   }
   // ...in any mix of paper sizes: Letter (the count), then Legal, Tabloid and Half letter; each can be turned sideways
   const cc = $('.certcount'), letter = cc.querySelector('.opt');
@@ -1793,7 +1821,7 @@ function paintPrices() {
     if (V6) { const { w, h } = dims(); up.textContent = `${fmt(w)} × ${fmt(h)}`; up.hidden = false; }   // v6: the size itself
   }
   if (V6) {                                                    // Documents: how many are on the board (+ when none yet)
-    const up = badge($('.sec[data-sec="certs"] .sec-h')), n = state.myCerts.length || (state.sheets ? sampleCount() : 0);
+    const up = badge($('.sec[data-sec="certs"] .sec-h')), n = (showOwn() ? state.myCerts.length : 0) || (state.sheets ? sampleCount() : 0);
     up.classList.add('size', 'docn'); if (n) up.textContent = n; else up.innerHTML = '<svg class="i"><use href="#i-plus"/></svg>'; up.hidden = false;
     up.setAttribute('aria-label', n ? `${n} document${n === 1 ? '' : 's'}` : 'None added yet');
   }
@@ -1993,21 +2021,49 @@ async function scanWall(file, pre) {   // pre: a Gemini answer already in hand f
   const counts = {};
   for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
   const names = ai && found.some(f => f.name) ? ` (${found.map(f => f.name || 'not sure').join(', ')})` : '';
+  if (V8 && ai?.location) guessState(ai.location, 'photo');
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
-  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`;
+  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Tick each one below that\'s right, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
   state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
     const d = { sample: true, title: f.name || (ai ? 'Compliance Document' : SHEETS.titles[i % SHEETS.titles.length]), size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
     d.thumb = certificateTexture(f.turn ? s.h : s.w, f.turn ? s.w : s.h, d.title).image.toDataURL('image/jpeg', 0.5);
     return d;
   });
-  state.sheets = true; $('#sheets').checked = true;
+  if (V8 && ai) state.myCerts = found.map(f => wallDoc(tmp.img, f));   // v8: their real certificates, cut out of the photo
+  state.sheets = !(V8 && ai); $('#sheets').checked = state.sheets;   // (v8: their own documents, so samples off)
   docsKey = '';
   useBestFit();
   if (LAYOUT !== 'v4') toast(`Found ${found.length} document${found.length === 1 ? '' : 's'}. Here's a board that fits them.`);
   return { found, img: tmp.img };
 }
 
+// v8: one certificate cut out of the wall photo (the paper inside any frame), as one of their own documents
+function wallDoc(img, f) {
+  const it = f.det, s = DOC_SIZES.find(x => x.id === f.size), crop = cropCertificate(img, it.paper, 0.01);
+  const t = document.createElement('canvas'), k = 88 / Math.max(crop.width, crop.height);
+  t.width = Math.round(crop.width * k); t.height = Math.round(crop.height * k); t.getContext('2d').drawImage(crop, 0, 0, t.width, t.height);
+  return { img: crop, aspect: crop.width / crop.height, name: f.name || 'Document', imgId: Math.random(), thumb: t.toDataURL('image/jpeg', 0.7),
+    size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, typeId: it.types[0], types: it.types, confidence: it.confidence, ok: false, fromWall: true };
+}
+// v8: which state the business is in. From the photo (a state agency or seal on a certificate) beats a guess from their
+// internet connection; nothing changes once they've confirmed it.
+function guessState(loc, from) {
+  const code = String(loc?.state || '').toUpperCase();
+  if (state.bizStateOk || !US_STATES[code] || (from === 'ip' && state.bizState)) return;
+  state.bizState = code;
+  state.bizWhy = from === 'ip' ? 'from your internet connection' : loc.evidence ? `from your ${loc.evidence}` : 'from your photo';
+  paintState();
+}
+function paintState() {
+  const row = $('#stateRow'); if (!row) return;
+  row.hidden = !state.myCerts.length && !state.bizState;
+  $('#bizState').value = state.bizState || ''; $('#bizState').disabled = !!state.bizStateOk;
+  row.classList.toggle('done', !!state.bizStateOk);
+  $('#stateOk').textContent = state.bizStateOk ? 'Change' : 'Confirm';
+  $('#stateWhy').textContent = state.bizStateOk ? 'Thanks. We use it to check which documents your business needs.'
+    : state.bizState ? (state.bizWhy ? `Is this right? We guessed it ${state.bizWhy}.` : 'Tap Confirm if this is right.') : 'Choose your state so we can check which documents your business needs.';
+}
 // "See an example" (also ?scan=demo): a drawn photo of a wall with 6 certificates, run through the same scan
 async function scanExample() {
   if (V8) { const d = await demoWall(); return scanWall(new File([d.blob], 'example-wall.jpg', { type: 'image/jpeg' })); }   // v8: a wall with readable titles
@@ -2609,7 +2665,7 @@ const MIX_SIZES = ['legal', 'tabloid', 'half'];
 let mixCache = { key: '', docs: [] };
 function mixDocs() {
   const m = state.sampleMix;
-  if (!V6 || state.myCerts.length || !sampleCount()) return [];
+  if (!V6 || showOwn() || !sampleCount()) return [];
   const key = [state.certNeed, state.sheetTurn, ...MIX_SIZES.map(id => `${m[id] || 0}${state.sampleTurn[id] ? 't' : ''}`)].join(',');
   if (key !== mixCache.key) {   // (the same objects until the mix changes, so dragged samples stay put)
     const docs = [];
@@ -2622,7 +2678,8 @@ function mixDocs() {
   return mixCache.docs;
 }
 const letterTurned = () => state.sheetTurn === true || state.sheetTurn === 'wide';   // Letter samples in a size mix
-const curDocs = () => (state.myCerts.length ? state.myCerts : mixDocs());   // what's packed on the board (none: the 8.5x11 grid)
+const showOwn = () => state.myCerts.length > 0 && !(V8 && state.sheets);   // (v8: the samples switch shows samples instead; their own are kept)
+const curDocs = () => (showOwn() ? state.myCerts : mixDocs());   // what's packed on the board (none: the 8.5x11 grid)
 const sampleCount = () => state.certNeed + MIX_SIZES.reduce((s, id) => s + (state.sampleMix[id] || 0), 0);
 const docsFit = (W, H) => packDocs(W, H, curDocs().map(d => ({ ...d, px: null }))).missing.length === 0;
 // smallest board that holds all of the customer's documents
@@ -2807,19 +2864,26 @@ function wireExtras() {
       t.width = Math.round(own.img.width * k); t.height = Math.round(own.img.height * k);
       t.getContext('2d').drawImage(own.img, 0, 0, t.width, t.height); own.thumb = t.toDataURL('image/jpeg', 0.7);
       state.myCerts.push(own);
-      if (V8 && files.length === 1 && !isPdf(f)) checkWallPhoto(own, f);
+      if (V8) checkWallPhoto(own, f, files.length === 1 && !isPdf(f));
       if (own.pages > 1) toast(`Added page 1 of ${own.pages} from ${f.name}.`);
     }
+    if (V8) { state.sheets = false; $('#sheets').checked = false; }   // (their own documents show, not samples)
     docsKey = '';
     refresh();
     if (lastDocs?.missing.length) toast('Some documents don\'t fit on this board yet. See the suggestion under Size.');
   };
   // v8: if a photo added as one document is really the whole wall (Gemini sees 2 or more certificates in it),
   // offer to read it as a wall instead. Runs in the background; the document is already on the board meanwhile.
-  async function checkWallPhoto(own, file) {
-    $('#wallHint')?.remove();
+  async function checkWallPhoto(own, file, wallCheck) {
+    if (wallCheck) $('#wallHint')?.remove();
     let ai; try { ai = await detectCertificates(own.img); } catch { return; }
-    if (ai.items.length < 2 || !state.myCerts.includes(own)) return;
+    if (!state.myCerts.includes(own)) return;
+    if (ai.items.length === 1 || (!wallCheck && ai.items.length)) {   // name it (the checklist shows the type)
+      const it = ai.items[0]; own.typeId = it.types[0]; own.types = it.types; own.confidence = it.confidence;
+      own.name = CAT?.byId[it.types[0]]?.name || own.name; docsKey = ''; refresh();
+    }
+    if (ai.location) guessState(ai.location, 'photo');
+    if (!wallCheck || ai.items.length < 2) return;
     const n = ai.items.length, hint = document.createElement('div');
     hint.id = 'wallHint'; hint.className = 'wallhint'; hint.setAttribute('role', 'status');
     hint.innerHTML = `<p>This photo shows <b>${n} certificates</b>. Read it as your whole wall instead, so each one gets its own place on the board?</p>`
@@ -2844,7 +2908,9 @@ function wireExtras() {
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
     const d = state.myCerts[+li.dataset.i];
-    if (e.target.matches('select')) { d.size = e.target.value; if (d.size === 'custom') { [d.cw, d.ch] = docDims({ ...d, size: 'letter', turn: false }); } }
+    if (e.target.matches('[data-ok]')) { d.ok = e.target.checked; docsKey = ''; return refresh(); }
+    if (e.target.matches('[data-type]')) { d.typeId = e.target.value || null; d.name = CAT?.byId[d.typeId]?.name || 'Document'; d.ok = !!d.typeId; docsKey = ''; return refresh(); }
+    if (e.target.matches('select:not([data-type])')) { d.size = e.target.value; if (d.size === 'custom') { [d.cw, d.ch] = docDims({ ...d, size: 'letter', turn: false }); } }
     if (e.target.matches('[data-cw]')) d.cw = Math.max(2, Math.min(96, +e.target.value || 8.5));
     if (e.target.matches('[data-ch]')) d.ch = Math.max(2, Math.min(96, +e.target.value || 11));
     d.px = d.py = null; docsKey = ''; refresh();
@@ -2863,11 +2929,12 @@ function wireExtras() {
 let docsKey = '';   // redraw the document list only when the documents change (keeps focus in its inputs)
 function paintDocs() {
   const docs = state.myCerts, miss = new Set(lastDocs?.missing || []);
-  const key = docs.map(d => [d.imgId, d.size, d.turn, d.cw, d.ch].join(':')).join('|') + '/' + [...miss].join(',');
+  const key = docs.map(d => [d.imgId, d.size, d.turn, d.cw, d.ch, d.ok, d.typeId].join(':')).join('|') + '/' + [...miss].join(',') + (CAT ? '+' : '');
   $('#docTools').hidden = !docs.length;
   if (key === docsKey) return;
   docsKey = key;
   const opts = DOC_SIZES.map(s => `<option value="${s.id}">${s.name} ${fmt(s.w)}×${fmt(s.h)}</option>`).join('') + '<option value="custom">Custom size…</option>';
+  if (V8) return paintDocs8(docs, miss, opts);
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc${miss.has(i) ? ' miss' : ''}" data-i="${i}">
       <img alt=""><select aria-label="Document size">${opts}</select>
       <button class="ib" type="button" data-act="turn" title="Turn sideways" aria-label="Turn sideways"><svg class="i"><use href="#i-rotate"/></svg></button>
@@ -2876,10 +2943,32 @@ function paintDocs() {
       ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
   $('#docList').querySelectorAll('.doc').forEach((li, i) => { li.querySelector('img').src = docs[i].thumb; li.querySelector('select').value = docs[i].size; });
 }
+// v8: the documents are a checklist: tick each one that's right; its name (type) and size can be changed
+function paintDocs8(docs, miss, opts) {
+  const types = CAT ? '<option value="">Which document?</option>' + Object.entries(CAT.groups).map(([g, gn]) => `<optgroup label="${gn}">`
+    + CAT.types.filter(t => t.group === g).map(t => `<option value="${t.id}">${t.name}</option>`).join('') + '</optgroup>').join('')
+    + `<option value="other">${CAT.other.name}</option>` : '';
+  $('#docList').innerHTML = docs.map((d, i) => `<li class="doc doc8${miss.has(i) ? ' miss' : ''}${d.ok ? ' ok' : ''}" data-i="${i}">
+      <input type="checkbox" class="okbox" data-ok aria-label="Document ${i + 1} is right"${d.ok ? ' checked' : ''}>
+      <img alt="">
+      <span class="dfields">${types ? `<select data-type aria-label="Which document">${types}</select>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select></span>
+      <button class="ib" type="button" data-act="turn" title="Turn sideways" aria-label="Turn sideways"><svg class="i"><use href="#i-rotate"/></svg></button>
+      <button class="ib" type="button" data-act="remove" title="Remove" aria-label="Remove"><svg class="i"><use href="#i-x"/></svg></button>
+      ${d.size === 'custom' ? `<span class="cust">W <input type="number" data-cw min="2" max="96" step="0.5" value="${d.cw}"> × H <input type="number" data-ch min="2" max="96" step="0.5" value="${d.ch}"> in</span>` : ''}
+      ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
+  $('#docList').querySelectorAll('.doc').forEach((li, i) => {
+    li.querySelector('img').src = docs[i].thumb; li.querySelector('[data-size]').value = docs[i].size;
+    const t = li.querySelector('[data-type]'); if (t) t.value = docs[i].typeId === 'other' || CAT?.byId[docs[i].typeId] ? docs[i].typeId : '';
+  });
+  const okN = docs.filter(d => d.ok).length;
+  $('#dlHead').hidden = !docs.length; $('#okAll').hidden = okN === docs.length;
+  $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} checked` : `Tick each one that's right (${okN} of ${docs.length})`;
+}
 function paintExtras() {
   paintDocs();
+  if (V8) { $('#ownDocs').classList.toggle('dim', !!state.myCerts.length && state.sheets); paintState(); }
   // how many certificates (or: which of your documents) -> advice + highlight the best-fit size tile
-  const own = state.myCerts.length, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)
+  const own = showOwn() ? state.myCerts.length : 0, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)
   document.querySelector('.certcount .opt').hidden = !!own;
   if (V6) {
     $('#mixRows').hidden = !!own;

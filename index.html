@@ -551,6 +551,32 @@
   [data-v8] .side .snapbox .upload { flex: 1 1 100%; justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
   [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
   [data-v8] .side .owndocs label.upload:has(#certCam) { background: #fff; border-color: var(--line-2); color: var(--ink); }   /* (only Snap your wall is solid) */
+  /* v8: Add your own = the Snap box (pale blue), the checklist, then one at a time */
+  [data-v8] .side .owndocs .snapbox .scanrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  [data-v8] .side .owndocs .snapbox .scanrow > * { grid-column: auto; }
+  [data-v8] .owndocs.dim > :not(.opt):not(.help) { opacity: .45; }
+  [data-v8] .staterow { display: grid; gap: 6px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--tint-2); }
+  [data-v8] .staterow[hidden] { display: none; }
+  [data-v8] .staterow label { font-size: 13px; font-weight: 700; color: var(--accent); }
+  [data-v8] .staterow .stctl { display: flex; gap: 8px; }
+  [data-v8] .staterow select { flex: 1; min-width: 0; font: inherit; font-size: 14px; border: 1px solid var(--line-2); border-radius: 10px; padding: 8px; background: #fff; color: var(--ink); }
+  [data-v8] .staterow .stok { border: 0; border-radius: 10px; padding: 8px 16px; background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+  [data-v8] .staterow.done .stok { background: #fff; color: var(--accent); border: 1px solid var(--line-2); }
+  [data-v8] .staterow.done select:disabled { opacity: 1; color: var(--ink); background: #eef6f0; border-color: #b9dcc5; }
+  [data-v8] .staterow .help { margin: 0 !important; font-size: 12px; }
+  [data-v8] .dlhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 700; color: var(--accent); }
+  [data-v8] .dlhead[hidden] { display: none; }
+  [data-v8] .dlhead .link[hidden] { display: none; }
+  [data-v8] .doc8 { grid-template-columns: 22px 44px minmax(0, 1fr) auto auto; }
+  [data-v8] .doc8 img { grid-row: auto; }
+  [data-v8] .doc8 .okbox { width: 20px; height: 20px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
+  [data-v8] .doc8.ok { border-color: #b9dcc5; background: #f4fbf6; }
+  [data-v8] .doc8 .dfields { display: grid; gap: 4px; min-width: 0; }
+  [data-v8] .doc8 .dfields select { width: 100%; }
+  [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
+  [data-v8] .doc8 .dname { font-size: 13px; }
+  [data-v8] .doc8 :is(.cust, .warn) { grid-column: 3 / -1; }
+  [data-v8] .onebyone { margin: 4px 0 -4px !important; font-weight: 650; color: var(--ink); }
   [data-v8] .wallhint { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4d6; border: 1px solid #f0d48a; color: #5a3d00; font-size: 13.5px; }
   [data-v8] .wallhint p { margin: 0; }
   [data-v8] .wallhint .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -1717,6 +1743,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611011517" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011535" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
