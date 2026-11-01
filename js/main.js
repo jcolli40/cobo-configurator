@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202610301911';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202610301911';
-import { wallTexture, wallSwatch } from './env.js?v=202610301911';
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011421';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011421';
+import { wallTexture, wallSwatch } from './env.js?v=202611011421';
+import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011421';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -35,6 +36,7 @@ const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
 //   style presets instead of popular boards, no wall photo scan (the certificate count sizes the board)
 const V6 = 'v6' in document.documentElement.dataset;
 const V7 = 'v7' in document.documentElement.dataset;   // v7 = v6 without popular designs
+const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wall in the Documents step (Gemini)
 // ?embed=morph: only the welcome's morphing board, for the store's home page (no controls, no saving, no messages)
 const EMBED = new URLSearchParams(location.search).get('embed') === 'morph';
 // v6: three steps, Build › Style › Preview. Each shows only its own options in the dock (the room picker sits on the
@@ -241,7 +243,8 @@ function certificateTexture(w, h, title) {
   const ppi = 56, c = document.createElement('canvas');
   c.width = Math.round(w * ppi); c.height = Math.round(h * ppi);
   const g = c.getContext('2d'), W = c.width, H = c.height, u = Math.min(W, H) / 100;   // u = 1% of the short side
-  const L = CERT_LOOKS[Math.max(0, SHEETS.titles.indexOf(title)) % CERT_LOOKS.length];
+  const ti = SHEETS.titles.indexOf(title);                // (a detected type's name isn't in the list: pick a look from its letters)
+  const L = CERT_LOOKS[(ti >= 0 ? ti : [...title].reduce((s, ch) => s + ch.charCodeAt(0), 0)) % CERT_LOOKS.length];
   const face = L.sans ? 'system-ui, "Segoe UI", Arial, sans-serif' : 'Georgia, "Times New Roman", serif';
   const fit = (text, size, weight, maxW) => {          // shrink a line of text until it fits
     let s = size; g.font = `${weight} ${s}px ${face}`;
@@ -1529,6 +1532,19 @@ function wireSteps() {
   lab.innerHTML = '<span class="lab">Use sample certificates</span>';
   lab.append($('#sheets')); showRow.remove();
   body.prepend(own, or, $('.certcount'));
+  if (V8) {                                                  // Snap your wall: its own box above "Add your own"
+    const box = document.createElement('div'), or2 = document.createElement('p');
+    box.className = 'snapbox';
+    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Snap your wall</span></div>'
+      + '<p class="help">Take one photo of the certificates on your wall. We find each one, name it, guess its size and size a board to fit.</p>';
+    const sr = $('.scanrow'), srHelp = sr.nextElementSibling, res = $('#scanResult');   // (grab them before they move: a box not on the page can't be searched)
+    sr.querySelector('.upload').lastChild.textContent = 'Take a photo';
+    res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
+    srHelp?.remove();
+    box.append(sr, res);
+    or2.className = 'ordiv'; or2.innerHTML = '<span>OR</span>';
+    body.prepend(box, or2);
+  }
   // ...in any mix of paper sizes: Letter (the count), then Legal, Tabloid and Half letter; each can be turned sideways
   const cc = $('.certcount'), letter = cc.querySelector('.opt');
   const rotBtn = (id, name) => `<span class="orseg" role="group" aria-label="${name} orientation">`   // portrait | landscape
@@ -1909,28 +1925,48 @@ function packFresh(W, H, docs) {
 async function scanWall(file) {
   const tmp = {};
   try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
-  const found = sizeDocuments(findDocuments(tmp.img), DOC_SIZES);
-  // preview: the photo with a numbered box around each document found
+  if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); }
+  // dev copy: Gemini finds the documents and names each one's type (Part A "detect"). Types that usually aren't posted
+  // on a board (signs, tags, wallet cards, on-file papers) are left off. The home-made finder is the fallback when
+  // Gemini isn't set up or fails.
+  let found, ai = null, skipped = [];
+  if (V8) try { ai = await detectCertificates(tmp.img); } catch (e) {
+    console.warn('detect:', e.code, e.message);
+    if (!['no-key', 'no-server'].includes(e.code)) toast("Gemini couldn't read that photo, so the basic scanner was used.");
+  }
+  if (ai) {
+    const cat = await certTypes(), board = ai.items.filter(it => it.types.some(t => cat.byId[t]?.board));
+    const use = board.length ? board : ai.items;
+    skipped = ai.items.filter(it => !use.includes(it)).map(it => cat.byId[it.types[0]].name);
+    found = sizeDocuments(use.map(it => it.paper), DOC_SIZES);    // sized from the paper inside any frame
+    found.forEach((f, i) => { f.box = use[i].box; });          // (the frame comes off the wall photo too)
+    found.forEach((f, i) => { f.det = use[i]; f.name = use[i].types[0] === 'other' ? null : cat.byId[use[i].types[0]].name; });
+    state.detected = ai;                                     // (for Part B "tracking", later)
+  } else found = sizeDocuments(findDocuments(tmp.img), DOC_SIZES);
+  // preview: the photo with a numbered box around each document found (+ its type, when Gemini named it)
   const cv = $('#scanCanvas'), k = 640 / Math.max(tmp.img.width, tmp.img.height);
   cv.width = Math.round(tmp.img.width * k); cv.height = Math.round(tmp.img.height * k);
   const g = cv.getContext('2d'); g.drawImage(tmp.img, 0, 0, cv.width, cv.height);
   g.lineWidth = 3; g.font = 'bold 16px system-ui, sans-serif';
   found.forEach((f, i) => {
-    const b = f.box;
+    const b = f.box, label = f.name && g.measureText(`${i + 1} ${f.name}`).width + 14 <= Math.max(b.w * k, 130) ? `${i + 1} ${f.name}` : String(i + 1);
+    const tw = Math.max(24, g.measureText(label).width + 14);
     g.strokeStyle = '#2e7d4f'; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k);
-    g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, 24, 22); g.fillStyle = '#fff'; g.fillText(i + 1, b.x * k + 7, b.y * k + 17);
+    g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, tw, 22); g.fillStyle = '#fff'; g.fillText(label, b.x * k + 7, b.y * k + 17);
   });
-  $('#scanResult').hidden = false;
+  $('#scanResult').hidden = false; $('#scanCanvas').hidden = false; $('#scanBusy')?.classList.remove('on');
   if (!found.length) {
     $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
     return { found, img: tmp.img };
   }
   const counts = {};
   for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
-  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}. Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`;
+  const names = ai && found.some(f => f.name) ? ` (${found.map(f => f.name || 'not sure').join(', ')})` : '';
+  const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
+  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`;
   state.myCerts = found.map((f, i) => {
     const s = DOC_SIZES.find(x => x.id === f.size);
-    const d = { sample: true, title: SHEETS.titles[i % SHEETS.titles.length], size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
+    const d = { sample: true, title: f.name || SHEETS.titles[i % SHEETS.titles.length], size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
     d.thumb = certificateTexture(f.turn ? s.h : s.w, f.turn ? s.w : s.h, d.title).image.toDataURL('image/jpeg', 0.5);
     return d;
   });
@@ -1943,9 +1979,10 @@ async function scanWall(file) {
 
 // "See an example" (also ?scan=demo): a drawn photo of a wall with 6 certificates, run through the same scan
 async function scanExample() {
+  if (V8) { const d = await demoWall(); return scanWall(new File([d.blob], 'example-wall.jpg', { type: 'image/jpeg' })); }   // v8: a wall with readable titles
   const W = 1600, H = 1200, ppi = 22, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'), rnd = rng(3);
-  g.fillStyle = '#8c9a86'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#e8edf5'; g.fillRect(0, 0, W, H);   // dev copy: the configurator's light blue (--tint), was sage #8c9a86
   for (let i = 0; i < 30000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * 0.06})`; g.fillRect(rnd() * W, rnd() * H, 3, 3); }
   const docs = [[90, 110, 8.5, 11, '#1b3a6b'], [330, 110, 8.5, 11, '#b3261e'], [590, 130, 8.5, 11, '#2c6e49', 1], [90, 420, 8.5, 11, '#6b4a33'], [860, 100, 11, 17, '#1b3a6b'], [1180, 140, 8.5, 11, '#c27c0e']];
   for (const [x, y, w, h, head, frame] of docs) {

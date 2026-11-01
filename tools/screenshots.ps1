@@ -4,7 +4,7 @@
 # server, same origin) gives a true phone layout, which is then cropped. Each Edge run has a hard 40s limit.
 param([string]$Path = '/', [string]$Name = 'shot', [string]$Base = 'http://localhost:8000')
 $ErrorActionPreference = 'Continue'
-$proj = 'E:\Levitate-creative Dropbox\01_Clients\COBO - Compliance Boards\_Claude\cobo-configurator'
+$proj = Split-Path $PSScriptRoot -Parent   # this copy's own folder (works in the dev copy too)
 $dir = Join-Path $proj 'screenshots'; New-Item -ItemType Directory -Force $dir | Out-Null
 $edge = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
 $prof = Join-Path $env:TEMP 'cobo-shots-edge-profile'

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snap Your Wall lab (Part A: detect)</title>
+<style>
+  :root {
+    --accent: #1b3a6b; --tint: #e8edf5; --ink: #1d2433; --muted: #5d6677; --line: #dde2ea; --bg: #f4f6f9; --card: #fff;
+    --high: #2e7d4f; --high-bg: #e6f3eb; --med: #b26a00; --med-bg: #fdf1dc; --low: #b3261e; --low-bg: #fbe6e4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 17px; margin: 0; }
+  h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; background: var(--tint); color: var(--accent); }
+  .pill.warn { background: var(--med-bg); color: var(--med); }
+  .pill.off { background: var(--low-bg); color: var(--low); }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 9px 15px; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  .btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; }
+  .msg { margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; background: var(--med-bg); color: #6b4300; }
+  .msg:empty { display: none; }
+  .busy { display: none; align-items: center; gap: 10px; margin-top: 10px; color: var(--accent); font-weight: 600; }
+  body.working .busy { display: flex; }
+  body.working .actions { opacity: .45; pointer-events: none; }
+  .spin { width: 18px; height: 18px; border: 3px solid var(--tint); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+
+  .result { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+  .result[hidden] { display: none; }
+  @media (max-width: 860px) { .result { grid-template-columns: minmax(0, 1fr); } }
+  .photo { position: relative; }
+  .photo canvas { width: 100%; height: auto; display: block; border-radius: 10px; background: #ddd; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .notes { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+
+  .list { display: grid; gap: 10px; }
+  .item { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; }
+  .item.hot { border-color: var(--accent); box-shadow: 0 0 0 2px var(--tint); }
+  .item.off { opacity: .6; }
+  .item img { width: 74px; height: 74px; object-fit: contain; background: #eef0f3; border-radius: 8px; }
+  .item .top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .num { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; padding: 0 5px; }
+  .conf { border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; }
+  .conf.high { background: var(--high-bg); color: var(--high); }
+  .conf.medium { background: var(--med-bg); color: var(--med); }
+  .conf.low { background: var(--low-bg); color: var(--low); }
+  .conf.checked { background: var(--tint); color: var(--accent); }
+  select { font: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: #fff; color: var(--ink); max-width: 100%; }
+  .item select.type { width: 100%; margin-top: 6px; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .chip { display: inline-flex; gap: 4px; align-items: center; background: var(--tint); color: var(--accent); border-radius: 999px; padding: 2px 4px 2px 9px; font-size: 12px; font-weight: 600; }
+  .chip button { border: 0; background: none; color: inherit; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+  .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .meta q { font-style: italic; color: var(--ink); }
+  .row2 { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 8px; font-size: 12.5px; }
+  .row2 label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+  .row2 select { padding: 4px 6px; font-size: 12.5px; }
+  .x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .x:hover { background: var(--bg); color: var(--low); }
+
+  .board { margin-top: 12px; padding: 10px 12px; background: var(--tint); border-radius: 10px; color: var(--accent); font-weight: 600; }
+  .board small { display: block; font-weight: 500; color: var(--ink); margin-top: 2px; }
+  .settings { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .settings label { display: inline-flex; gap: 6px; align-items: center; }
+  .settings select { padding: 5px 7px; font-size: 12.5px; }
+  .settings .btn { padding: 6px 12px; font-size: 12.5px; }
+  .flag { border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; background: #fff4d6; color: #7a4d00; border: 1px solid #f0d48a; }
+
+  .score .line { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .score .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .score .grid { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; margin-top: 12px; }
+  .score .f { display: grid; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .score input[type=text] { font: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; min-width: 0; width: 240px; max-width: 100%; }
+  .step { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .step button { border: 0; background: #fff; font: inherit; font-weight: 700; width: 34px; height: 34px; cursor: pointer; }
+  .step span { min-width: 28px; text-align: center; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 12px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .tablewrap { overflow-x: auto; }
+  pre { margin: 0; max-height: 420px; overflow: auto; background: #0f1724; color: #d6e2f5; border-radius: 10px; padding: 12px; font-size: 12px; line-height: 1.5; }
+  .handoff .actions { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Snap Your Wall: Part A (detect) <small>Dev lab: try wall photos and see what Part A hands to Part B (tracking)</small></h1>
+  <span class="pill" id="status">Checking Gemini…</span>
+</header>
+<main>
+  <section class="card" aria-labelledby="h-photo">
+    <h2 id="h-photo">1. A photo of the wall</h2>
+    <div class="actions">
+      <label class="btn primary"><input type="file" accept="image/*" capture="environment" id="cam">Take a photo</label>
+      <label class="btn"><input type="file" accept="image/*" id="file">Upload a photo</label>
+      <button class="btn" type="button" id="demo">Try the example wall</button>
+    </div>
+    <p class="hint">Or drag a photo onto this page. Whole wall in view, straight on if you can. Photos go to Google Gemini and are not stored there.</p>
+    <div class="settings" id="settings" hidden>
+      <label>Model <select id="optModel"></select></label>
+      <label>Thinking <select id="optThinking"></select></label>
+      <label>Photo detail <select id="optRes"></select></label>
+      <button class="btn" type="button" id="rerun" hidden>Run this photo again</button>
+    </div>
+    <div class="busy" role="status"><span class="spin" aria-hidden="true"></span><span id="busyTxt">Gemini is reading the wall…</span></div>
+    <p class="msg" id="msg" role="alert"></p>
+  </section>
+
+  <section class="result" id="result" hidden>
+    <div class="card">
+      <h2>2. What Part A found</h2>
+      <div class="photo"><canvas id="shot" aria-label="Your photo with a numbered box around each certificate found"></canvas></div>
+      <div class="stats" id="stats"></div>
+      <p class="notes" id="notes"></p>
+    </div>
+    <div class="card">
+      <h2>3. Looks right? Edit</h2>
+      <div class="list" id="list"></div>
+      <div class="board" id="board"></div>
+    </div>
+  </section>
+
+  <section class="card score" id="scoreCard" hidden aria-labelledby="h-score">
+    <h2 id="h-score">4. Score this test</h2>
+    <p class="sub">Fix every mistake in step 3 first: change wrong types, remove things that aren't certificates, and count any certificate Gemini missed below.</p>
+    <div class="line" id="scoreLine"></div>
+    <div class="sub" id="scoreSub"></div>
+    <div class="grid">
+      <div class="f">Certificates Gemini missed
+        <span class="step"><button type="button" id="missMinus" aria-label="One fewer missed">−</button><span id="missed" aria-live="polite">0</span><button type="button" id="missPlus" aria-label="One more missed">+</button></span></div>
+      <label class="f">Photo / place<input type="text" id="testName" placeholder="e.g. Harbor Grill, front counter"></label>
+      <label class="f">Notes (lighting, distance, glass…)<input type="text" id="testNotes" placeholder="optional"></label>
+      <button class="btn primary" type="button" id="saveTest">Save to test log</button>
+    </div>
+    <div id="logWrap" hidden>
+      <div class="sub" id="logSum" style="margin-top:16px;font-weight:600;color:var(--ink)"></div>
+      <div class="tablewrap"><table><thead><tr><th>Date</th><th>Photo</th><th>Settings</th><th>Right first time</th><th>Wrong type</th><th>Not certs</th><th>Missed</th><th>Closer photo</th><th>Notes</th></tr></thead><tbody id="logRows"></tbody></table></div>
+      <div class="actions" style="margin-top:10px"><button class="btn" type="button" id="logCsv">Download test log (CSV)</button><button class="btn" type="button" id="logClear">Clear log</button></div>
+    </div>
+  </section>
+
+  <section class="card handoff" id="handoffCard" hidden>
+    <h2>5. Handed to Part B (tracking)</h2>
+    <div class="actions">
+      <button class="btn" type="button" id="copy">Copy JSON</button>
+      <button class="btn" type="button" id="download">Download JSON + cut-outs</button>
+    </div>
+    <pre id="json"></pre>
+  </section>
+</main>
+
+<script type="module">
+  import { certTypes, detectStatus, detectCertificates, cropCertificate, handoff, demoWall } from '../js/detect.js';
+  import { sizeDocuments } from '../js/scan.js';
+  import { DOC_SIZES } from '../js/config.js';
+
+  const $ = (s) => document.querySelector(s);
+  const CAT = await certTypes();
+  const nameOf = (id) => CAT.byId[id]?.name || id;
+  const boardDefault = (types) => types.some(t => CAT.byId[t]?.board);
+  const ISSUE = { glare: 'glare', too_small: 'too small to read', blurry: 'blurry', cut_off: 'cut off', blocked: 'something in front' };
+  let ready = false, photo = null, photoName = '', items = [], meta = {}, hot = -1;
+  let score = { found: 0, removed: [], missed: 0 };       // for the accuracy test (step 4)
+
+  // ---- Gemini status
+  const st = await detectStatus();
+  ready = !!st?.ready;
+  $('#status').textContent = !st ? 'No detect server: run node tools/serve.js' : ready ? `Gemini ready · ${st.model}` : 'Demo mode: no Gemini key yet';
+  $('#status').className = 'pill' + (!st ? ' off' : ready ? '' : ' warn');
+  // test settings (speed vs accuracy): the server's defaults are preselected
+  if (ready && st.choices) {
+    const fill = (sel, list, dflt) => { $(sel).innerHTML = list.map(v => `<option value="${v}"${v === dflt ? ' selected' : ''}>${v.replace('_', ' ')}${v === dflt ? ' (default)' : ''}</option>`).join(''); };
+    fill('#optModel', st.choices.model, st.model); fill('#optThinking', st.choices.thinking, st.thinking); fill('#optRes', st.choices.resolution, 'high');
+    $('#settings').hidden = false;
+  }
+  const opts = () => (ready ? { model: $('#optModel').value, thinking: $('#optThinking').value, resolution: $('#optRes').value } : undefined);
+  $('#rerun').addEventListener('click', () => run('again'));
+
+  // ---- photo in
+  const onFile = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) run(f); };
+  $('#cam').addEventListener('change', onFile);
+  $('#file').addEventListener('change', onFile);
+  $('#demo').addEventListener('click', () => run(null));
+  addEventListener('dragover', (e) => e.preventDefault());
+  addEventListener('drop', (e) => { e.preventDefault(); const f = [...(e.dataTransfer?.files || [])].find(f => f.type.startsWith('image/')); if (f) run(f); });
+
+  async function loadImage(blob) {
+    const url = URL.createObjectURL(blob), img = new Image();
+    try { await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = url; }); }
+    finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;   // full size, upright
+    c.getContext('2d').drawImage(img, 0, 0); return c;
+  }
+
+  async function run(file) {
+    $('#msg').textContent = '';
+    document.body.classList.add('working');
+    try {
+      let result;
+      if (file === 'again') {                        // the same photo again (e.g. with other settings)
+        $('#busyTxt').textContent = 'Gemini is reading the wall…';
+        result = await detectCertificates(photo, opts());
+      } else if (!file) {                            // example wall: real Gemini if set up, else the demo answer
+        const d = await demoWall();
+        photo = await loadImage(d.blob); photoName = 'Example wall';
+        $('#busyTxt').textContent = ready ? 'Gemini is reading the wall…' : 'Loading the example…';
+        result = ready ? await detectCertificates(photo, opts()) : d.result;
+        if (!ready) $('#msg').textContent = 'Demo mode: this is a pre-made answer for the example wall. Add a Gemini key to try real photos.';
+      } else {
+        if (!ready) throw Object.assign(new Error('Gemini isn\'t set up yet, so only the example wall works. Add the key to the .gemini-key file, then restart the preview.'), { code: 'no-key' });
+        $('#busyTxt').textContent = 'Gemini is reading the wall…';
+        photo = await loadImage(file); photoName = file.name.replace(/\.\w+$/, '');
+        result = await detectCertificates(photo, opts());
+      }
+      show(result);
+      $('#rerun').hidden = !ready;
+    } catch (e) {
+      console.error(e);
+      $('#msg').textContent = e.code === 'rate-limit' ? 'Gemini is busy (rate limit). Wait a minute and try again.' : e.message || 'Something went wrong.';
+    } finally { document.body.classList.remove('working'); }
+  }
+
+  function show(result) {
+    meta = result;
+    const sized = sizeDocuments(result.items.map(i => i.paper || i.box), DOC_SIZES);   // sized from the paper, not its frame
+    items = result.items.map((it, i) => {
+      const crop = cropCertificate(photo, it.box);
+      return { ...it, sheet: it.paper, onBoard: boardDefault(it.types), paper: DOC_SIZES.find(s => s.id === sized[i].size), turn: sized[i].turn,
+        crop, thumb: crop.toDataURL('image/jpeg', 0.8), edited: false, gemini: { type: it.types[0], confidence: it.confidence } };
+    });
+    score = { found: items.length, removed: [], missed: 0 };
+    $('#testName').value = photoName; $('#testNotes').value = '';
+    $('#result').hidden = false; $('#handoffCard').hidden = false; $('#scoreCard').hidden = false;
+    const flagged = items.filter(it => it.closer_photo && it.closer_photo !== 'none').length;
+    const u = result.usage || {}, tokIn = u.input_tokens ?? u.total_input_tokens ?? u.prompt_tokens, tokOut = u.output_tokens ?? u.total_output_tokens ?? u.completion_tokens;
+    $('#stats').innerHTML = [`${items.length} found`, flagged ? `${flagged} need${flagged === 1 ? 's' : ''} a closer photo` : '', ...(result.demo ? ['demo answer'] : [`${(result.ms / 1000).toFixed(1)} s`, result.model, result.settings ? `thinking ${result.settings.thinking} · detail ${result.settings.resolution.replace('_', ' ')}` : '']),
+      tokIn != null ? `${tokIn} tokens in · ${tokOut ?? '?'} out` : ''].filter(Boolean).map(s => `<span>${s}</span>`).join('');
+    $('#notes').textContent = result.photo_notes ? `Gemini's note: ${result.photo_notes}` : '';
+    if (!items.length) $('#msg').textContent = "No certificates found in that photo. Try again closer, with the whole wall in view and less glare.";
+    render();
+  }
+
+  // ---- the photo with boxes
+  function draw() {
+    const cv = $('#shot'), k = Math.min(1, 1400 / Math.max(photo.width, photo.height));
+    cv.width = Math.round(photo.width * k); cv.height = Math.round(photo.height * k);
+    const g = cv.getContext('2d'); g.drawImage(photo, 0, 0, cv.width, cv.height);
+    const fs = Math.max(13, Math.round(cv.width / 70));
+    items.forEach((it, i) => {
+      const b = it.box, col = it.edited ? '#1b3a6b' : { high: '#2e7d4f', medium: '#b26a00', low: '#b3261e' }[it.confidence];
+      g.lineWidth = i === hot ? 6 : 3; g.setLineDash(it.onBoard ? [] : [10, 6]);
+      g.strokeStyle = col; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k); g.setLineDash([]);
+      g.font = `700 ${fs}px Inter, system-ui, sans-serif`;
+      let label = `${i + 1} ${nameOf(it.types[0])}${it.types.length > 1 ? ` +${it.types.length - 1}` : ''}`;
+      if (g.measureText(label).width + 12 > Math.max(b.w * k, 150)) label = String(i + 1);   // too long for a small box: number only
+      const tw = g.measureText(label).width + 12;
+      const ly = b.y * k > fs + 8 ? b.y * k - fs - 8 : b.y * k;
+      g.fillStyle = col; g.fillRect(b.x * k, ly, tw, fs + 8);
+      g.save(); g.beginPath(); g.rect(b.x * k, ly, tw, fs + 8); g.clip();
+      g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(label, b.x * k + 6, ly + (fs + 8) / 2); g.restore();
+    });
+  }
+  $('#shot').addEventListener('click', (e) => {
+    const cv = e.currentTarget, r = cv.getBoundingClientRect(), k = cv.width / photo.width;
+    const x = (e.clientX - r.left) * cv.width / r.width / k, y = (e.clientY - r.top) * cv.height / r.height / k;
+    const i = items.findIndex(it => x >= it.box.x && x <= it.box.x + it.box.w && y >= it.box.y && y <= it.box.y + it.box.h);
+    if (i >= 0) { setHot(i); $(`#item${i}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  });
+  const setHot = (i) => { hot = i; document.querySelectorAll('.item').forEach((el, j) => el.classList.toggle('hot', j === i)); draw(); };
+
+  // ---- the list (edit types, on board, paper size, remove)
+  const typeOptions = (sel, skip = []) => Object.entries(CAT.groups).map(([g, gname]) =>
+    `<optgroup label="${gname}">${CAT.types.filter(t => t.group === g && !skip.includes(t.id)).map(t => `<option value="${t.id}"${t.id === sel ? ' selected' : ''}>${t.name}</option>`).join('')}</optgroup>`).join('')
+    + `<option value="other"${sel === 'other' ? ' selected' : ''}>${CAT.other.name}</option>`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function render() {
+    $('#list').innerHTML = items.map((it, i) => `
+      <div class="item${it.onBoard ? '' : ' off'}${i === hot ? ' hot' : ''}" id="item${i}" data-i="${i}">
+        <img src="${it.thumb}" alt="Cut-out of certificate ${i + 1}">
+        <div>
+          <div class="top"><span class="num">${i + 1}</span>
+            <span class="conf ${it.edited ? 'checked' : it.confidence}">${it.edited ? 'checked by you' : it.confidence + ' confidence'}</span>
+            ${it.closer_photo && it.closer_photo !== 'none' ? `<span class="flag">Closer photo: ${ISSUE[it.closer_photo]}</span>` : ''}</div>
+          <select class="type" data-act="type" aria-label="Type of certificate ${i + 1}">${typeOptions(it.types[0])}</select>
+          <div class="chips">${it.types.slice(1).map(t => `<span class="chip">${esc(nameOf(t))}<button type="button" data-act="unchip" data-t="${t}" aria-label="Remove ${esc(nameOf(t))}">×</button></span>`).join('')}
+            <select data-act="addtype" aria-label="Add another type (all-in-one posters)"><option value="">+ also covers…</option>${typeOptions('', it.types)}</select></div>
+          ${it.heading || it.reason ? `<div class="meta">${it.heading ? `Reads <q>${esc(it.heading)}</q>` : ''}${it.issuer ? ` · ${esc(it.issuer)}` : ''}${it.reason && !it.edited ? ` · ${esc(it.reason)}` : ''}</div>` : ''}
+          <div class="row2">
+            <label><input type="checkbox" data-act="board"${it.onBoard ? ' checked' : ''}> On the board</label>
+            <select data-act="paper" aria-label="Paper size">${DOC_SIZES.map(s => `<option value="${s.id}"${s.id === it.paper.id ? ' selected' : ''}>${s.name} ${s.w}×${s.h}</option>`).join('')}</select>
+            <label><input type="checkbox" data-act="turn"${it.turn ? ' checked' : ''}> Landscape</label>
+          </div>
+        </div>
+        <button class="x" type="button" data-act="remove" aria-label="Remove certificate ${i + 1}" title="Not a certificate: remove">×</button>
+      </div>`).join('');
+    const on = items.filter(it => it.onBoard), counts = {};
+    for (const it of on) { const n = `${it.paper.name} ${it.paper.w}×${it.paper.h}`; counts[n] = (counts[n] || 0) + 1; }
+    $('#board').innerHTML = on.length
+      ? `${on.length} of ${items.length} go on the board: ${Object.entries(counts).map(([n, c]) => `${c} × ${n}`).join(', ')}<small>Signs, tags, wallet cards and on-file papers are left off by default. The configurator sizes the board from these.</small>`
+      : 'Nothing marked for the board yet.';
+    draw(); json(); scoreNow();
+  }
+
+  // ---- accuracy test: compare Gemini's first answer with the corrected list
+  function tally() {
+    const kept = items, right = kept.filter(it => it.types[0] === it.gemini.type), wrong = kept.filter(it => it.types[0] !== it.gemini.type);
+    const real = kept.length + score.missed, byConf = {};
+    for (const c of ['high', 'medium', 'low']) {
+      const all = [...kept, ...score.removed].filter(it => it.gemini.confidence === c);
+      byConf[c] = { right: all.filter(it => kept.includes(it) && it.types[0] === it.gemini.type).length, of: all.length };
+    }
+    return { real, right: right.length, wrong: wrong.length, removed: score.removed.length, missed: score.missed, found: score.found,
+      flagged: [...kept, ...score.removed].filter(it => it.closer_photo && it.closer_photo !== 'none').length, byConf };
+  }
+  function scoreNow() {
+    const t = tally(), pct = t.real ? Math.round(t.right / t.real * 100) : 0;
+    $('#scoreLine').textContent = `Right first time: ${t.right} of ${t.real} certificates (${pct}%)`;
+    $('#scoreSub').textContent = `Wrong type: ${t.wrong} · Not certificates (removed): ${t.removed} · Missed: ${t.missed} · Flagged for a closer photo: ${t.flagged}. `
+      + 'By confidence, right: ' + ['high', 'medium', 'low'].filter(c => t.byConf[c].of).map(c => `${c} ${t.byConf[c].right}/${t.byConf[c].of}`).join(', ');
+    $('#missed').textContent = t.missed;
+  }
+  $('#missPlus').addEventListener('click', () => { score.missed++; scoreNow(); });
+  $('#missMinus').addEventListener('click', () => { score.missed = Math.max(0, score.missed - 1); scoreNow(); });
+
+  // the test log stays in this browser (download the CSV to keep it)
+  const LOG = 'cobo-detect-tests';
+  const readLog = () => { try { return JSON.parse(localStorage.getItem(LOG)) || []; } catch { return []; } };
+  const writeLog = (l) => { try { localStorage.setItem(LOG, JSON.stringify(l)); } catch {} };
+  function showLog() {
+    const log = readLog();
+    $('#logWrap').hidden = !log.length;
+    if (!log.length) return;
+    const sum = (k) => log.reduce((s, r) => s + r[k], 0), real = sum('real'), right = sum('right');
+    $('#logSum').textContent = `${log.length} test${log.length === 1 ? '' : 's'} so far: right first time ${right} of ${real} (${real ? Math.round(right / real * 100) : 0}%), `
+      + `${sum('wrong')} wrong type, ${sum('removed')} not certificates, ${sum('missed')} missed, ${sum('flagged')} flagged for a closer photo.`;
+    $('#logRows').innerHTML = log.slice().reverse().map(r => `<tr><td>${esc(r.date.slice(0, 10))}</td><td>${esc(r.name)}</td><td>${esc([r.model, r.thinking, r.detail, r.seconds ? r.seconds + ' s' : ''].filter(Boolean).join(' · '))}</td><td>${r.right}/${r.real}</td><td>${r.wrong}</td><td>${r.removed}</td><td>${r.missed}</td><td>${r.flagged}</td><td>${esc(r.notes)}</td></tr>`).join('');
+  }
+  $('#saveTest').addEventListener('click', () => {
+    const t = tally(), log = readLog();
+    log.push({ date: new Date().toISOString(), name: $('#testName').value.trim() || photoName, notes: $('#testNotes').value.trim(), model: meta.model || '', thinking: meta.settings?.thinking || '', detail: meta.settings?.resolution || '',
+      seconds: meta.ms ? +(meta.ms / 1000).toFixed(1) : 0, ...t, byConf: undefined,
+      high: `${t.byConf.high.right}/${t.byConf.high.of}`, medium: `${t.byConf.medium.right}/${t.byConf.medium.of}`, low: `${t.byConf.low.right}/${t.byConf.low.of}` });
+    writeLog(log); showLog();
+    $('#saveTest').textContent = 'Saved'; setTimeout(() => ($('#saveTest').textContent = 'Save to test log'), 1500);
+  });
+  $('#logCsv').addEventListener('click', () => {
+    const cols = ['date', 'name', 'notes', 'model', 'thinking', 'detail', 'seconds', 'found', 'real', 'right', 'wrong', 'removed', 'missed', 'flagged', 'high', 'medium', 'low'];
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [cols.join(','), ...readLog().map(r => cols.map(c => q(r[c])).join(','))].join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'cobo-detect-test-log.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('#logClear').addEventListener('click', () => { if (confirm('Clear every saved test from this browser?')) { writeLog([]); showLog(); } });
+  showLog();
+
+  $('#list').addEventListener('change', (e) => {
+    const el = e.target, i = +el.closest('.item').dataset.i, it = items[i], act = el.dataset.act;
+    if (act === 'type') { it.types = [el.value, ...it.types.slice(1).filter(t => t !== el.value)]; it.onBoard = boardDefault(it.types); it.edited = true; }
+    if (act === 'addtype' && el.value) { it.types = [...it.types, el.value]; it.edited = true; }
+    if (act === 'board') it.onBoard = el.checked;
+    if (act === 'paper') it.paper = DOC_SIZES.find(s => s.id === el.value);
+    if (act === 'turn') it.turn = el.checked;
+    render();
+  });
+  $('#list').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.closest('.item').dataset.i;
+    if (b.dataset.act === 'remove') { score.removed.push(...items.splice(i, 1)); hot = -1; render(); }
+    if (b.dataset.act === 'unchip') { items[i].types = items[i].types.filter(t => t !== b.dataset.t); items[i].edited = true; render(); }
+  });
+  $('#list').addEventListener('mouseover', (e) => { const el = e.target.closest('.item'); if (el && +el.dataset.i !== hot) setHot(+el.dataset.i); });
+
+  // ---- the handoff to Part B
+  const current = () => handoff(items, photo, meta);
+  function json() { $('#json').textContent = JSON.stringify(current(), null, 2); }
+  $('#copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#json').textContent); $('#copy').textContent = 'Copied'; } catch { $('#copy').textContent = 'Copy failed'; }
+    setTimeout(() => ($('#copy').textContent = 'Copy JSON'), 1500);
+  });
+  $('#download').addEventListener('click', () => {
+    const out = { ...current(), crops: Object.fromEntries(items.map((it, i) => [`crop-${i + 1}.jpg`, it.crop.toDataURL('image/jpeg', 0.92)])) };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
+    a.download = `cobo-detect-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  // testing: ?run=demo runs the example wall straight away
+  // testing: ?run=demo runs the example wall straight away; &at=score scrolls to the scoring
+  const q = new URLSearchParams(location.search);
+  if (q.get("run") === "demo") run(null).then(() => { if (q.get("at")) document.getElementById(q.get("at") + "Card")?.scrollIntoView(); });
+</script>
+</body>
+</html>

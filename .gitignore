@@ -9,3 +9,6 @@ screenshots/
 
 # Old placeholder swatches (not in data/laminates.json)
 textures/**/DEMO-*.jpg
+
+# Dev copy: the Gemini API key (never commit or serve it)
+.gemini-key

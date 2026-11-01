@@ -542,6 +542,17 @@
   /* My wall: the scan results, the certificate count and their own documents (moved here by main.js) */
   [data-layout="v5"] .certcount { background: none; padding: 0; gap: 8px; }
   [data-layout="v5"] .certcount .scanrow, [data-layout="v5"] .certcount .scanrow + .help { display: none; }
+  /* v8: Snap your wall (the photo row + the result moved out of the sample box by main.js) */
+  [data-v8] .snapbox { display: grid; gap: 8px; }
+  [data-v8] .snapbox .scanrow { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  [data-v8] .snapbox .scanres { margin-top: 2px; }
+  [data-v8] .snapbox .scanres canvas { border: 1px solid var(--line); }
+  [data-v8] .scanbusy { display: none; align-items: center; gap: 8px; margin: 0; color: var(--accent); font-size: 13px; font-weight: 600; }
+  [data-v8] .scanbusy.on { display: flex; }
+  [data-v8] .scanbusy .spin { width: 16px; height: 16px; border: 3px solid var(--tint); border-top-color: var(--accent); border-radius: 50%; animation: scanspin .8s linear infinite; }
+  @keyframes scanspin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { [data-v8] .scanbusy .spin { animation-duration: 3s; } }
+
   .mw-empty { display: grid; gap: 10px; justify-items: start; }
   .mw-sum { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
   .mw-sum i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .18); flex: none; }
@@ -1696,6 +1707,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202610301911" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011421" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
