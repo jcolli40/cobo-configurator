@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011820';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011820';
-import { wallTexture, wallSwatch } from './env.js?v=202611011820';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011820';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011830';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011830';
+import { wallTexture, wallSwatch } from './env.js?v=202611011830';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011830';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1591,6 +1591,7 @@ function wireSteps() {
     $('#certCam').closest('.row').remove();                            // (Snap your docs and Upload Files do it all, one at a time or the whole wall)
     $('#scanFile').closest('label').lastChild.textContent = 'Upload Files';
     $('#scanFile').accept = 'image/*,application/pdf,.pdf'; $('#scanFile').multiple = true;          // (no camera forced: phones offer Photo Library, Take Photo and Files)
+    $('#scanFile').closest('label').insertAdjacentHTML('afterbegin', '<svg class="i" aria-hidden="true"><use href="#i-share"/></svg>');   // (the same upload arrow as Share)
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)

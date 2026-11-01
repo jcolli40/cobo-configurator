@@ -611,7 +611,9 @@
   /* Sample certificates, switched off: only the title and the switch */
   .certcount.off > :not(.labrow) { display: none !important; }
   /* "or choose from your photos": a button beside Snap your docs */
-  [data-v8] .side .snapbox label.scanup { flex: 1 1 100%; display: flex; align-items: center; justify-content: center; position: relative; min-height: 46px; border: 1.5px solid var(--accent); border-radius: 12px; background: #fff; color: var(--accent); font-size: 14.5px; font-weight: 650; text-decoration: none; cursor: pointer; }
+  [data-v8] .side .snapbox label.scanup { flex: 1 1 100%; display: flex; align-items: center; justify-content: center; position: relative; gap: 7px; min-height: 44px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 400; text-decoration: none; cursor: pointer; }   /* (like Share and Save for later) */
+  [data-v8] .side .snapbox label.scanup:hover { border-color: var(--accent); }
+  [data-v8] .side .snapbox label.scanup .i { width: 18px; height: 18px; }
   [data-v8] .side .owndocs .row .upload { font-size: 14px; line-height: 1.2; text-align: center; }
   [data-v8] .side .side-body .owndocs .row { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }   /* (room for "Upload Photos or PDFs" on one line) */
   [data-v8] .side .side-body .owndocs .row .upload { padding-left: 8px; padding-right: 8px; gap: 6px; }
@@ -1850,6 +1852,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611011820" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011830" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
