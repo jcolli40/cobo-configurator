@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011752';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011752';
-import { wallTexture, wallSwatch } from './env.js?v=202611011752';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011752';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011753';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011753';
+import { wallTexture, wallSwatch } from './env.js?v=202611011753';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011753';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3305,6 +3305,7 @@ function wireStyle() {
   tabs.innerHTML = '<button type="button" role="tab" id="tabBtnColors" data-tab="colors" aria-controls="tabColors">Solid Colors</button>'
     + '<button type="button" role="tab" id="tabBtnTex" data-tab="tex" aria-controls="tabTex">Textures &amp; Patterns<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>';
   head.after(tabs); tabs.after(cols, tex);
+  head.prepend(Object.assign(document.createElement('span'), { id: 'styleIcon', innerHTML: $('.sec[data-sec="boardgrp"] .sec-h .i').outerHTML }));   // (the board icon, left of the title)
   $('#lamTitle').textContent = 'Board Style'; head.querySelector('.x').setAttribute('aria-label', 'Close');
   tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStyleTab(b.dataset.tab); });
   tabs.addEventListener('keydown', (e) => {                      // arrow keys move between the two tabs
