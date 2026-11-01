@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011734';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011734';
-import { wallTexture, wallSwatch } from './env.js?v=202611011734';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011734';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011741';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011741';
+import { wallTexture, wallSwatch } from './env.js?v=202611011741';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011741';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -54,7 +54,7 @@ const EMBED = new URLSearchParams(location.search).get('embed') === 'morph';
 // 3D view the whole time). Build starts with the customer's documents because the size depends on them.
 // Style: computers list Solid Colors and Textures & Patterns under a "Board style" heading; phones show Board | Edge |
 // Caps, and Board opens those two beside it (boardgrp).
-const STEPS6 = { build: ['certs', 'size'], style: ['boardgrp', 'color', 'laminate', 'edge', 'caps'], preview: ['arview', 'sharelink', 'saveit', 'summary'] };
+const STEPS6 = { build: ['certs', 'size'], style: ['boardgrp', 'edge', 'caps'], preview: ['arview', 'sharelink', 'saveit', 'summary'] };
 const STEP_ORDER = Object.keys(STEPS6);
 let step6 = 'build';
 // an upcharge from UPCHARGES (config.js): one amount, or one per size
@@ -968,7 +968,7 @@ function openSection(name) {
   const sec = document.querySelector(`.sec[data-sec="${name}"]`);
   if (!sec) return;
   if (V6 && name === 'arview') { step6 = 'preview'; updateUI(); return openAR(); }   // (?open=arview: the QR code's link)
-  if (V6 && name === 'laminate') { $('.p-body').classList.add('bopen'); if (step6 !== 'style') { step6 = 'style'; updateUI(); } }   // (the textures picker isn't a sheet)
+  if (V6 && ['color', 'laminate', 'boardgrp'].includes(name)) return openStyle(name === 'laminate' ? 'tex' : name === 'color' ? 'colors' : undefined);   // (Solid Colors and Textures share one tabbed panel)
   if (SHEETS_ONLY()) return name === 'laminate' ? openPicker() : openOptSheet(sec);   // phones: the option opens in a pop-up sheet
   if (sec.hidden) return openOptSheet(sec);                          // v2/v3: options that aren't cards open in the side sheet
   document.querySelectorAll('.p-body .sec').forEach(s => setSec(s, s === sec));
@@ -978,6 +978,7 @@ function openSection(name) {
 // Phones: one option at a time in a pop-up sheet. The section's own controls are moved into the sheet while it's open.
 let optOpen = null;   // { sec, body }
 function openOptSheet(sec) {
+  if (V6 && ['color', 'laminate', 'boardgrp'].includes(sec.dataset.sec)) return openStyle(sec.dataset.sec === 'laminate' ? 'tex' : sec.dataset.sec === 'color' ? 'colors' : undefined);
   closeOptSheet(true);
   if (V6) {                                       // v6: an option from another step (say, a tap on a cap) moves to that step
     const st = STEP_ORDER.find(k => STEPS6[k].includes(sec.dataset.sec));
@@ -1187,11 +1188,7 @@ function build() {
     const k = h.closest('.sec').dataset.sec;
     if (k === 'arview') return openAR();                                       // v6 Preview: these two act straight away
     if (k === 'saveit') return saveForLater();
-    if (k === 'boardgrp') {                                                    // v6 phones: Board opens its two options beside it
-      const open = $('.p-body').classList.toggle('bopen');
-      h.setAttribute('aria-expanded', open);
-      return updateStage(false);
-    }
+    if (k === 'boardgrp') return $('#lamPanel').hidden ? openStyle() : closePicker();   // v6: Board Style = one panel, tabbed Solid Colors | Textures & Patterns
     if (V6 && k === 'laminate' && !$('#lamPanel').hidden) return closePicker();   // v6: a second click on the open option closes it
     if (V6 && optOpen?.sec === h.closest('.sec')) return closeOptSheet();
     if (SHEETS_ONLY() && h.closest('.sec').dataset.sec === 'laminate') return openPicker();   // phones: straight to the swatches
@@ -1554,6 +1551,7 @@ function blankBoard() {
 // the 3D view, Preview's buttons, and the welcome card's two ways to start
 function wireSteps() {
   $('#stepBar').hidden = false;
+  wireStyle();
   // the size is worked out from the documents: a one-line hint under the steps (Build, before any documents), a note at the
   // top of the Size pop-up, and a small tag on the Size button (Auto-fit / Your pick); see paintSizeAuto
   const hint = document.createElement('p'); hint.id = 'stepHint'; hint.className = 'stephint'; hint.hidden = true;
@@ -1657,7 +1655,7 @@ function wireSteps() {
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
   col.querySelector('.sec-t').textContent = 'Solid Colors'; col.querySelector('.sec-h .i use').setAttribute('href', '#i-palette');
-  lam.querySelector('.sec-t').textContent = 'Textures & Patterns'; $('#lamTitle').textContent = 'Textures & Patterns';
+  lam.querySelector('.sec-t').textContent = 'Textures & Patterns'; $('#lamTitle').textContent = 'Board Style';
   // ?icons=sketch: Board, Edge and Caps show a sketch of the board with that part in light blue
   if (new URLSearchParams(location.search).get('icons') === 'sketch') {
     document.documentElement.classList.add('sk');
@@ -2494,9 +2492,9 @@ const COACH = [
     go: () => {}, every: 650, seq: [1, 2, 3, 4].map(n => () => { state.certNeed = n; useBestFit(); }) },
   { el: () => [onScreen('.sec[data-sec="size"] .sec-h')], k: 'Step 1 · Build', t: 'Choose the size', s: 'The best fit for your documents is marked. Pick any size you like.',
     go: () => {}, every: 900, seq: [() => { Object.assign(state, { sizeId: '24x36', orient: 'portrait' }); sizePicked = true; refresh(true); }] },
-  { el: () => [onScreen('.sec[data-sec="color"] .sec-h'), onScreen('.sec[data-sec="laminate"] .sec-h')], k: 'Step 2 · Style', t: 'Pick a color or texture',
+  { el: () => [onScreen('.sec[data-sec="boardgrp"] .sec-h')], k: 'Step 2 · Style', t: 'Pick a color or texture',
     s: 'Solid colors, or Wilsonart textures and patterns.',
-    go: () => { goStep('style', false); $('.p-body').classList.add('bopen'); },
+    go: () => { goStep('style', false); },
     every: 850, seq: [...COLORS.slice(0, 3).map(c => () => { state.lamSel = null; state.face = c.name; refresh(); }), ...COACH_TEX.map(coachLam)] },
   { el: () => [onScreen('.sec[data-sec="edge"] .sec-h'), 'board'], k: 'Step 2 · Style', t: 'Edge banding', s: 'Match the board, or pick a contrasting edge.',
     go: () => { $('.p-body').classList.remove('bopen'); focusPart('edge'); }, every: 1100, seq: ['White', 'Red', 'Black'].map(c => () => { state.edge = c; refresh(); }) },
@@ -3262,21 +3260,59 @@ function renderPicker() {
 
 // The picker is a side panel, not a pop-up: the board stays visible, so each pick shows on it right away.
 function openPicker() {
-  if (SHEETS_ONLY()) { closeOptSheet(true); setSheet(false); markActive('laminate'); }
+  if (SHEETS_ONLY()) { closeOptSheet(true); setSheet(false); markActive(V6 ? 'boardgrp' : 'laminate'); }
   $('#lamPanel').hidden = false;
   $('#lamBtn').setAttribute('aria-expanded', 'true');
+  $('.sec[data-sec="boardgrp"] .sec-h')?.setAttribute('aria-expanded', 'true');
   if (!phone.matches) setInset($('#lamPanel').getBoundingClientRect().width);   // slide the board out from under the panel
   renderPicker();
-  if (!phone.matches) setTimeout(() => $('#lamSearch').focus(), 30);   // on phones, focusing would pop up the keyboard
+  if (!phone.matches && (!V6 || styleTab === 'tex')) setTimeout(() => $('#lamSearch').focus(), 30);   // on phones, focusing would pop up the keyboard
   updateStage(true);                                                   // phones: board fits above the picker
 }
 function closePicker() {
   $('#lamPanel').hidden = true;
   $('#lamBtn').setAttribute('aria-expanded', 'false');
+  $('.sec[data-sec="boardgrp"] .sec-h')?.setAttribute('aria-expanded', 'false');
   if (inset.target) setInset(0);
   if (!optOpen) markActive(null);
   updateStage(true);
-  if (!phone.matches) $('#lamBtn').focus();
+  if (!phone.matches) (V6 ? $('.sec[data-sec="boardgrp"] .sec-h') : $('#lamBtn')).focus();
+}
+// v6: Board Style is one pop-up with two tabs, Solid Colors | Textures & Patterns (the colors moved into the Wilsonart panel)
+let styleTab = 'colors';
+function openStyle(tab) {
+  if (step6 !== 'style') { step6 = 'style'; updateUI(); }
+  setStyleTab(tab || (state.lamSel ? 'tex' : 'colors'));
+  openPicker();
+}
+function setStyleTab(t) {
+  styleTab = t;
+  const tex = t === 'tex';
+  $('#tabColors').hidden = tex; $('#tabTex').hidden = !tex;
+  $('#lamPanel .side-h img').hidden = !tex;                      // (the Wilsonart logo goes with the textures)
+  for (const b of document.querySelectorAll('.styletabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
+  if (!$('#lamPanel').hidden) { if (tex && !phone.matches) $('#lamSearch').focus(); updateStage(false); }
+}
+function wireStyle() {
+  const pnl = $('#lamPanel'), head = pnl.querySelector('.side-h'), colorsBody = $('.sec[data-sec="color"] .sec-b');
+  colorsBody.hidden = false;
+  const tex = document.createElement('div'); tex.id = 'tabTex'; tex.setAttribute('role', 'tabpanel'); tex.setAttribute('aria-labelledby', 'tabBtnTex');
+  [...pnl.children].filter(c => c !== head).forEach(c => tex.append(c));
+  const cols = document.createElement('div'); cols.id = 'tabColors'; cols.className = 'side-body'; cols.setAttribute('role', 'tabpanel'); cols.setAttribute('aria-labelledby', 'tabBtnColors');
+  cols.append(colorsBody);
+  const tabs = document.createElement('div'); tabs.className = 'styletabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Board style');
+  tabs.innerHTML = '<button type="button" role="tab" id="tabBtnColors" data-tab="colors" aria-controls="tabColors">Solid Colors</button>'
+    + '<button type="button" role="tab" id="tabBtnTex" data-tab="tex" aria-controls="tabTex">Textures &amp; Patterns</button>';
+  head.after(tabs); tabs.after(cols, tex);
+  $('#lamTitle').textContent = 'Board Style'; head.querySelector('.x').setAttribute('aria-label', 'Close');
+  tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStyleTab(b.dataset.tab); });
+  tabs.addEventListener('keydown', (e) => {                      // arrow keys move between the two tabs
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault(); const t = e.key === 'ArrowLeft' || e.key === 'Home' ? 'colors' : 'tex'; setStyleTab(t); $('#tabBtn' + (t === 'tex' ? 'Tex' : 'Colors')).focus();
+  });
+  setStyleTab('colors');
+  const g = $('.sec[data-sec="boardgrp"]'); g.querySelector('.sec-t').textContent = 'Board style'; g.querySelector('.sec-t').dataset.full = 'Board Style';
+  g.querySelector('.sec-h').setAttribute('aria-haspopup', 'dialog');
 }
 function selectLam(item) {
   state.lamSel = item;

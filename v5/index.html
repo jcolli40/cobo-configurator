@@ -852,6 +852,16 @@
   [data-v6] .stepnext { order: 99; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 650; padding: 11px 12px; cursor: pointer; }
   [data-v6] .stepnext .i { width: 16px; height: 16px; }
   [data-v6] .stepnext[hidden] { display: none; }
+  /* Board style: one panel, tabbed Solid Colors | Textures & Patterns */
+  .styletabs { display: none; }
+  [data-v6] .styletabs { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+  [data-v6] .styletabs button { flex: 1; padding: 12px 6px 10px; border: 0; border-bottom: 3px solid transparent; background: none; font: inherit; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; }
+  [data-v6] .styletabs button:hover { color: var(--ink); }
+  [data-v6] .styletabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  [data-v6] .styletabs button:focus-visible { outline: 3px solid #8fb0e0; outline-offset: -3px; border-radius: 8px; }
+  [data-v6] #tabTex { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  [data-v6] #tabTex[hidden], [data-v6] #tabColors[hidden] { display: none; }
+  [data-v6] #tabColors > .sec-b { display: grid !important; padding: 0; gap: 14px; }
   /* the size follows the documents: a hint under the steps, a tag on the Size button, a note in its pop-up */
   .stephint, .autonote { display: none; }
   [data-v6] .stephint:not([hidden]) { order: -1; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: -8px 0 12px; padding: 8px 12px; border-radius: 10px; background: var(--tint); color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1.3; }
@@ -1074,7 +1084,7 @@
     [data-v6] .p-body .sec-h .up { grid-column: 3; grid-row: 1; justify-self: end; font-size: 11.5px; }   /* upcharge: right of the name */
     [data-v6] .p-body .sec-h .up.size { grid-column: 3; grid-row: 1; justify-self: end; font-size: 13.5px; }   /* the size: right of the name, same line */
     [data-v6] .dockhead { display: block; margin: 8px 12px 2px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-    [data-v6] .dockhead[hidden], [data-v6] .p-body .sec[data-sec="boardgrp"] { display: none !important; }
+    [data-v6] .dockhead { display: none !important; }   /* (Board style is one button now) */
     /* an option slides out to the left of the column, full height (like the Wilsonart panel) */
     [data-v6] .side { top: 68px; bottom: 84px; right: 260px; width: 400px; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, .18); animation: slideOut .24s ease; }
     @keyframes slideOut { from { transform: translateX(48px); opacity: 0; } }
@@ -1793,6 +1803,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011734" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011741" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
