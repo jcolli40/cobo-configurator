@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011535';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011535';
-import { wallTexture, wallSwatch } from './env.js?v=202611011535';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus } from './detect.js?v=202611011535';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011604';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011604';
+import { wallTexture, wallSwatch } from './env.js?v=202611011604';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus } from './detect.js?v=202611011604';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2038,6 +2038,14 @@ async function scanWall(file, pre) {   // pre: a Gemini answer already in hand f
   return { found, img: tmp.img };
 }
 
+// v8: trim a photo added as one document down to the certificate in it (Gemini's box around the paper)
+function trimDoc(own, paper) {
+  const crop = cropCertificate(own.img, paper, 0.015);
+  const t = document.createElement('canvas'), k = 88 / Math.max(crop.width, crop.height);
+  t.width = Math.round(crop.width * k); t.height = Math.round(crop.height * k); t.getContext('2d').drawImage(crop, 0, 0, t.width, t.height);
+  Object.assign(own, { img: crop, aspect: crop.width / crop.height, thumb: t.toDataURL('image/jpeg', 0.7), imgId: Math.random(), tex: null });
+  guessDoc(own);                                             // (its size from the trimmed shape)
+}
 // v8: one certificate cut out of the wall photo (the paper inside any frame), as one of their own documents
 function wallDoc(img, f) {
   const it = f.det, s = DOC_SIZES.find(x => x.id === f.size), crop = cropCertificate(img, it.paper, 0.01);
@@ -2872,19 +2880,27 @@ function wireExtras() {
     refresh();
     if (lastDocs?.missing.length) toast('Some documents don\'t fit on this board yet. See the suggestion under Size.');
   };
-  // v8: if a photo added as one document is really the whole wall (Gemini sees 2 or more certificates in it),
-  // offer to read it as a wall instead. Runs in the background; the document is already on the board meanwhile.
+  // v8: Gemini reads each photo added as one document (runs in the background; the photo is already on the board):
+  // it names it, trims the photo to just that certificate (a close photo often catches the edge of the one beside it),
+  // and if the photo really shows 2 or more whole certificates, offers to read it as a wall instead.
   async function checkWallPhoto(own, file, wallCheck) {
     if (wallCheck) $('#wallHint')?.remove();
     let ai; try { ai = await detectCertificates(own.img); } catch { return; }
-    if (!state.myCerts.includes(own)) return;
-    if (ai.items.length === 1 || (!wallCheck && ai.items.length)) {   // name it (the checklist shows the type)
-      const it = ai.items[0]; own.typeId = it.types[0]; own.types = it.types; own.confidence = it.confidence;
-      own.name = CAT?.byId[it.types[0]]?.name || own.name; docsKey = ''; refresh();
-    }
+    if (!state.myCerts.includes(own) || !ai.items.length) return;
     if (ai.location) guessState(ai.location, 'photo');
-    if (!wallCheck || ai.items.length < 2) return;
-    const n = ai.items.length, hint = document.createElement('div');
+    const W = own.img.width, H = own.img.height, share = (b) => (b.w * b.h) / (W * H);
+    const whole = ai.items.filter(it => it.closer_photo !== 'cut_off' && share(it.paper) > 0.008);   // (not ones cut off at the edge, or specks; on a wall photo each one is ~1-5%)
+    if (!(wallCheck && whole.length >= 2)) {
+      // the one they meant: the biggest whole certificate, nearest the middle
+      const off = (b) => Math.hypot((b.x + b.w / 2) / W - 0.5, (b.y + b.h / 2) / H - 0.5);
+      const main = (whole.length ? whole : ai.items).reduce((m, it) => (share(it.paper) * (1 - off(it.paper)) > share(m.paper) * (1 - off(m.paper)) ? it : m));
+      own.typeId = main.types[0]; own.types = main.types; own.confidence = main.confidence;
+      own.name = CAT?.byId[main.types[0]]?.name || own.name;
+      if (!isPdf(file) && share(main.paper) < 0.9) trimDoc(own, main.paper);
+      docsKey = ''; refresh();
+      return;
+    }
+    const n = whole.length, hint = document.createElement('div');
     hint.id = 'wallHint'; hint.className = 'wallhint'; hint.setAttribute('role', 'status');
     hint.innerHTML = `<p>This photo shows <b>${n} certificates</b>. Read it as your whole wall instead, so each one gets its own place on the board?</p>`
       + '<div class="row"><button type="button" class="primary" data-wh="wall">Read it as a wall</button><button type="button" class="link" data-wh="keep">Keep as one document</button></div>';
