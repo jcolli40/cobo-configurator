@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011833';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011833';
-import { wallTexture, wallSwatch } from './env.js?v=202611011833';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011833';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011842';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011842';
+import { wallTexture, wallSwatch } from './env.js?v=202611011842';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011842';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -777,7 +777,7 @@ function applyInset() {
 function setInset(px) {
   inset.target = px;
   limitZoom();
-  setView(state.view);   // re-frame for the visible width (animated)
+  if (!sway) setView(state.view);   // re-frame for the visible width (animated); the welcome and snap screens keep their own framing
 }
 
 // distance that shows the whole board with a margin, in the part of the view the side panel doesn't cover
@@ -2373,10 +2373,12 @@ function swayFrame() {
   }
   if (phone.matches || aspect < 1) {
     // the part of the screen above the card is free (v6: measured, less the COBO icon on the card's edge; the board fills it)
-    const card = V6 && step() === 'intro' ? $('.t-intro .t-card').getBoundingClientRect() : null;
-    const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - 34 - r.top) / r.height)) : 0.42;
+    const cardEl = V6 && step() === 'intro' ? $('.t-intro .t-card') : null, card = cardEl?.getBoundingClientRect();
+    const slide = cardEl ? new DOMMatrix(getComputedStyle(cardEl).transform).m42 : 0;   // (the card slides up as it appears: measure where it ends up)
+    const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - slide - 34 - r.top) / r.height)) : 0.42;
     const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * (card?.height ? 1.14 : 1.35) + 2;
-    return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room), 0.5), d };
+    const lift = card?.height ? 0.015 : 0;                   // (the board rides a little high in the free space, clear of the card)
+    return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room + 2 * lift), 0.5), d };
   }
   const room = 0.62;                                         // right 62% of the screen is free
   const d = Math.max(h / 2, w / 2 / (aspect * room)) / Math.tan(fov) * 1.3 + 2;

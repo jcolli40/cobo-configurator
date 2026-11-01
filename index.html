@@ -846,10 +846,9 @@
   [data-v6] .stepbar { order: -2; display: flex; gap: 4px; padding-bottom: 6px; margin-bottom: 2px; border-bottom: 1px solid var(--line); }
   [data-v6] .stepbar button { flex: 1; display: grid; justify-items: center; gap: 3px; border: 0; background: none; padding: 6px 2px; border-radius: 10px; font: inherit; font-size: 11.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
   [data-v6] .stepbar button:hover { background: var(--hover); }
-  [data-v6] .stepbar b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: #ececef; color: var(--muted); }
-  [data-v6] .stepbar button.on { color: var(--accent); background: var(--tint); }
-  [data-v6] .stepbar button.on b { background: var(--accent); color: #fff; }
-  [data-v6] .stepbar button.done b { background: var(--tint-2); color: var(--accent); }
+  [data-v6] .stepbar b { box-sizing: border-box; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: transparent; border: 1.5px solid #a3a6af; color: #7d808a; }   /* (inactive steps: an outlined circle, all the same grey) */
+  [data-v6] .stepbar button.on { color: var(--accent); background: none; }
+  [data-v6] .stepbar button.on b { background: var(--accent); border-color: var(--accent); color: #fff; }
   [data-v6] .p-body .sec[data-sec="certs"] { order: -1; }      /* Build: your documents come before the size */
   [data-v6] .stepnext { order: 99; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 650; padding: 11px 12px; cursor: pointer; }
   [data-v6] .stepnext .i { width: 16px; height: 16px; }
@@ -1853,6 +1852,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611011833" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611011842" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
