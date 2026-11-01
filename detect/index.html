@@ -160,7 +160,7 @@
 </main>
 
 <script type="module">
-  import { certTypes, detectStatus, detectCertificates, cropCertificate, handoff, demoWall } from '../js/detect.js';
+  import { certTypes, detectStatus, detectCertificates, straightenCertificate, handoff, demoWall } from '../js/detect.js';
   import { sizeDocuments } from '../js/scan.js';
   import { DOC_SIZES } from '../js/config.js';
 
@@ -234,7 +234,7 @@
     meta = result;
     const sized = sizeDocuments(result.items.map(i => i.paper || i.box), DOC_SIZES);   // sized from the paper, not its frame
     items = result.items.map((it, i) => {
-      const crop = cropCertificate(photo, it.box);
+      const crop = straightenCertificate(photo, it);   // (straightened when Gemini gave its corners)
       return { ...it, sheet: it.paper, onBoard: boardDefault(it.types), paper: DOC_SIZES.find(s => s.id === sized[i].size), turn: sized[i].turn,
         crop, thumb: crop.toDataURL('image/jpeg', 0.8), edited: false, gemini: { type: it.types[0], confidence: it.confidence } };
     });

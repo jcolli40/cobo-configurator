@@ -22,6 +22,9 @@ permits, licenses, certificates, inspection cards, required posters, notices, co
 For each one, return:
 - box_2d: [ymin, xmin, ymax, xmax] around the document's outer edge (including its frame, if framed), normalized to 0-1000.
 - paper_2d: the same, but around the paper itself, inside any frame, mat or sleeve (equal to box_2d if unframed).
+- corners: the paper's 4 corners as [y, x] points (0-1000), in the order top-left, top-right, bottom-right,
+  bottom-left as seen in the photo. Put them exactly on the paper's own corners (inside any frame), following its real
+  edges when it is tilted or photographed at an angle.
 - types: the matching type id(s) from the catalog below. Use one id, unless it is an all-in-one poster that combines
   several notices (then list every notice it covers). Use "other" if it is a compliance document you can't match.
 - heading: the largest title text you can read on it, as written ("" if unreadable).
@@ -63,6 +66,7 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
           properties: {
             box_2d: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 1000 }, minItems: 4, maxItems: 4 },
             paper_2d: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 1000 }, minItems: 4, maxItems: 4 },
+            corners: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 1000 }, minItems: 2, maxItems: 2 } },
             types: { type: 'array', items: { type: 'string', enum: IDS }, minItems: 1, maxItems: 8 },
             heading: { type: 'string' },
             issuer: { type: 'string' },
@@ -70,7 +74,7 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
             reason: { type: 'string' },
             closer_photo: { type: 'string', enum: ISSUES },
           },
-          required: ['box_2d', 'paper_2d', 'types', 'heading', 'confidence', 'closer_photo'],
+          required: ['box_2d', 'paper_2d', 'corners', 'types', 'heading', 'confidence', 'closer_photo'],
         },
       },
       photo_notes: { type: 'string' },
@@ -139,6 +143,7 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
     // keep only well-formed items and known types (the schema should already ensure this)
     const items = (out.items || []).filter(i => Array.isArray(i.box_2d) && i.box_2d.length === 4).map(i => ({
       box_2d: clamp(i.box_2d), paper_2d: Array.isArray(i.paper_2d) && i.paper_2d.length === 4 ? clamp(i.paper_2d) : clamp(i.box_2d),
+      corners: Array.isArray(i.corners) && i.corners.length === 4 && i.corners.every(p => Array.isArray(p) && p.length === 2) ? i.corners.map(clamp) : null,
       types: [...new Set((i.types || []).filter(t => IDS.includes(t)))].slice(0, 8),
       heading: String(i.heading || ''), issuer: String(i.issuer || ''),
       confidence: ['high', 'medium', 'low'].includes(i.confidence) ? i.confidence : 'low', reason: String(i.reason || ''),

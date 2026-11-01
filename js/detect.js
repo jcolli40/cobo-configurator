@@ -6,7 +6,7 @@
 // server. On the public site it's the Cloudflare Worker: paste its address into WORKER_URL after deploying it
 // (see SNAPWALL-GEMINI.md). While WORKER_URL is empty the public site simply uses the old scanner.
 const WORKER_URL = 'https://cobo-detect.justin-2f3.workers.dev';   // the Cloudflare Worker (holds the Gemini key)
-const LOCAL = /^(localhost|127.0.0.1|10..*|192.168..*|172.(1[6-9]|2d|3[01])..*)$/.test(location.hostname);
+const LOCAL = /^(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(location.hostname);
 export const DETECT_URL = LOCAL ? '/api/detect' : WORKER_URL;
 const SEND_PX = 1600;                       // the photo is shrunk to this on its long side before sending
 
@@ -27,7 +27,8 @@ export async function detectStatus() {
 }
 
 // img: an <img> or <canvas> at full size. Returns { items: [{ box: {x,y,w,h} in img pixels, types, heading, issuer,
-// confidence, reason, closer_photo: 'none' or why a close-up would help, paper: the sheet itself inside any frame (for sizing) }], photo_notes, model, usage, ms }. Throws an Error with .code: no-server, no-key, rate-limit, ...
+// confidence, reason, closer_photo: 'none' or why a close-up would help, paper: the sheet itself inside any frame (for sizing;
+// .dw/.dh = its true sides when the corners are known), quad: its 4 corners [tl, tr, br, bl] {x,y} or null }], photo_notes, model, usage, ms }. Throws an Error with .code: no-server, no-key, rate-limit, ...
 // options (lab testing): { model, thinking, resolution }
 export async function detectCertificates(img, options) {
   const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, k = Math.min(1, SEND_PX / Math.max(W, H));
@@ -41,7 +42,11 @@ export async function detectCertificates(img, options) {
   } catch { throw Object.assign(new Error('The detect server isn\'t running.'), { code: 'no-server' }); }
   const out = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(out.error || `Detect failed (${res.status})`), { code: out.code || (res.status === 404 ? 'no-server' : 'error') });
-  out.items = readingOrder(out.items.map(i => ({ ...i, box: fromBox2d(i.box_2d, W, H), paper: fromBox2d(i.paper_2d || i.box_2d, W, H) })).filter(i => i.box.w > 4 && i.box.h > 4));
+  out.items = readingOrder(out.items.map(i => {
+    const paper = fromBox2d(i.paper_2d || i.box_2d, W, H), quad = toQuad(i.corners, W, H, paper);
+    if (quad) Object.assign(paper, quadSides(quad));               // (tilt-proof sides: better paper-size guesses)
+    return { ...i, box: fromBox2d(i.box_2d, W, H), paper, quad };
+  }).filter(i => i.box.w > 4 && i.box.h > 4));
   return out;
 }
 
@@ -60,6 +65,128 @@ export function readingOrder(items) {
 // Gemini boxes are [ymin, xmin, ymax, xmax] on a 0-1000 scale
 const fromBox2d = ([y0, x0, y1, x1], W, H) => ({ x: x0 / 1000 * W, y: y0 / 1000 * H, w: (x1 - x0) / 1000 * W, h: (y1 - y0) / 1000 * H });
 const toBox2d = (b, W, H) => [b.y / H, b.x / W, (b.y + b.h) / H, (b.x + b.w) / W].map(v => Math.round(v * 1000));
+
+// Gemini's corners ([y, x] on 0-1000) -> image pixels, put in order (top-left, top-right, bottom-right, bottom-left) and
+// sanity-checked against its box around the paper. null when they don't make a believable sheet of paper.
+function toQuad(corners, W, H, paper) {
+  if (!Array.isArray(corners) || corners.length !== 4) return null;
+  let q = corners.map(([y, x]) => ({ x: x / 1000 * W, y: y / 1000 * H }));
+  const cx = q.reduce((s, p) => s + p.x, 0) / 4, cy = q.reduce((s, p) => s + p.y, 0) / 4;
+  q.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));   // clockwise on screen
+  const first = q.reduce((m, p, i) => (p.x + p.y < q[m].x + q[m].y ? i : m), 0);       // top-left = smallest x + y
+  q = [...q.slice(first), ...q.slice(0, first)];
+  const cross = (a, b, c) => (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+  if (![0, 1, 2, 3].every(i => cross(q[i], q[(i + 1) % 4], q[(i + 2) % 4]) > 0)) return null;   // must be convex
+  const area = Math.abs(q.reduce((s, p, i) => s + p.x * q[(i + 1) % 4].y - q[(i + 1) % 4].x * p.y, 0)) / 2;
+  const boxArea = paper.w * paper.h, mx = paper.w * 0.08, my = paper.h * 0.08;
+  if (area < boxArea * 0.45 || area > boxArea * 1.15) return null;
+  if (!q.every(p => p.x > paper.x - mx && p.x < paper.x + paper.w + mx && p.y > paper.y - my && p.y < paper.y + paper.h + my)) return null;
+  return q;
+}
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const quadSides = ([tl, tr, br, bl]) => ({ dw: (dist(tl, tr) + dist(bl, br)) / 2, dh: (dist(tl, bl) + dist(tr, br)) / 2 });
+
+// One certificate straightened: the 4 corners are stretched back into a flat rectangle (like a scanner app). Gemini's
+// corners are close but not exact, so each side is first nudged onto the paper's real edge in the photo, then the cut
+// goes a hair inside it so no wall shows. Falls back to a plain cut-out when the corners aren't known.
+export function straightenCertificate(img, item, maxPx = 1100) {
+  if (!item.quad) return cropCertificate(img, item.paper, 0.01);
+  const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height;
+  let src = img;
+  if (!src.getContext) { src = document.createElement('canvas'); src.width = W; src.height = H; src.getContext('2d').drawImage(img, 0, 0); }
+  // only read the part of the photo around this certificate (plus room to look for its edges)
+  const s0 = quadSides(item.quad), M = Math.ceil(0.06 * Math.max(s0.dw, s0.dh)) + 8;
+  const x0 = Math.max(0, Math.floor(Math.min(...item.quad.map(p => p.x))) - M), y0 = Math.max(0, Math.floor(Math.min(...item.quad.map(p => p.y))) - M);
+  const x1 = Math.min(W, Math.ceil(Math.max(...item.quad.map(p => p.x))) + M), y1 = Math.min(H, Math.ceil(Math.max(...item.quad.map(p => p.y))) + M);
+  const sw = x1 - x0, sh = y1 - y0, sd = src.getContext('2d', { willReadFrequently: true }).getImageData(x0, y0, sw, sh).data;
+  const q = refineQuad(sd, sw, sh, item.quad.map(p => ({ x: p.x - x0, y: p.y - y0 })));
+  const ctr = q.reduce((c, p) => ({ x: c.x + p.x / 4, y: c.y + p.y / 4 }), { x: 0, y: 0 });
+  const qi = q.map(p => ({ x: ctr.x + (p.x - ctr.x) * 0.994, y: ctr.y + (p.y - ctr.y) * 0.994 }));   // (0.6% in from the edges)
+  const { dw, dh } = quadSides(qi), k = Math.min(1, maxPx / Math.max(dw, dh));
+  const OW = Math.max(8, Math.round(dw * k)), OH = Math.max(8, Math.round(dh * k));
+  const m = homography([[0, 0], [OW, 0], [OW, OH], [0, OH]], qi.map(p => [p.x, p.y]));
+  const out = document.createElement('canvas'); out.width = OW; out.height = OH;
+  const og = out.getContext('2d'), od = og.createImageData(OW, OH), o = od.data;
+  for (let v = 0; v < OH; v++) for (let u = 0; u < OW; u++) {
+    const uu = u + 0.5, vv = v + 0.5, z = m[6] * uu + m[7] * vv + 1;
+    const x = Math.min(sw - 1.001, Math.max(0, (m[0] * uu + m[1] * vv + m[2]) / z - 0.5));
+    const y = Math.min(sh - 1.001, Math.max(0, (m[3] * uu + m[4] * vv + m[5]) / z - 0.5));
+    const xi = x | 0, yi = y | 0, fx = x - xi, fy = y - yi, a = (yi * sw + xi) * 4, b = a + sw * 4, j = (v * OW + u) * 4;
+    for (let ch = 0; ch < 3; ch++) {                       // (smooth: a blend of the 4 nearest photo pixels)
+      o[j + ch] = (sd[a + ch] * (1 - fx) + sd[a + 4 + ch] * fx) * (1 - fy) + (sd[b + ch] * (1 - fx) + sd[b + 4 + ch] * fx) * fy;
+    }
+    o[j + 3] = 255;
+  }
+  og.putImageData(od, 0, 0);
+  return out;
+}
+// Nudge each side of the quad onto the paper's edge: along the side, look a little in and out for where it turns from
+// bright (paper) to darker (wall, frame), fit a straight line through those spots, and meet the lines at new corners.
+// A side with no clear edge (a pale wall) keeps Gemini's line; a corner that would move too far keeps Gemini's point.
+function refineQuad(px, sw, sh, q) {
+  const lum = (x, y) => {
+    x = Math.round(x); y = Math.round(y);
+    if (x < 0 || y < 0 || x >= sw || y >= sh) return null;
+    const i = (y * sw + x) * 4; return 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+  };
+  const median = (a) => { const b = [...a].sort((x, y) => x - y); return b[b.length >> 1]; };
+  const c = q.reduce((m, p) => ({ x: m.x + p.x / 4, y: m.y + p.y / 4 }), { x: 0, y: 0 });
+  let reach = 0;
+  const sides = q.map((a, i) => {
+    const b = q[(i + 1) % 4], len = dist(a, b);
+    let nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len;                 // a normal, turned to point inward
+    if ((c.x - (a.x + b.x) / 2) * nx + (c.y - (a.y + b.y) / 2) * ny < 0) { nx = -nx; ny = -ny; }
+    const R = Math.max(4, Math.round(len * 0.035)), pts = [];
+    reach = Math.max(reach, R);
+    for (let k = 1; k <= 14; k++) {
+      const t = k / 15, x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+      let best = 0, bs = 0;
+      for (let s = -R; s <= R; s++) {                    // how much brighter just inside than just outside
+        let inS = 0, outS = 0, n = 0;
+        for (let d = 1; d <= 6; d++) {
+          const li = lum(x + nx * (s + d), y + ny * (s + d)), lo = lum(x + nx * (s - d), y + ny * (s - d));
+          if (li == null || lo == null) { n = 0; break; }
+          inS += li; outS += lo; n++;
+        }
+        if (n && (inS - outS) / n > best) { best = (inS - outS) / n; bs = s; }
+      }
+      if (best > 35) pts.push({ t, s: bs });
+    }
+    if (pts.length < 6) return { a, b, nx, ny, s0: 0, s1: 0 };
+    const med = median(pts.map(p => p.s)), dev = median(pts.map(p => Math.abs(p.s - med))) || 1;
+    const ok = pts.filter(p => Math.abs(p.s - med) <= 2.5 * dev + 1);
+    const mt = ok.reduce((m, p) => m + p.t, 0) / ok.length, ms = ok.reduce((m, p) => m + p.s, 0) / ok.length;
+    const vt = ok.reduce((m, p) => m + (p.t - mt) ** 2, 0), slope = vt ? ok.reduce((m, p) => m + (p.t - mt) * (p.s - ms), 0) / vt : 0;
+    return { a, b, nx, ny, s0: ms - slope * mt, s1: ms + slope * (1 - mt) };
+  });
+  const line = (L) => [{ x: L.a.x + L.nx * L.s0, y: L.a.y + L.ny * L.s0 }, { x: L.b.x + L.nx * L.s1, y: L.b.y + L.ny * L.s1 }];
+  const meet = ([p1, p2], [p3, p4]) => {
+    const d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    if (Math.abs(d) < 1e-6) return null;
+    const t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / d;
+    return { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
+  };
+  const L = sides.map(line);
+  return q.map((p, i) => {                                 // corner i is where side i-1 meets side i
+    const n = meet(L[(i + 3) % 4], L[i]);
+    return n && dist(n, p) <= reach * 2 ? n : p;
+  });
+}
+// the 3x3 perspective map (8 numbers) that sends 4 points onto 4 others
+function homography(from, to) {
+  const A = [], B = [];
+  from.forEach(([u, v], i) => {
+    const [x, y] = to[i];
+    A.push([u, v, 1, 0, 0, 0, -u * x, -v * x]); B.push(x);
+    A.push([0, 0, 0, u, v, 1, -u * y, -v * y]); B.push(y);
+  });
+  for (let c = 0; c < 8; c++) {                            // solve A h = B (Gaussian elimination)
+    let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [B[c], B[p]] = [B[p], B[c]];
+    for (let r = 0; r < 8; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; B[r] -= f * B[c]; }
+  }
+  return B.map((b, i) => b / A[i][i]);
+}
 
 // one certificate cut out of the full-size photo (a little margin so no edge is lost)
 export function cropCertificate(img, box, pad = 0.02) {

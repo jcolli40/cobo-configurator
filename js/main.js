@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011604';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011604';
-import { wallTexture, wallSwatch } from './env.js?v=202611011604';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus } from './detect.js?v=202611011604';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011611';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011611';
+import { wallTexture, wallSwatch } from './env.js?v=202611011611';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011611';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2038,9 +2038,9 @@ async function scanWall(file, pre) {   // pre: a Gemini answer already in hand f
   return { found, img: tmp.img };
 }
 
-// v8: trim a photo added as one document down to the certificate in it (Gemini's box around the paper)
-function trimDoc(own, paper) {
-  const crop = cropCertificate(own.img, paper, 0.015);
+// v8: trim (and straighten) a photo added as one document down to the certificate in it
+function trimDoc(own, item) {
+  const crop = straightenCertificate(own.img, item);
   const t = document.createElement('canvas'), k = 88 / Math.max(crop.width, crop.height);
   t.width = Math.round(crop.width * k); t.height = Math.round(crop.height * k); t.getContext('2d').drawImage(crop, 0, 0, t.width, t.height);
   Object.assign(own, { img: crop, aspect: crop.width / crop.height, thumb: t.toDataURL('image/jpeg', 0.7), imgId: Math.random(), tex: null });
@@ -2048,7 +2048,7 @@ function trimDoc(own, paper) {
 }
 // v8: one certificate cut out of the wall photo (the paper inside any frame), as one of their own documents
 function wallDoc(img, f) {
-  const it = f.det, s = DOC_SIZES.find(x => x.id === f.size), crop = cropCertificate(img, it.paper, 0.01);
+  const it = f.det, s = DOC_SIZES.find(x => x.id === f.size), crop = straightenCertificate(img, it);   // (straightened when Gemini gave its corners)
   const t = document.createElement('canvas'), k = 88 / Math.max(crop.width, crop.height);
   t.width = Math.round(crop.width * k); t.height = Math.round(crop.height * k); t.getContext('2d').drawImage(crop, 0, 0, t.width, t.height);
   return { img: crop, aspect: crop.width / crop.height, name: f.name || 'Document', imgId: Math.random(), thumb: t.toDataURL('image/jpeg', 0.7),
@@ -2896,7 +2896,7 @@ function wireExtras() {
       const main = (whole.length ? whole : ai.items).reduce((m, it) => (share(it.paper) * (1 - off(it.paper)) > share(m.paper) * (1 - off(m.paper)) ? it : m));
       own.typeId = main.types[0]; own.types = main.types; own.confidence = main.confidence;
       own.name = CAT?.byId[main.types[0]]?.name || own.name;
-      if (!isPdf(file) && share(main.paper) < 0.9) trimDoc(own, main.paper);
+      if (!isPdf(file) && (share(main.paper) < 0.9 || main.quad)) trimDoc(own, main);   // (trim to it, and straighten it)
       docsKey = ''; refresh();
       return;
     }
