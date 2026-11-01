@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011842';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011842';
-import { wallTexture, wallSwatch } from './env.js?v=202611011842';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011842';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011846';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011846';
+import { wallTexture, wallSwatch } from './env.js?v=202611011846';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011846';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -996,6 +996,7 @@ function openOptSheet(sec) {
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
   $('#docBar')?.classList.toggle('on', sec.dataset.sec === 'certs');   // (the best-fit bar belongs to Your Documents)
+  if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   optOpen = { sec, body };
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1008,6 +1009,7 @@ function closeOptSheet(switching) {
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
   $('#docBar')?.classList.remove('on');
+  if ($('#docTabs')) $('#docTabs').hidden = true;
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
@@ -1653,6 +1655,23 @@ function wireSteps() {
   const bar = document.createElement('div'); bar.id = 'docBar'; bar.className = 'docbar';
   bar.append($('#certAdvice'), qn);
   $('#optSheet .side-h').after(bar);
+  if (V8) {                                                  // Your Documents: tabs, Use Your Own | Use Samples (the tab is the samples switch)
+    const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs'; dt.hidden = true; dt.setAttribute('role', 'tablist'); dt.setAttribute('aria-label', 'Your documents or samples');
+    dt.innerHTML = '<button type="button" role="tab" id="docTabOwn" data-dt="own" aria-controls="ownDocs">Use Your Own</button><button type="button" role="tab" id="docTabSamples" data-dt="samples" aria-controls="docSamples">Use Samples</button>';
+    $('#optSheet .side-h').after(dt);
+    or.hidden = true; $('.certcount').id = 'docSamples';
+    dt.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-dt]'); if (!b) return;
+      if (state.sheets !== (b.dataset.dt === 'samples')) $('#sheets').click();     // (the same switch as ever: samples show instead of their own documents)
+      else paintDocTabs();
+    });
+    dt.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      e.preventDefault(); const want = e.key === 'ArrowLeft' || e.key === 'Home' ? 'own' : 'samples';
+      if (state.sheets !== (want === 'samples')) $('#sheets').click();
+      $(want === 'own' ? '#docTabOwn' : '#docTabSamples').focus();
+    });
+  }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
   col.querySelector('.sec-t').textContent = 'Solid Colors'; col.querySelector('.sec-h .i use').setAttribute('href', '#i-palette');
@@ -2375,7 +2394,7 @@ function swayFrame() {
     // the part of the screen above the card is free (v6: measured, less the COBO icon on the card's edge; the board fills it)
     const cardEl = V6 && step() === 'intro' ? $('.t-intro .t-card') : null, card = cardEl?.getBoundingClientRect();
     const slide = cardEl ? new DOMMatrix(getComputedStyle(cardEl).transform).m42 : 0;   // (the card slides up as it appears: measure where it ends up)
-    const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - slide - 34 - r.top) / r.height)) : 0.42;
+    const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - slide - 14 - r.top) / r.height)) : 0.42;
     const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * (card?.height ? 1.14 : 1.35) + 2;
     const lift = card?.height ? 0.015 : 0;                   // (the board rides a little high in the free space, clear of the card)
     return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room + 2 * lift), 0.5), d };
@@ -3076,8 +3095,15 @@ function openLightbox(d, i) {
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg); dlg.showModal();
 }
+// v8: Your Documents shows one of two tabs, picked by the samples switch (their own documents are kept while samples show)
+function paintDocTabs() {
+  const s = !!state.sheets;
+  $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
+  for (const b of document.querySelectorAll('#docTabs [data-dt]')) { const on = (b.dataset.dt === 'samples') === s; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
+}
 function paintExtras() {
   paintDocs();
+  if (V8) paintDocTabs();
   if (V8) { $('#ownDocs').classList.toggle('dim', !!state.myCerts.length && state.sheets); paintState(); }
   // how many certificates (or: which of your documents) -> advice + highlight the best-fit size tile
   const own = showOwn() ? state.myCerts.length : 0, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)

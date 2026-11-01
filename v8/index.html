@@ -760,9 +760,9 @@
   [data-v6] :is(.p-head, #popStrip, #lines, #autoBtn, .autorow, .sec[data-sec="mywall"], #cta small, .t-bar, .t-list) { display: none !important; }
   /* v6 start card: the COBO icon on its top edge, the title, then two big tiles side by side (computers: left aligned) */
   [data-v6] .t-card .g-kick { display: none; }
-  [data-v6] .t-card { padding-top: 42px; }
+  [data-v6] .t-card { padding-top: 8px; }
   .t-logo { display: none; }
-  [data-v6] .t-logo { display: grid; place-items: center; position: absolute; top: -30px; left: 26px; width: 60px; height: 60px; border-radius: 50%; background: #fff; box-shadow: 0 8px 22px rgba(0, 0, 0, .28); }
+  [data-v6] .t-logo { display: grid; place-items: center; justify-self: start; margin-bottom: -4px; }   /* (just the icon, in the flow of the text: no circle) */
   [data-v6] .t-logo img { height: 38px; width: auto; }
   [data-v6] .t-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; justify-self: stretch; }
   [data-v6] .t-acts > :is(.t-go, .t-skip) { display: grid; justify-items: center; align-content: center; gap: 10px; min-height: 112px; padding: 16px 10px; border-radius: 18px; font-size: 16px; font-weight: 700; line-height: 1.2; text-align: center; white-space: normal; }
@@ -780,10 +780,9 @@
   [data-v6] .t-sub { font-size: 17.5px; line-height: 1.4; color: #3d3d45; }
   /* the start card: white, dark text, navy Start button */
   [data-v6] .t-intro { background: none; }
-  [data-v6] .t-card { background: #fff; color: var(--ink); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 20px 56px rgba(15, 25, 45, .2); }
+  [data-v6] .t-card { background: none; color: var(--ink); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }   /* (the text sits right on the background) */
   [data-v6] .t-card .t-go { background: var(--accent); color: #fff; box-shadow: 0 8px 22px rgba(27, 58, 107, .3); }
   [data-v6] .t-card .t-go:hover { background: #24497f; }
-  [data-v6] .t-logo { box-shadow: 0 6px 18px rgba(15, 25, 45, .18), 0 0 0 1px #e6e8ee; }
   @media (min-width: 861px) { [data-v6] .t-card { width: min(387px, calc(100% - 32px)); } }   /* 10% narrower than the old 430 */
   /* "Continue where you left off": a red bubble just under the card (the card moves up to make room) */
   .t-cont { display: none; }
@@ -796,11 +795,10 @@
   @media (min-width: 861px) { [data-v6] .t-card { padding-left: 38px; padding-right: 38px; } }   /* (3% of the card, more room at the sides) */
   /* phones: a shorter start card, so the board turning above it can be bigger */
   @media (max-width: 860px) {
-    [data-v6] .t-card { padding: 36px calc(16px + 3%) 12px; gap: 8px; }
+    [data-v6] .t-card { padding: 4px calc(16px + 3%) 12px; gap: 8px; }
     [data-v6] .t-sub { margin: 0 0 15px; font-size: 15px; line-height: 1.35; }
     [data-v6] .t-acts > .t-go { min-height: 48px; padding: 8px 24px; font-size: 17px; }
     [data-v6] .t-acts > .t-go { width: 60%; min-width: 180px; justify-self: center; }   /* (a narrower Start button, centered) */
-    [data-v6] .t-logo { top: -26px; width: 52px; height: 52px; }
     [data-v6] .t-logo img { height: 33px; }
     [data-v6] .t-card.cont { bottom: 66px; }
   }
@@ -857,6 +855,9 @@
   [data-v6] .stepnext[hidden] { display: none; }
   /* Board style: one panel, tabbed Solid Colors | Textures & Patterns */
   .styletabs { display: none; }
+  [data-v6] .styletabs[hidden] { display: none; }
+  [data-v8] .side :is(.owndocs, .certcount)[hidden] { display: none !important; }
+  [data-v8] .certcount .labrow { display: none; }   /* (the Use Samples tab is the switch) */
   [data-v6] .styletabs { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--line); }
   [data-v6] .styletabs button { flex: 1 1 auto; white-space: nowrap; padding: 12px 8px 10px; border: 0; border-bottom: 3px solid transparent; background: none; font: inherit; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; }
   [data-v6] .styletabs button[data-tab="colors"] { flex: 0 1 auto; padding-left: 14px; padding-right: 14px; }
@@ -1262,7 +1263,7 @@
     [data-v6] .t-cont { left: 50%; transform: translateX(-50%); white-space: nowrap; animation-name: tInC; }
     @keyframes tInC { from { opacity: 0; transform: translate(-50%, 16px); } }
     [data-v6] .t-card.cont { bottom: 72px; }
-    [data-v6] .t-logo { left: 50%; transform: translateX(-50%); width: 56px; height: 56px; top: -28px; }
+    [data-v6] .t-logo { justify-self: center; }
     [data-v6] .t-logo img { height: 34px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
@@ -1854,6 +1855,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011842" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011846" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
