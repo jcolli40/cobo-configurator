@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011741';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011741';
-import { wallTexture, wallSwatch } from './env.js?v=202611011741';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011741';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011747';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011747';
+import { wallTexture, wallSwatch } from './env.js?v=202611011747';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011747';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3212,7 +3212,7 @@ function renderPicker() {
   const groups = [
     { key: 'type', label: 'Design type', opts: LAMINATE.types.map(n => ({ name: n })) },
     { key: 'color', label: 'Color', opts: LAMINATE.colors },
-    { key: 'shade', label: 'Shade', opts: LAMINATE.shades.map(n => ({ name: n })) },
+    ...(V6 ? [] : [{ key: 'shade', label: 'Shade', opts: LAMINATE.shades.map(n => ({ name: n })) }]),   // (v6: no Shade)
     ...(wood ? [{ key: 'cut', label: 'Cut', opts: LAMINATE.cuts.map(n => ({ name: n })) },
                 { key: 'match', label: 'Match', opts: LAMINATE.matches.map(n => ({ name: n })) }] : []),
   ];
@@ -3289,7 +3289,6 @@ function setStyleTab(t) {
   styleTab = t;
   const tex = t === 'tex';
   $('#tabColors').hidden = tex; $('#tabTex').hidden = !tex;
-  $('#lamPanel .side-h img').hidden = !tex;                      // (the Wilsonart logo goes with the textures)
   for (const b of document.querySelectorAll('.styletabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
   if (!$('#lamPanel').hidden) { if (tex && !phone.matches) $('#lamSearch').focus(); updateStage(false); }
 }
@@ -3298,11 +3297,13 @@ function wireStyle() {
   colorsBody.hidden = false;
   const tex = document.createElement('div'); tex.id = 'tabTex'; tex.setAttribute('role', 'tabpanel'); tex.setAttribute('aria-labelledby', 'tabBtnTex');
   [...pnl.children].filter(c => c !== head).forEach(c => tex.append(c));
+  const brand = document.createElement('div'); brand.className = 'wa-brand'; brand.append(head.querySelector('img')); tex.prepend(brand);   // (the Wilsonart logo sits under the tab)
+  const srow = tex.querySelector('.side-search'); srow.insertBefore(tex.querySelector('#lamFilters'), tex.querySelector('#lamCols'));   // (Design type and Color, left of the 1 / 2 / 3 per row buttons)
   const cols = document.createElement('div'); cols.id = 'tabColors'; cols.className = 'side-body'; cols.setAttribute('role', 'tabpanel'); cols.setAttribute('aria-labelledby', 'tabBtnColors');
   cols.append(colorsBody);
   const tabs = document.createElement('div'); tabs.className = 'styletabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Board style');
   tabs.innerHTML = '<button type="button" role="tab" id="tabBtnColors" data-tab="colors" aria-controls="tabColors">Solid Colors</button>'
-    + '<button type="button" role="tab" id="tabBtnTex" data-tab="tex" aria-controls="tabTex">Textures &amp; Patterns</button>';
+    + '<button type="button" role="tab" id="tabBtnTex" data-tab="tex" aria-controls="tabTex"><span class="tabup" aria-hidden="true" title="Costs extra">+$</span>Textures &amp; Patterns<span class="vh"> (costs extra)</span></button>';
   head.after(tabs); tabs.after(cols, tex);
   $('#lamTitle').textContent = 'Board Style'; head.querySelector('.x').setAttribute('aria-label', 'Close');
   tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStyleTab(b.dataset.tab); });
