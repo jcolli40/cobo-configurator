@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011611';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011611';
-import { wallTexture, wallSwatch } from './env.js?v=202611011611';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011611';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011619';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011619';
+import { wallTexture, wallSwatch } from './env.js?v=202611011619';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011619';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1572,8 +1572,8 @@ function wireSteps() {
   if (V8) {                                                  // Snap your wall: its own box above "Add your own"
     const box = document.createElement('div'), or2 = document.createElement('p');
     box.className = 'snapbox';
-    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-spark"/></svg><span>Your whole wall, in one photo</span></div>'
-      + '<p class="help">Take one photo of all the certificates on your wall. We find each one, name it, guess its size and size a board to fit.</p>';
+    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-spark"/></svg><span>All your certificates, in one photo</span></div>'
+      + '<p class="help">On your wall, or laid out on a table: take one photo of them all. We find each one, name it, straighten it and size a board to fit.</p>';
     const sr = $('.scanrow'), srHelp = sr.nextElementSibling, res = $('#scanResult');   // (grab them before they move: a box not on the page can't be searched)
     sr.querySelector('.upload').lastChild.textContent = 'Snap your wall';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
@@ -1581,7 +1581,7 @@ function wireSteps() {
     $('#certFiles').closest('label').lastChild.textContent = 'Photos or PDFs';
     $('#certFiles').accept = 'image/*,application/pdf,.pdf';
     $('#scanFile').closest('label').lastChild.textContent = 'or choose one from your photos';
-    own.querySelector('.opt + .help').textContent = 'Snap your whole wall in one photo, or add your documents one at a time.';
+    own.querySelector('.opt + .help').textContent = 'Snap them all in one photo, or add them one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     box.append(sr, res);
@@ -1594,7 +1594,7 @@ function wireSteps() {
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
-    $('#certCam').closest('.row').insertAdjacentHTML('beforebegin', '<p class="help onebyone">One at a time: a close photo of each, or the PDF if you have one.</p>');
+    $('#certCam').closest('.row').insertAdjacentHTML('beforebegin', '<p class="help onebyone">One at a time: a close photo of each (handy for one that isn\'t up yet), or the PDF if you have one.</p>');
     $('#certClear').textContent = 'Remove all';
     $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
@@ -2872,7 +2872,7 @@ function wireExtras() {
       t.width = Math.round(own.img.width * k); t.height = Math.round(own.img.height * k);
       t.getContext('2d').drawImage(own.img, 0, 0, t.width, t.height); own.thumb = t.toDataURL('image/jpeg', 0.7);
       state.myCerts.push(own);
-      if (V8) checkWallPhoto(own, f, files.length === 1 && !isPdf(f));
+      if (V8) readOneDoc(own, f);
       if (own.pages > 1) toast(`Added page 1 of ${own.pages} from ${f.name}.`);
     }
     if (V8) { state.sheets = false; $('#sheets').checked = false; }   // (their own documents show, not samples)
@@ -2880,40 +2880,48 @@ function wireExtras() {
     refresh();
     if (lastDocs?.missing.length) toast('Some documents don\'t fit on this board yet. See the suggestion under Size.');
   };
-  // v8: Gemini reads each photo added as one document (runs in the background; the photo is already on the board):
-  // it names it, trims the photo to just that certificate (a close photo often catches the edge of the one beside it),
-  // and if the photo really shows 2 or more whole certificates, offers to read it as a wall instead.
-  async function checkWallPhoto(own, file, wallCheck) {
-    if (wallCheck) $('#wallHint')?.remove();
+  // v8: Gemini reads each photo added (or retaken) as one document, in the background (the photo is already on the
+  // board): it names it, and trims and straightens the photo to just that certificate (a close photo often catches the
+  // edge of the one beside it). keep: the size it had before a retake, kept unless the new shape clearly differs.
+  async function readOneDoc(own, file, keep) {
     let ai; try { ai = await detectCertificates(own.img); } catch { return; }
     if (!state.myCerts.includes(own) || !ai.items.length) return;
     if (ai.location) guessState(ai.location, 'photo');
     const W = own.img.width, H = own.img.height, share = (b) => (b.w * b.h) / (W * H);
     const whole = ai.items.filter(it => it.closer_photo !== 'cut_off' && share(it.paper) > 0.008);   // (not ones cut off at the edge, or specks; on a wall photo each one is ~1-5%)
-    if (!(wallCheck && whole.length >= 2)) {
-      // the one they meant: the biggest whole certificate, nearest the middle
-      const off = (b) => Math.hypot((b.x + b.w / 2) / W - 0.5, (b.y + b.h / 2) / H - 0.5);
-      const main = (whole.length ? whole : ai.items).reduce((m, it) => (share(it.paper) * (1 - off(it.paper)) > share(m.paper) * (1 - off(m.paper)) ? it : m));
-      own.typeId = main.types[0]; own.types = main.types; own.confidence = main.confidence;
-      own.name = CAT?.byId[main.types[0]]?.name || own.name;
-      if (!isPdf(file) && (share(main.paper) < 0.9 || main.quad)) trimDoc(own, main);   // (trim to it, and straighten it)
-      docsKey = ''; refresh();
-      return;
-    }
-    const n = whole.length, hint = document.createElement('div');
-    hint.id = 'wallHint'; hint.className = 'wallhint'; hint.setAttribute('role', 'status');
-    hint.innerHTML = `<p>This photo shows <b>${n} certificates</b>. Read it as your whole wall instead, so each one gets its own place on the board?</p>`
-      + '<div class="row"><button type="button" class="primary" data-wh="wall">Read it as a wall</button><button type="button" class="link" data-wh="keep">Keep as one document</button></div>';
-    $('#docList').after(hint);
-    hint.addEventListener('click', async (e) => {
-      const b = e.target.closest('[data-wh]'); if (!b) return;
-      hint.remove();
-      if (b.dataset.wh !== 'wall') return;
-      state.myCerts = state.myCerts.filter(d => d !== own); docsKey = ''; refresh();
-      $('#optBody').scrollTop = 0;
-      await scanWall(file, ai);
-    });
+    // the one they meant: the biggest whole certificate, nearest the middle
+    const off = (b) => Math.hypot((b.x + b.w / 2) / W - 0.5, (b.y + b.h / 2) / H - 0.5);
+    const main = (whole.length ? whole : ai.items).reduce((m, it) => (share(it.paper) * (1 - off(it.paper)) > share(m.paper) * (1 - off(m.paper)) ? it : m));
+    own.typeId = main.types[0]; own.types = main.types; own.confidence = main.confidence;
+    own.name = CAT?.byId[main.types[0]]?.name || own.name;
+    if (!isPdf(file) && (share(main.paper) < 0.9 || main.quad)) trimDoc(own, main);   // (trim to it, and straighten it)
+    if (keep) keepSize(own, keep);
+    docsKey = ''; refresh();
   }
+  // a retake keeps the document's size (a poster stays a poster: a close photo has no ruler) unless the shape changed
+  function keepSize(d, keep) {
+    const [w, h] = docDims({ ...d, ...keep }), was = Math.max(w, h) / Math.min(w, h), now = Math.max(d.aspect, 1 / d.aspect);
+    if (Math.abs(now - was) / was < 0.1) Object.assign(d, keep, { turn: d.aspect > 1 });
+  }
+  // Retake: tap a document's picture to take or choose a new photo of just that one
+  let retakeIdx = -1;
+  const retakeInput = Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*,application/pdf,.pdf', hidden: true });
+  document.body.append(retakeInput);
+  retakeInput.addEventListener('change', async () => {
+    const f = retakeInput.files[0], d = state.myCerts[retakeIdx]; retakeInput.value = '';
+    if (!f || !d) return;
+    const fresh = {};
+    try { await loadArt(fresh, f); } catch { return toast(`Couldn't read ${f.name}`); }
+    const keep = { size: d.size, cw: d.cw, ch: d.ch };
+    guessDoc(fresh);
+    const t = document.createElement('canvas'), k = 88 / Math.max(fresh.img.width, fresh.img.height);
+    t.width = Math.round(fresh.img.width * k); t.height = Math.round(fresh.img.height * k); t.getContext('2d').drawImage(fresh.img, 0, 0, t.width, t.height);
+    Object.assign(d, { img: fresh.img, aspect: fresh.aspect, name: d.name, imgId: Math.random(), thumb: t.toDataURL('image/jpeg', 0.7), tex: null, pages: fresh.pages, ok: false, px: null, py: null, turn: fresh.turn });
+    keepSize(d, keep);
+    docsKey = ''; refresh();
+    toast('Photo replaced. Reading it…');
+    readOneDoc(d, f, keep);
+  });
   for (const id of ['#certCam', '#certFiles']) $(id).addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
   $('#certClear').addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
   $('#docAuto').addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
@@ -2932,8 +2940,9 @@ function wireExtras() {
     d.px = d.py = null; docsKey = ''; refresh();
   });
   list.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;
+    const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;   // (v8: the picture is Retake)
     const i = +li.dataset.i;
+    if (b.dataset.act === 'retake') { retakeIdx = i; return retakeInput.click(); }
     if (b.dataset.act === 'turn') { state.myCerts[i].turn = !state.myCerts[i].turn; state.myCerts[i].px = state.myCerts[i].py = null; }
     if (b.dataset.act === 'remove') state.myCerts.splice(i, 1);
     docsKey = ''; refresh();
@@ -2966,7 +2975,7 @@ function paintDocs8(docs, miss, opts) {
     + `<option value="other">${CAT.other.name}</option>` : '';
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc doc8${miss.has(i) ? ' miss' : ''}${d.ok ? ' ok' : ''}" data-i="${i}">
       <input type="checkbox" class="okbox" data-ok aria-label="Document ${i + 1} is right"${d.ok ? ' checked' : ''}>
-      <img alt="">
+      <button type="button" class="retake" data-act="retake" title="Retake this photo" aria-label="Retake the photo of document ${i + 1}"><img alt=""><span class="rt"><svg class="i"><use href="#i-camera"/></svg>Retake</span></button>
       <span class="dfields">${types ? `<select data-type aria-label="Which document">${types}</select>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select></span>
       <button class="ib" type="button" data-act="turn" title="Turn sideways" aria-label="Turn sideways"><svg class="i"><use href="#i-rotate"/></svg></button>
       <button class="ib" type="button" data-act="remove" title="Remove" aria-label="Remove"><svg class="i"><use href="#i-x"/></svg></button>

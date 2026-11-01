@@ -12,7 +12,8 @@ function makeDetector(CATALOG, cfg) {
   const ISSUES = ['none', 'glare', 'too_small', 'blurry', 'cut_off', 'blocked'];
   const IDS = [...CATALOG.types.map(t => t.id), CATALOG.other.id];
 
-  const INSTRUCTIONS = `You look at a photo of a wall in a restaurant or other business and find every compliance document on it:
+  const INSTRUCTIONS = `You look at a photo of a wall in a restaurant or other business (or of documents laid out on a table or other
+surface) and find every compliance document in it:
 permits, licenses, certificates, inspection cards, required posters, notices, compliance signs and tags.
 
 For each one, return:
@@ -116,7 +117,7 @@ ${CATALOG.types.map(t => `- ${t.id}: ${t.name}. Also called: ${t.aka.join('; ')}
         store: false,                                   // don't keep customer photos on Google's side
         system_instruction: INSTRUCTIONS,
         input: [
-          { type: 'text', text: 'Find the compliance documents on this wall. Return JSON only.' },
+          { type: 'text', text: 'Find the compliance documents in this photo. Return JSON only.' },
           { type: 'image', mime_type: mime, data: image, resolution: settings.resolution },
         ],
         generation_config: { thinking_level: settings.thinking },

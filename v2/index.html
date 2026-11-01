@@ -570,6 +570,11 @@
   [data-v8] .dlhead .link[hidden] { display: none; }
   [data-v8] .doc8 { grid-template-columns: 22px 44px minmax(0, 1fr) auto auto; }
   [data-v8] .doc8 img { grid-row: auto; }
+  [data-v8] .doc8 .retake { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; }
+  [data-v8] .doc8 .retake img { display: block; }
+  [data-v8] .doc8 .retake .rt { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 2px; padding: 1px 0; border-radius: 0 0 6px 6px; background: rgba(27, 58, 107, .88); color: #fff; font-size: 8.5px; font-weight: 700; }
+  [data-v8] .doc8 .retake .rt .i { width: 9px; height: 9px; }
+  [data-v8] .doc8 .retake:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   [data-v8] .doc8 .okbox { width: 20px; height: 20px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
   [data-v8] .doc8.ok { border-color: #b9dcc5; background: #f4fbf6; }
   [data-v8] .doc8 .dfields { display: grid; gap: 4px; min-width: 0; }
@@ -1744,6 +1749,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011611" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011619" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
