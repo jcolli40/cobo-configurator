@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011509';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011509';
-import { wallTexture, wallSwatch } from './env.js?v=202611011509';
-import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011509';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011517';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011517';
+import { wallTexture, wallSwatch } from './env.js?v=202611011517';
+import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011517';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1995,9 +1995,9 @@ async function scanWall(file, pre) {   // pre: a Gemini answer already in hand f
   const names = ai && found.some(f => f.name) ? ` (${found.map(f => f.name || 'not sure').join(', ')})` : '';
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
   $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`;
-  state.myCerts = found.map((f, i) => {
+  state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
-    const d = { sample: true, title: f.name || SHEETS.titles[i % SHEETS.titles.length], size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
+    const d = { sample: true, title: f.name || (ai ? 'Compliance Document' : SHEETS.titles[i % SHEETS.titles.length]), size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
     d.thumb = certificateTexture(f.turn ? s.h : s.w, f.turn ? s.w : s.h, d.title).image.toDataURL('image/jpeg', 0.5);
     return d;
   });
