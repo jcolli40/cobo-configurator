@@ -871,12 +871,17 @@
   [data-v6] #lamSelRow #grainBtn .i { width: 22px; height: 22px; }
   [data-v6] #lamSelRow #grainBtn:hover { background: rgba(27, 58, 107, .08); }
   [data-v6] #lamSelRow #grainBtn[aria-pressed="true"] { background: #cfe0f7; color: var(--accent); }
-  [data-v6] .wa-brand { position: relative; }
-  [data-v6] .wa-ext { position: absolute; right: 16px; top: 50%; margin-top: 5px; transform: translateY(-50%); display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #b4b7bf; }
-  [data-v6] .wa-ext:hover { color: var(--accent); background: var(--tint); }
-  [data-v6] .wa-ext:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 1px; color: var(--accent); }
-  [data-v6] .wa-ext .i { width: 15px; height: 15px; }
-  [data-v6] .wa-brand { padding: 19px 16px 3px; text-align: center; }
+  [data-v6] .wa-brand { position: relative; display: flex; align-items: center; gap: 12px; padding: 19px 16px 3px; }
+  [data-v6] .wa-brand #lamFilters { flex: 1; min-width: 0; justify-content: flex-end; position: static; }   /* (the open list spans the whole row) */
+  [data-v6] .wa-brand details.fgroup { flex: 1 1 88px; max-width: 150px; }
+  [data-v6] .side-search { display: none; }
+  /* swatches per row (header): the solid colors follow it too */
+  [data-v6] .side-h .seg.cols { height: 36px; flex: none; }
+  [data-v6] #faceSw { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+  [data-v6] #faceSw[data-cols="1"] .swc .sw { width: 76px; height: 76px; }
+  [data-v6] #faceSw[data-cols="2"] .swc .sw { width: 60px; height: 60px; }
+  [data-v6] #faceSw[data-cols="3"] .swc .sw { width: 48px; height: 48px; }
+  [data-v6] #faceSw[data-cols="1"] .swc span { font-size: 13px; }
   [data-v6] #tabTex .rowsb { margin-top: 3px; }
   /* 1 / 2 / 3 per row: simple line icons on white, like the filter dropdowns beside them */
   [data-v6] .seg.cols { background: var(--card); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; gap: 0; height: 38px; box-sizing: border-box; overflow: hidden; }
@@ -886,7 +891,7 @@
   [data-v6] .seg.cols button:hover { background: var(--hover); color: var(--ink); }
   [data-v6] .seg.cols button.on { background: var(--tint); color: var(--accent); box-shadow: none; }
   [data-v6] .seg.cols svg { fill: none; stroke: currentColor; stroke-width: 1.3; }
-  [data-v6] .wa-brand img { display: inline-block; height: 22px; width: auto; }
+  [data-v6] .wa-brand img { display: block; flex: none; height: 22px; width: auto; }
   [data-v6] .side-search { position: relative; align-items: flex-start; }
   [data-v6] .side-search .sbox { display: none; }
   [data-v6] .side-search .ffilters { flex: 1; min-width: 0; position: static; }
@@ -1841,6 +1846,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011759" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011809" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

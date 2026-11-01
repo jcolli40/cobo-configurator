@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011759';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011759';
-import { wallTexture, wallSwatch } from './env.js?v=202611011759';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011759';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011809';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011809';
+import { wallTexture, wallSwatch } from './env.js?v=202611011809';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011809';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3298,10 +3298,10 @@ function wireStyle() {
   const tex = document.createElement('div'); tex.id = 'tabTex'; tex.setAttribute('role', 'tabpanel'); tex.setAttribute('aria-labelledby', 'tabBtnTex');
   [...pnl.children].filter(c => c !== head).forEach(c => tex.append(c));
   const brand = document.createElement('div'); brand.className = 'wa-brand'; brand.append(head.querySelector('img')); tex.prepend(brand);
-  brand.insertAdjacentHTML('beforeend', '<a class="wa-ext" href="https://www.wilsonart.com/laminate" target="_blank" rel="noopener noreferrer" title="See the full Wilsonart catalog" aria-label="See the full Wilsonart catalog (opens wilsonart.com in a new tab)"><svg class="i" aria-hidden="true"><use href="#i-ext"/></svg></a>');   // (the Wilsonart logo sits under the tab)
+  brand.append(tex.querySelector('#lamFilters'));                 // (the Type and Color dropdowns share the logo's line)
+  head.insertBefore(tex.querySelector('#lamCols'), head.querySelector('.x'));   // (swatches per row: in the header, for either tab)
   const gb = tex.querySelector('#grainBtn'); gb.lastChild.textContent = 'Rotate'; gb.setAttribute('aria-label', 'Rotate the texture 90 degrees'); gb.title = 'Rotate 90°';   // (just the icon, with a small label)
   tex.append(tex.querySelector('#lamSelRow'));                   // (the selected swatch: stuck to the bottom of the panel)
-  const srow = tex.querySelector('.side-search'); srow.insertBefore(tex.querySelector('#lamFilters'), tex.querySelector('#lamCols'));   // (Design type and Color, left of the 1 / 2 / 3 per row buttons)
   const cols = document.createElement('div'); cols.id = 'tabColors'; cols.className = 'side-body'; cols.setAttribute('role', 'tabpanel'); cols.setAttribute('aria-labelledby', 'tabBtnColors');
   cols.append(colorsBody);
   const tabs = document.createElement('div'); tabs.className = 'styletabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Board style');
@@ -3329,6 +3329,7 @@ function selectLam(item) {
 function setCols(n) {
   $('#lamGrid').style.setProperty('--cols', n);
   $('#lamGrid').dataset.cols = n;
+  if ($('#faceSw')) { $('#faceSw').style.setProperty('--cols', n); $('#faceSw').dataset.cols = n; }   // (v6: the solid colors follow it too)
   document.querySelectorAll('#lamCols [data-cols]').forEach(b => { b.classList.toggle('on', +b.dataset.cols === n); b.setAttribute('aria-pressed', +b.dataset.cols === n); });
   try { localStorage.setItem('cobo.lamCols', n); } catch { /* storage blocked: fine */ }
 }
