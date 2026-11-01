@@ -877,10 +877,12 @@
   /* swatches per row (header): the solid colors follow it too */
   [data-v6] .side-h .seg.cols { height: 36px; flex: none; }
   [data-v6] #faceSw { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
-  [data-v6] #faceSw[data-cols="1"] .swc .sw { width: 76px; height: 76px; }
-  [data-v6] #faceSw[data-cols="2"] .swc .sw { width: 60px; height: 60px; }
-  [data-v6] #faceSw[data-cols="3"] .swc .sw { width: 48px; height: 48px; }
-  [data-v6] #faceSw[data-cols="1"] .swc span { font-size: 13px; }
+  /* solid colors: the same size and spacing as the texture cards (square swatch fills its column, name under it) */
+  [data-v6] #faceSw { gap: 10px; padding: 0; border: 0; border-radius: 0; }
+  [data-v6] #faceSw .swc { justify-items: stretch; gap: 3px; padding: 6.5px; text-align: left; }
+  [data-v6] #faceSw .swc .sw { width: 100%; height: auto; aspect-ratio: 1; border-radius: 7px; }
+  [data-v6] #faceSw .swc span { font-size: 12.5px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: left; }
+  [data-v6] #faceSw[data-cols="1"] .swc span { font-size: 15px; }
   [data-v6] #tabTex .rowsb { margin-top: 3px; }
   /* 1 / 2 / 3 per row: simple line icons on white, like the filter dropdowns beside them */
   [data-v6] .seg.cols { background: var(--card); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; gap: 0; height: 38px; box-sizing: border-box; overflow: hidden; }
