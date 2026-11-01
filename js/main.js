@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011717';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011717';
-import { wallTexture, wallSwatch } from './env.js?v=202611011717';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011717';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011729';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011729';
+import { wallTexture, wallSwatch } from './env.js?v=202611011729';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011729';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1577,11 +1577,9 @@ function wireSteps() {
     const sr = $('.scanrow'), srHelp = sr.nextElementSibling, res = $('#scanResult');   // (grab them before they move: a box not on the page can't be searched)
     sr.querySelector('.upload').lastChild.textContent = 'Snap your docs';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
-    $('#certCam').closest('label').lastChild.textContent = 'Add more';
-    $('#certFiles').closest('label').lastChild.textContent = 'Upload Photos or PDFs';
-    $('#certFiles').accept = 'image/*,application/pdf,.pdf';
+    $('#certCam').closest('.row').remove();                            // (Snap your docs and Upload Files do it all, one at a time or the whole wall)
     $('#scanFile').closest('label').lastChild.textContent = 'Upload Files';
-    $('#scanFile').accept = 'image/*,application/pdf,.pdf';          // (no camera forced: phones offer Photo Library, Take Photo and Files)
+    $('#scanFile').accept = 'image/*,application/pdf,.pdf'; $('#scanFile').multiple = true;          // (no camera forced: phones offer Photo Library, Take Photo and Files)
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
@@ -1598,7 +1596,7 @@ function wireSteps() {
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
-    $('#certClear').remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
+    $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
     $('#stateOk').addEventListener('click', () => {
@@ -1982,7 +1980,8 @@ function packFresh(W, H, docs) {
   return P;
 }
 // "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
-async function scanWall(file, pre) {   // pre: a Gemini answer already in hand for this photo (v8)
+async function scanWall(file, pre, add) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list
+  const keepOld = add ? state.myCerts.slice() : [];
   const tmp = {};
   try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
   if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); }
@@ -2032,6 +2031,7 @@ async function scanWall(file, pre) {   // pre: a Gemini answer already in hand f
     return d;
   });
   if (V8 && ai) state.myCerts = found.map(f => wallDoc(tmp.img, f));   // v8: their real certificates, cut out of the photo
+  if (keepOld.length) state.myCerts = [...keepOld, ...state.myCerts];   // (added to the list, ticks and edits kept)
   state.sheets = !(V8 && ai); $('#sheets').checked = state.sheets;   // (v8: their own documents, so samples off)
   docsKey = '';
   useBestFit();
@@ -2923,12 +2923,21 @@ function wireExtras() {
     toast('Photo replaced. Reading it…');
     readOneDoc(d, f, keep);
   });
-  for (const id of ['#certCam', '#certFiles']) $(id).addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
+  for (const id of ['#certCam', '#certFiles']) $(id)?.addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
   $('#certClear')?.addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
   $('#docAuto')?.addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
   $('#docDemo')?.addEventListener('click', loadExampleDocs);
   $('#scanDemo')?.addEventListener('click', scanExample);
-  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) await scanWall(f); });
+  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => {
+    const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
+    let add = false;
+    if (V8 && state.myCerts.length) {                      // already on the list: add to it (the default), or start over
+      const n = state.myCerts.length, pick = await askAddOrNew(`You already have ${n} document${n === 1 ? '' : 's'} on your list.`);
+      if (!pick) return;
+      add = pick === 'add';
+    }
+    for (const f of fs) { await scanWall(f, null, add); add = true; }   // (several files: each one is added after the first)
+  });
   const list = $('#docList');
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
@@ -3009,6 +3018,21 @@ function askSure(question, okLabel) {
     dlg.querySelector('.sure-no').addEventListener('click', () => dlg.close());
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });       // (a tap on the dimmed part cancels)
     dlg.addEventListener('close', () => { dlg.remove(); resolve(yes); });
+    document.body.append(dlg); dlg.showModal();
+  });
+}
+// v8: a second Snap / Upload: add to the list (first, the default) or start over; Esc or a tap outside cancels
+function askAddOrNew(question) {
+  return new Promise((resolve) => {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'sure'; dlg.setAttribute('aria-labelledby', 'sureQ');
+    dlg.innerHTML = `<p id="sureQ">${escHtml(question)}</p><p class="sure-s">Add the new ones to your list, or start over with just these?</p>`
+      + '<div class="sure-b"><button type="button" class="sure-add" autofocus>Add to list</button><button type="button" class="sure-no">Start over</button></div>';
+    let pick = null;
+    dlg.querySelector('.sure-add').addEventListener('click', () => { pick = 'add'; dlg.close(); });
+    dlg.querySelector('.sure-no').addEventListener('click', () => { pick = 'new'; dlg.close(); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(pick); });
     document.body.append(dlg); dlg.showModal();
   });
 }
@@ -3094,7 +3118,7 @@ function paintExtras() {
   $('#certOwnInfo').hidden = !own;
   if (own) {
     const shown = lastDocs?.places.length || 0, miss = own - shown;
-    $('#certOwnInfo').textContent = `${shown} of your ${own} document${own === 1 ? '' : 's'} on the board${miss ? `; ${miss} won't fit at this size` : ''}. Upload more to add them.`;
+    $('#certOwnInfo').textContent = `${shown} of your ${own} document${own === 1 ? '' : 's'} on the board${miss ? `; ${miss} won't fit at this size` : ''}. Snap or upload more to add them.`;
   }
   if (V6) {                                          // a size mix that doesn't all fit: say so
     const miss = !own && docs ? lastDocs?.missing.length || 0 : 0;
