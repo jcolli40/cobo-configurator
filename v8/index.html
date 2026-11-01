@@ -545,9 +545,8 @@
   [data-layout="v5"] .certcount .scanrow, [data-layout="v5"] .certcount .scanrow + .help { display: none; }
   /* v8: Snap your wall (the photo row + the result moved out of the sample box by main.js) */
   [data-v8] .snapbox { display: grid; gap: 8px; }
-  [data-v8] .side .snapbox { padding: 14px; border-radius: 16px; background: var(--tint); }
-  [data-v8] .side .snapbox > .opt:first-of-type { font-size: 15px; font-weight: 750; color: var(--accent); }
-  [data-v8] .side .snapbox > .opt:first-of-type .i { color: var(--accent); }
+  [data-v8] .side .snapbox { padding: 0; background: none; }
+  [data-v8] .side .side-body .owndocs { background: var(--tint); }   /* Add your own: the pale blue card */
   [data-v8] .side .snapbox .help { margin-top: -6px; }
   [data-v8] .side .snapbox .upload { flex: 1 1 100%; justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
   [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
@@ -568,20 +567,54 @@
   [data-v8] .dlhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 700; color: var(--accent); }
   [data-v8] .dlhead[hidden] { display: none; }
   [data-v8] .dlhead .link[hidden] { display: none; }
-  [data-v8] .doc8 { grid-template-columns: 22px 44px minmax(0, 1fr) auto auto; }
-  [data-v8] .doc8 img { grid-row: auto; }
-  [data-v8] .doc8 .retake { position: relative; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; }
-  [data-v8] .doc8 .retake img { display: block; }
-  [data-v8] .doc8 .retake .rt { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 2px; padding: 1px 0; border-radius: 0 0 6px 6px; background: rgba(27, 58, 107, .88); color: #fff; font-size: 8.5px; font-weight: 700; }
-  [data-v8] .doc8 .retake .rt .i { width: 9px; height: 9px; }
-  [data-v8] .doc8 .retake:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
-  [data-v8] .doc8 .okbox { width: 20px; height: 20px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
+  /* each document: picture (tap = large) with Retake under it | Document n, type, size, Rotate + Delete; tick box top right */
+  [data-v8] .doc8 { position: relative; grid-template-columns: 68px minmax(0, 1fr); align-items: start; gap: 6px 12px; padding: 12px; }
+  [data-v8] .doc8 .dpic { display: grid; justify-items: center; gap: 4px; }
+  [data-v8] .doc8 .thumb { width: 68px; height: 84px; padding: 0; border: 0; background: #f4f4f6; border-radius: 8px; cursor: zoom-in; display: grid; place-items: center; }
+  [data-v8] .doc8 .thumb img { grid-row: auto; width: 100%; height: 100%; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  [data-v8] .doc8 .retakebtn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 4px; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 650; color: var(--accent); cursor: pointer; border-radius: 6px; }
+  [data-v8] .doc8 .retakebtn .i { width: 14px; height: 14px; }
+  [data-v8] .doc8 .retakebtn:hover { background: var(--tint); }
+  [data-v8] .doc8 :is(.thumb, .retakebtn):focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  [data-v8] .doc8 .okbox { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
   [data-v8] .doc8.ok { border-color: #b9dcc5; background: #f4fbf6; }
-  [data-v8] .doc8 .dfields { display: grid; gap: 4px; min-width: 0; }
-  [data-v8] .doc8 .dfields select { width: 100%; }
+  [data-v8] .doc8 .dfields { display: grid; gap: 8px; min-width: 0; }
+  [data-v8] .doc8 .dnum { min-height: 22px; display: flex; align-items: center; padding-right: 32px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  [data-v8] .doc8 .dfields select { width: 100%; padding: 8px 8px; font-size: 14px; }
   [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
-  [data-v8] .doc8 .dname { font-size: 13px; }
-  [data-v8] .doc8 :is(.cust, .warn) { grid-column: 3 / -1; }
+  [data-v8] .doc8 .dname { font-size: 14px; }
+  [data-v8] .doc8 .dacts { display: flex; gap: 8px; }
+  [data-v8] .doc8 .dacts .ib { width: auto; height: 34px; padding: 0 12px; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
+  [data-v8] .doc8 .dacts .ib .i { width: 16px; height: 16px; }
+  [data-v8] .doc8 .dacts .ib.del { color: #b3261e; }
+  [data-v8] .doc8 :is(.cust, .warn) { grid-column: 1 / -1; }
+  /* "are you sure?" and the large picture */
+  dialog.sure { width: min(340px, calc(100vw - 32px)); padding: 22px 20px 18px; border: 0; border-radius: 18px; color: var(--ink); box-shadow: 0 24px 60px rgba(0, 0, 0, .35); }
+  dialog.sure::backdrop, dialog.lightbox::backdrop { background: rgba(10, 16, 28, .6); }
+  dialog.sure p { margin: 0 0 6px; font-size: 17px; font-weight: 750; line-height: 1.3; }
+  dialog.sure .sure-s { margin-bottom: 16px; font-size: 13.5px; font-weight: 400; color: var(--muted); }
+  dialog.sure .sure-b { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  dialog.sure button { min-height: 46px; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; border: 1.5px solid var(--line-2); background: #fff; color: var(--ink); }
+  dialog.sure .sure-yes { background: #b3261e; border-color: #b3261e; color: #fff; }
+  dialog.lightbox { max-width: 100vw; max-height: 100dvh; width: 100vw; height: 100dvh; margin: 0; padding: 56px 16px 20px; border: 0; background: transparent; display: none; place-items: center; align-content: center; gap: 10px; cursor: zoom-out; }
+  dialog.lightbox[open] { display: grid; }
+  dialog.lightbox img { max-width: min(100%, 900px); max-height: calc(100dvh - 130px); object-fit: contain; border-radius: 6px; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+  dialog.lightbox p { margin: 0; color: #fff; font-size: 14px; font-weight: 600; }
+  dialog.lightbox .lb-x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: #fff; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+  dialog.lightbox .lb-x .i { width: 20px; height: 20px; }
+  /* Your Documents: the best-fit line and the custom-board note, in a bar that stays under the header */
+  .docbar { display: none; }
+  .docbar.on:has(> :not([hidden])) { display: grid; gap: 8px; padding: 10px 16px; background: var(--tint); border-bottom: 1px solid var(--tint-2); }
+  .docbar .help { margin: 0 !important; font-size: 13.5px; color: var(--ink); }
+  .docbar .help b { color: var(--accent); }
+  .docbar .quotenote { margin: 0; }
+  /* Sample certificates, switched off: only the title and the switch */
+  .certcount.off > :not(.labrow) { display: none !important; }
+  /* "or choose from your photos": a button beside Snap your docs */
+  [data-v8] .side .snapbox label.scanup { flex: 1 1 100%; display: flex; align-items: center; justify-content: center; position: relative; min-height: 46px; border: 1.5px solid var(--accent); border-radius: 12px; background: #fff; color: var(--accent); font-size: 14.5px; font-weight: 650; text-decoration: none; cursor: pointer; }
+  [data-v8] .side .owndocs .row .upload { font-size: 14px; line-height: 1.2; text-align: center; }
+  [data-v8] .side .side-body .owndocs .row { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }   /* (room for "Upload Photos or PDFs" on one line) */
+  [data-v8] .side .side-body .owndocs .row .upload { padding-left: 8px; padding-right: 8px; gap: 6px; }
   [data-v8] .onebyone { margin: 4px 0 -4px !important; font-weight: 650; color: var(--ink); }
   [data-v8] .wallhint { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4d6; border: 1px solid #f0d48a; color: #5a3d00; font-size: 13.5px; }
   [data-v8] .wallhint p { margin: 0; }
@@ -738,14 +771,6 @@
   [data-v6] .t-acts > .t-go .i { width: 22px; height: 22px; animation: nudge 1.8s ease-in-out infinite; }   /* the arrow drifts right and back */
   @keyframes nudge { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(5px); } }
   @media (prefers-reduced-motion: reduce) { [data-v6] .t-acts > .t-go .i { animation: none; } }
-  /* v7: the three steps as a numbered list, like the step bar */
-  .t-steps { display: none; }
-  [data-v7] .t-steps { display: grid; justify-self: stretch; gap: 10px; margin: 2px 0 4px; padding: 0; list-style: none; text-align: left; }
-  [data-v7] .t-steps li { display: grid; grid-template-columns: 28px 1fr; align-items: start; gap: 12px; padding: 6px 0; font-size: 15.5px; line-height: 1.35; color: #3d3d45; }
-  /* the number sits level with the first line of its text */
-  [data-v7] .t-steps b { display: grid; place-items: center; width: 28px; height: 28px; margin-top: calc((1.35em - 28px) / 2); border-radius: 50%; background: var(--accent); color: #fff; font-size: 14px; }
-  [data-v7] .t-steps strong { color: var(--accent); }
-  [data-v7] .t-card .t-sub { display: none; }
   [data-v6] .t-acts > .t-skip { display: none !important; }
   [data-v6].dmini .popcall span { display: none; }
   [data-v6] .t-card h1 { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; color: var(--accent); }
@@ -765,6 +790,15 @@
   [data-v6] .t-cont[hidden] { display: none; }
   [data-v6] .t-card.cont { bottom: calc(clamp(16px, 7vh, 72px) + 62px); }
   [data-v6] .t-sub { display: block; margin: -2px 0 2px; }
+  /* phones: a shorter start card, so the board turning above it can be bigger */
+  @media (max-width: 860px) {
+    [data-v6] .t-card { padding: 36px 16px 12px; gap: 8px; }
+    [data-v6] .t-sub { margin: 0; font-size: 15px; line-height: 1.35; }
+    [data-v6] .t-acts > .t-go { min-height: 48px; padding: 8px 24px; font-size: 17px; }
+    [data-v6] .t-logo { top: -26px; width: 52px; height: 52px; }
+    [data-v6] .t-logo img { height: 33px; }
+    [data-v6] .t-card.cont { bottom: 66px; }
+  }
   [data-v6] #shareBtn { top: 14px; right: 16px; transform: none; z-index: 5; box-shadow: var(--shadow); }
   [data-v6][data-step="intro"] #shareBtn { display: none; }
   [data-v6] #toast { bottom: auto; top: 16px; }                 /* clear of the dock and the cart */
@@ -1103,9 +1137,9 @@
     [data-v6] .p-body .sec-t { font-size: 11.5px; }
     [data-v6] .buysheet { width: auto; border-radius: 18px 18px 0 0; border-width: 1px 0 0; }
     /* phones: a pop-up slides up over the bottom 2/3 of the screen, and the board shrinks into the top third */
-    [data-v6] .side { top: var(--sheetTop, 33.33vh); animation: slideUp .28s ease; }
-    /* an option's pop-up is only as tall as its content (up to 2/3 of the screen); the board fills the space above */
-    [data-v6] #optSheet { top: auto; max-height: calc(100% - var(--sheetTop, 33.33vh)); }
+    [data-v6] .side { top: var(--sheetTop, 26.67vh); animation: slideUp .28s ease; }
+    /* an option's pop-up is only as tall as its content (up to ~73% of the screen, 10% more than 2/3); the board fills the space above */
+    [data-v6] #optSheet { top: auto; max-height: calc(100% - var(--sheetTop, 26.67vh)); }
     [data-v6] #optSheet .side-body { min-height: 0; }
     [data-v6] .qty { height: 44px; }
     [data-v6] .qty button { width: 44px; }
@@ -1749,6 +1783,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011619" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011659" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

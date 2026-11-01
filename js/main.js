@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011619';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011619';
-import { wallTexture, wallSwatch } from './env.js?v=202611011619';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011619';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011659';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011659';
+import { wallTexture, wallSwatch } from './env.js?v=202611011659';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011659';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -994,6 +994,7 @@ function openOptSheet(sec) {
   $('#optIcon').innerHTML = sec.querySelector('.sec-h .i').outerHTML;
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
+  $('#docBar')?.classList.toggle('on', sec.dataset.sec === 'certs');   // (the best-fit bar belongs to Your Documents)
   optOpen = { sec, body };
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1005,6 +1006,7 @@ function closeOptSheet(switching) {
   optOpen.sec.appendChild(optOpen.body);
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
+  $('#docBar')?.classList.remove('on');
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
@@ -1015,7 +1017,7 @@ function markActive(name) {
 // Phones: the 3D view is pinned to the top. It shrinks as you scroll down the options, and while a sheet is open
 // it fits the space above the sheet, so the whole board is always visible while you make changes.
 const STAGE = { max: 0.56, min: 0.34, sheet: 0.44 };   // fractions of the screen height (sheet: matches .side top: 44vh)
-const STAGE6 = { max: 0.58, min: 0.58, sheet: 1 / 3 };  // v6: no scrolling; a pop-up takes the bottom 2/3 (top: --sheetTop)
+const STAGE6 = { max: 0.58, min: 0.58, sheet: 0.2667 };  // v6: no scrolling; a pop-up takes the bottom ~73% (top: --sheetTop; was 2/3, now 10% taller)
 let stageQueued = false, stageMax = 0, stageW = 0, cartH = 84;
 function updateStage(animate) {
   const w = $('#stageWrap'), st = $('#stage'), root = document.documentElement;
@@ -1572,16 +1574,17 @@ function wireSteps() {
   if (V8) {                                                  // Snap your wall: its own box above "Add your own"
     const box = document.createElement('div'), or2 = document.createElement('p');
     box.className = 'snapbox';
-    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-spark"/></svg><span>All your certificates, in one photo</span></div>'
-      + '<p class="help">On your wall, or laid out on a table: take one photo of them all. We find each one, name it, straighten it and size a board to fit.</p>';
     const sr = $('.scanrow'), srHelp = sr.nextElementSibling, res = $('#scanResult');   // (grab them before they move: a box not on the page can't be searched)
-    sr.querySelector('.upload').lastChild.textContent = 'Snap your wall';
+    sr.querySelector('.upload').lastChild.textContent = 'Snap your docs';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
-    $('#certCam').closest('label').lastChild.textContent = 'Photo of 1 document';
-    $('#certFiles').closest('label').lastChild.textContent = 'Photos or PDFs';
+    $('#certCam').closest('label').lastChild.textContent = 'Add more';
+    $('#certFiles').closest('label').lastChild.textContent = 'Upload Photos or PDFs';
     $('#certFiles').accept = 'image/*,application/pdf,.pdf';
-    $('#scanFile').closest('label').lastChild.textContent = 'or choose one from your photos';
-    own.querySelector('.opt + .help').textContent = 'Snap them all in one photo, or add them one at a time.';
+    $('#scanFile').closest('label').lastChild.textContent = 'or choose from your photos';
+    $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
+    $('#scanDemo').remove();                                            // (no "see an example")
+    // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
+    own.querySelector('.opt + .help').textContent = 'On your wall, or laid out on a table: snap one photo of all your documents and we\'ll find each one, name it, straighten it and size a board to fit. Or add them one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     box.append(sr, res);
@@ -1595,7 +1598,7 @@ function wireSteps() {
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
     $('#certCam').closest('.row').insertAdjacentHTML('beforebegin', '<p class="help onebyone">One at a time: a close photo of each (handy for one that isn\'t up yet), or the PDF if you have one.</p>');
-    $('#certClear').textContent = 'Remove all';
+    $('#certClear').remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
     $('#stateOk').addEventListener('click', () => {
@@ -1636,7 +1639,10 @@ function wireSteps() {
   $('#sheetFit').hidden = true;                              // (the advice in the card already says what fits)
   const qn = document.createElement('div'); qn.id = 'quoteNote'; qn.className = 'quotenote'; qn.hidden = true; qn.setAttribute('role', 'status');
   qn.innerHTML = '<b class="qn-i" aria-hidden="true">!</b><span><b>Custom board · quote needed</b><span id="quoteNoteTxt"></span></span>';
-  cc.append(qn);
+  // a sticky bar right under the "Your Documents" header: the best-fit line (and the custom-board note) stay in view while the list scrolls
+  const bar = document.createElement('div'); bar.id = 'docBar'; bar.className = 'docbar';
+  bar.append($('#certAdvice'), qn);
+  $('#optSheet .side-h').after(bar);
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
   col.querySelector('.sec-t').textContent = 'Solid Colors'; col.querySelector('.sec-h .i use').setAttribute('href', '#i-palette');
@@ -1709,14 +1715,9 @@ function wireSteps() {
   logo.className = 't-logo'; img.src = new URL('../img/cobo-icon.svg', import.meta.url).href; img.alt = 'COBO';
   logo.append(img); $('.t-intro .t-card').prepend(logo);
   $('.t-intro h1').textContent = 'Compliance Board Designer';
-  $('.t-intro .t-sub').textContent = 'Add your documents, style your board, then see it on your wall. You can change anything as you go.';
+  $('.t-intro .t-sub').textContent = 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
   $('#tourStart').innerHTML = '<span>Start</span><svg class="i"><use href="#i-right"/></svg>';   // one way in: Build
   $('#tourSkipCard').hidden = true;
-  // v7: the three steps as a numbered list (in place of the paragraph)
-  const steps = document.createElement('ol'); steps.className = 't-steps';
-  steps.innerHTML = [['Build', 'Add your documents, or pick sample certificates.'], ['Style', 'Choose the color or texture, edge and caps.'],
-    ['Preview', 'See it on your wall, then add it to your cart.']].map(([t, s], i) => `<li><b>${i + 1}</b><span><strong>${t}:</strong> ${s}</span></li>`).join('');
-  $('.t-intro .t-sub').after(steps);
   // top of Style: v6 offers the popular designs as a starting point (v7 has none)
   $('#popCall').addEventListener('click', () => openOptSheet($('.sec[data-sec="presets"]')));
   $('#tourSkipCard').addEventListener('click', () => { setStep('custom'); goStep('build', false); openOptSheet(certs); });
@@ -2923,10 +2924,10 @@ function wireExtras() {
     readOneDoc(d, f, keep);
   });
   for (const id of ['#certCam', '#certFiles']) $(id).addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
-  $('#certClear').addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
-  $('#docAuto').addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
-  $('#docDemo').addEventListener('click', loadExampleDocs);
-  $('#scanDemo').addEventListener('click', scanExample);
+  $('#certClear')?.addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
+  $('#docAuto')?.addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
+  $('#docDemo')?.addEventListener('click', loadExampleDocs);
+  $('#scanDemo')?.addEventListener('click', scanExample);
   for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) await scanWall(f); });
   const list = $('#docList');
   list.addEventListener('change', (e) => {
@@ -2939,12 +2940,16 @@ function wireExtras() {
     if (e.target.matches('[data-ch]')) d.ch = Math.max(2, Math.min(96, +e.target.value || 11));
     d.px = d.py = null; docsKey = ''; refresh();
   });
-  list.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;   // (v8: the picture is Retake)
+  list.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;
     const i = +li.dataset.i;
+    if (b.dataset.act === 'zoom') return openLightbox(state.myCerts[i], i);              // (v8: the picture opens large)
     if (b.dataset.act === 'retake') { retakeIdx = i; return retakeInput.click(); }
     if (b.dataset.act === 'turn') { state.myCerts[i].turn = !state.myCerts[i].turn; state.myCerts[i].px = state.myCerts[i].py = null; }
-    if (b.dataset.act === 'remove') state.myCerts.splice(i, 1);
+    if (b.dataset.act === 'remove') {
+      if (V8 && !await askSure(`Delete document ${i + 1}${state.myCerts[i].name ? ` (${state.myCerts[i].name})` : ''}?`, 'Delete')) return;
+      state.myCerts.splice(i, 1);
+    }
     docsKey = ''; refresh();
   });
   // share
@@ -2955,7 +2960,7 @@ let docsKey = '';   // redraw the document list only when the documents change (
 function paintDocs() {
   const docs = state.myCerts, miss = new Set(lastDocs?.missing || []);
   const key = docs.map(d => [d.imgId, d.size, d.turn, d.cw, d.ch, d.ok, d.typeId].join(':')).join('|') + '/' + [...miss].join(',') + (CAT ? '+' : '');
-  $('#docTools').hidden = !docs.length;
+  if ($('#docTools')) $('#docTools').hidden = !docs.length;
   if (key === docsKey) return;
   docsKey = key;
   const opts = DOC_SIZES.map(s => `<option value="${s.id}">${s.name} ${fmt(s.w)}×${fmt(s.h)}</option>`).join('') + '<option value="custom">Custom size…</option>';
@@ -2973,12 +2978,15 @@ function paintDocs8(docs, miss, opts) {
   const types = CAT ? '<option value="">Which document?</option>' + Object.entries(CAT.groups).map(([g, gn]) => `<optgroup label="${gn}">`
     + CAT.types.filter(t => t.group === g).map(t => `<option value="${t.id}">${t.name}</option>`).join('') + '</optgroup>').join('')
     + `<option value="other">${CAT.other.name}</option>` : '';
+  // left: the picture (tap to see it large) with Retake just below it; right: the type and size (full width), then Rotate and Delete;
+  // the tick box sits in the top right corner of the box
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc doc8${miss.has(i) ? ' miss' : ''}${d.ok ? ' ok' : ''}" data-i="${i}">
       <input type="checkbox" class="okbox" data-ok aria-label="Document ${i + 1} is right"${d.ok ? ' checked' : ''}>
-      <button type="button" class="retake" data-act="retake" title="Retake this photo" aria-label="Retake the photo of document ${i + 1}"><img alt=""><span class="rt"><svg class="i"><use href="#i-camera"/></svg>Retake</span></button>
-      <span class="dfields">${types ? `<select data-type aria-label="Which document">${types}</select>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select></span>
-      <button class="ib" type="button" data-act="turn" title="Turn sideways" aria-label="Turn sideways"><svg class="i"><use href="#i-rotate"/></svg></button>
-      <button class="ib" type="button" data-act="remove" title="Remove" aria-label="Remove"><svg class="i"><use href="#i-x"/></svg></button>
+      <span class="dpic"><button type="button" class="thumb" data-act="zoom" title="See it large" aria-label="See document ${i + 1} large"><img alt=""></button>
+        <button type="button" class="retakebtn" data-act="retake" aria-label="Retake the photo of document ${i + 1}"><svg class="i"><use href="#i-camera"/></svg>Retake</button></span>
+      <span class="dfields"><span class="dnum">Document ${i + 1}</span>${types ? `<select data-type aria-label="Which document">${types}</select>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select>
+        <span class="dacts"><button class="ib" type="button" data-act="turn" aria-label="Rotate document ${i + 1} sideways"><svg class="i"><use href="#i-rotate"/></svg>Rotate</button>
+        <button class="ib del" type="button" data-act="remove" aria-label="Delete document ${i + 1}"><svg class="i"><use href="#i-trash"/></svg>Delete</button></span></span>
       ${d.size === 'custom' ? `<span class="cust">W <input type="number" data-cw min="2" max="96" step="0.5" value="${d.cw}"> × H <input type="number" data-ch min="2" max="96" step="0.5" value="${d.ch}"> in</span>` : ''}
       ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
   $('#docList').querySelectorAll('.doc').forEach((li, i) => {
@@ -2989,6 +2997,37 @@ function paintDocs8(docs, miss, opts) {
   $('#dlHead').hidden = !docs.length; $('#okAll').hidden = okN === docs.length;
   $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} checked` : `Tick each one that's right (${okN} of ${docs.length})`;
 }
+// v8: "are you sure?" before a document is deleted (a real <dialog>: Esc cancels, focus stays inside, starts on Cancel)
+function askSure(question, okLabel) {
+  return new Promise((resolve) => {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'sure'; dlg.setAttribute('aria-labelledby', 'sureQ');
+    dlg.innerHTML = `<p id="sureQ">${escHtml(question)}</p><p class="sure-s">This takes it off your board. You can add it again later.</p>`
+      + `<div class="sure-b"><button type="button" class="sure-no" autofocus>Cancel</button><button type="button" class="sure-yes">${escHtml(okLabel)}</button></div>`;
+    let yes = false;
+    dlg.querySelector('.sure-yes').addEventListener('click', () => { yes = true; dlg.close(); });
+    dlg.querySelector('.sure-no').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });       // (a tap on the dimmed part cancels)
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(yes); });
+    document.body.append(dlg); dlg.showModal();
+  });
+}
+// v8: a document's picture, large (tap anywhere or press Esc to close)
+function openLightbox(d, i) {
+  if (!d?.img) return;
+  const k = Math.min(1, 1600 / Math.max(d.img.width, d.img.height)), c = document.createElement('canvas');
+  c.width = Math.round(d.img.width * k); c.height = Math.round(d.img.height * k);
+  c.getContext('2d').drawImage(d.img, 0, 0, c.width, c.height);
+  const dlg = document.createElement('dialog'), pic = new Image();
+  dlg.className = 'lightbox'; dlg.setAttribute('aria-label', `Document ${i + 1}, large`);
+  pic.alt = d.name ? `Your photo of ${d.name}` : `Your photo of document ${i + 1}`; pic.src = c.toDataURL('image/jpeg', 0.9);
+  dlg.innerHTML = `<button type="button" class="lb-x" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>`;
+  dlg.append(pic);
+  if (d.name) dlg.insertAdjacentHTML('beforeend', `<p>${escHtml(d.name)}</p>`);
+  dlg.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg); dlg.showModal();
+}
 function paintExtras() {
   paintDocs();
   if (V8) { $('#ownDocs').classList.toggle('dim', !!state.myCerts.length && state.sheets); paintState(); }
@@ -2997,7 +3036,7 @@ function paintExtras() {
   document.querySelector('.certcount .opt').hidden = !!own;
   if (V6) {
     $('#mixRows').hidden = !!own;
-    $('.certcount').classList.toggle('off', !own && !state.sheets);
+    $('.certcount').classList.toggle('off', !state.sheets);   // (off: just the title and the switch)
     document.querySelectorAll('[data-mixn]').forEach(el => { el.textContent = state.sampleMix[el.dataset.mixn] || 0; });
     const letterWide = curDocs().length && !own ? letterTurned() : !!(lastSheets && lastSheets.sw > lastSheets.sh);   // (letters alone: however they're laid out now)
     document.querySelectorAll('[data-rot]').forEach(b => { const wide = b.dataset.rot === 'letter' ? letterWide : !!state.sampleTurn[b.dataset.rot]; const on = (b.dataset.o === 'wide') === wide; b.setAttribute('aria-pressed', on); b.classList.toggle('on', on); });
@@ -3041,6 +3080,7 @@ function paintExtras() {
       t.classList.toggle('nofit', !!(n && s && fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a])) < n));
     });
   }
+  $('#certAdvice').hidden = !docs && !n;               // (nothing to advise yet: no line in the sticky bar)
   // v6: each size tile says how many 8.5×11 documents it holds (at the current orientation)
   if (V6) document.querySelectorAll('#sizes .tile[data-k]').forEach(t => {
     const s = SIZES.find(x => x.id === t.dataset.k); if (!s) return;
@@ -3050,7 +3090,7 @@ function paintExtras() {
     em.textContent = docs ? '' : k ? `fits ${k}` : 'notices only';
   });
   // own documents
-  $('#certClear').hidden = !own;
+  if ($('#certClear')) $('#certClear').hidden = !own;
   $('#certOwnInfo').hidden = !own;
   if (own) {
     const shown = lastDocs?.places.length || 0, miss = own - shown;
@@ -3062,8 +3102,7 @@ function paintExtras() {
     // more than our largest standard board holds: an amber note in the card they're working in, and an amber count
     const big = SIZES.reduce((a, x) => (x.a * x.b > a.a * a.b ? x : a)), q = $('#quoteNote');
     q.hidden = !tooBig;
-    if (tooBig) {
-      (own ? $('#ownDocs') : $('.certcount')).append(q);
+    if (tooBig) {                                    // (the note lives in the sticky bar under the header)
       $('#quoteNoteTxt').textContent = `${own ? 'Your documents need' : 'These certificates need'} more room than our largest standard board (${big.a} × ${big.b}). `
         + (custom ? `We'll build a custom ${custom.w}" × ${custom.h}" board to order and send you a price.` : `Contact us about an oversize board.`);
     }
