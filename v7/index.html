@@ -545,6 +545,16 @@
   [data-layout="v5"] .certcount .scanrow, [data-layout="v5"] .certcount .scanrow + .help { display: none; }
   /* v8: Snap your wall (the photo row + the result moved out of the sample box by main.js) */
   [data-v8] .snapbox { display: grid; gap: 8px; }
+  [data-v8] .side .snapbox { padding: 14px; border-radius: 16px; background: var(--tint); }
+  [data-v8] .side .snapbox > .opt:first-of-type { font-size: 15px; font-weight: 750; color: var(--accent); }
+  [data-v8] .side .snapbox > .opt:first-of-type .i { color: var(--accent); }
+  [data-v8] .side .snapbox .help { margin-top: -6px; }
+  [data-v8] .side .snapbox .upload { flex: 1 1 100%; justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
+  [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
+  [data-v8] .side .owndocs label.upload:has(#certCam) { background: #fff; border-color: var(--line-2); color: var(--ink); }   /* (only Snap your wall is solid) */
+  [data-v8] .wallhint { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4d6; border: 1px solid #f0d48a; color: #5a3d00; font-size: 13.5px; }
+  [data-v8] .wallhint p { margin: 0; }
+  [data-v8] .wallhint .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
   [data-v8] .snapbox .scanrow { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
   [data-v8] .snapbox .scanres { margin-top: 2px; }
   [data-v8] .snapbox .scanres canvas { border: 1px solid var(--line); }
@@ -1708,6 +1718,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611011421" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611011457" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

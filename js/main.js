@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011421';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011421';
-import { wallTexture, wallSwatch } from './env.js?v=202611011421';
-import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011421';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011457';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011457';
+import { wallTexture, wallSwatch } from './env.js?v=202611011457';
+import { detectCertificates, certTypes, demoWall } from './detect.js?v=202611011457';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1535,10 +1535,14 @@ function wireSteps() {
   if (V8) {                                                  // Snap your wall: its own box above "Add your own"
     const box = document.createElement('div'), or2 = document.createElement('p');
     box.className = 'snapbox';
-    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-camera"/></svg><span>Snap your wall</span></div>'
-      + '<p class="help">Take one photo of the certificates on your wall. We find each one, name it, guess its size and size a board to fit.</p>';
+    box.innerHTML = '<div class="opt"><svg class="i"><use href="#i-spark"/></svg><span>Your whole wall, in one photo</span></div>'
+      + '<p class="help">Take one photo of all the certificates on your wall. We find each one, name it, guess its size and size a board to fit.</p>';
     const sr = $('.scanrow'), srHelp = sr.nextElementSibling, res = $('#scanResult');   // (grab them before they move: a box not on the page can't be searched)
-    sr.querySelector('.upload').lastChild.textContent = 'Take a photo';
+    sr.querySelector('.upload').lastChild.textContent = 'Snap your wall';
+    // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
+    $('#certCam').closest('label').lastChild.textContent = 'Photo of 1 document';
+    $('#certFiles').closest('label').lastChild.textContent = 'Upload documents';
+    own.querySelector('.opt + .help').textContent = 'Or add your permits, licenses and posters one at a time: a close photo or a file of each.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     box.append(sr, res);
@@ -1922,7 +1926,7 @@ function packFresh(W, H, docs) {
   return P;
 }
 // "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
-async function scanWall(file) {
+async function scanWall(file, pre) {   // pre: a Gemini answer already in hand for this photo (v8)
   const tmp = {};
   try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
   if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); }
@@ -1930,7 +1934,7 @@ async function scanWall(file) {
   // on a board (signs, tags, wallet cards, on-file papers) are left off. The home-made finder is the fallback when
   // Gemini isn't set up or fails.
   let found, ai = null, skipped = [];
-  if (V8) try { ai = await detectCertificates(tmp.img); } catch (e) {
+  if (V8) try { ai = pre || await detectCertificates(tmp.img); } catch (e) {
     console.warn('detect:', e.code, e.message);
     if (!['no-key', 'no-server'].includes(e.code)) toast("Gemini couldn't read that photo, so the basic scanner was used.");
   }
@@ -2776,11 +2780,32 @@ function wireExtras() {
       t.width = Math.round(own.img.width * k); t.height = Math.round(own.img.height * k);
       t.getContext('2d').drawImage(own.img, 0, 0, t.width, t.height); own.thumb = t.toDataURL('image/jpeg', 0.7);
       state.myCerts.push(own);
+      if (V8 && files.length === 1) checkWallPhoto(own, f);
     }
     docsKey = '';
     refresh();
     if (lastDocs?.missing.length) toast('Some documents don\'t fit on this board yet. See the suggestion under Size.');
   };
+  // v8: if a photo added as one document is really the whole wall (Gemini sees 2 or more certificates in it),
+  // offer to read it as a wall instead. Runs in the background; the document is already on the board meanwhile.
+  async function checkWallPhoto(own, file) {
+    $('#wallHint')?.remove();
+    let ai; try { ai = await detectCertificates(own.img); } catch { return; }
+    if (ai.items.length < 2 || !state.myCerts.includes(own)) return;
+    const n = ai.items.length, hint = document.createElement('div');
+    hint.id = 'wallHint'; hint.className = 'wallhint'; hint.setAttribute('role', 'status');
+    hint.innerHTML = `<p>This photo shows <b>${n} certificates</b>. Read it as your whole wall instead, so each one gets its own place on the board?</p>`
+      + '<div class="row"><button type="button" class="primary" data-wh="wall">Read it as a wall</button><button type="button" class="link" data-wh="keep">Keep as one document</button></div>';
+    $('#docList').after(hint);
+    hint.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-wh]'); if (!b) return;
+      hint.remove();
+      if (b.dataset.wh !== 'wall') return;
+      state.myCerts = state.myCerts.filter(d => d !== own); docsKey = ''; refresh();
+      $('#optBody').scrollTop = 0;
+      await scanWall(file, ai);
+    });
+  }
   for (const id of ['#certCam', '#certFiles']) $(id).addEventListener('change', async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await addCerts(fs); });
   $('#certClear').addEventListener('click', () => { state.myCerts = []; docsKey = ''; refresh(); });
   $('#docAuto').addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
