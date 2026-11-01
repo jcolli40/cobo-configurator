@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011659';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011659';
-import { wallTexture, wallSwatch } from './env.js?v=202611011659';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011659';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011717';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011717';
+import { wallTexture, wallSwatch } from './env.js?v=202611011717';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011717';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1560,7 +1560,7 @@ function wireSteps() {
   const certs = $('.sec[data-sec="certs"]'), body = certs.querySelector('.sec-b'), own = $('#ownDocs');
   const t = certs.querySelector('.sec-t'); t.textContent = 'Documents'; t.dataset.full = 'Your Documents';
   own.querySelector(':scope > hr.div')?.remove();
-  own.querySelector('.opt span').textContent = 'Add your own';
+  own.querySelector('.opt span').textContent = 'Add Your Documents';
   own.querySelector('.opt + .help').textContent = 'Take a photo of, or upload, the permits, licenses and posters you need to display. We size the board around them.';
   $('#docDemo').remove();                                   // (no "try it with examples" in v6)
   $('.hint').textContent = phone.matches ? 'Drag to turn the board · pinch to zoom' : 'Drag to rotate · scroll to zoom';
@@ -1580,7 +1580,8 @@ function wireSteps() {
     $('#certCam').closest('label').lastChild.textContent = 'Add more';
     $('#certFiles').closest('label').lastChild.textContent = 'Upload Photos or PDFs';
     $('#certFiles').accept = 'image/*,application/pdf,.pdf';
-    $('#scanFile').closest('label').lastChild.textContent = 'or choose from your photos';
+    $('#scanFile').closest('label').lastChild.textContent = 'Upload Files';
+    $('#scanFile').accept = 'image/*,application/pdf,.pdf';          // (no camera forced: phones offer Photo Library, Take Photo and Files)
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
@@ -1597,7 +1598,6 @@ function wireSteps() {
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
-    $('#certCam').closest('.row').insertAdjacentHTML('beforebegin', '<p class="help onebyone">One at a time: a close photo of each (handy for one that isn\'t up yet), or the PDF if you have one.</p>');
     $('#certClear').remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
