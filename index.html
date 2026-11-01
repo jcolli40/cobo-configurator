@@ -877,6 +877,13 @@
   [data-v6] .wa-ext .i { width: 15px; height: 15px; }
   [data-v6] .wa-brand { padding: 19px 16px 3px; text-align: center; }
   [data-v6] #tabTex .rowsb { margin-top: 3px; }
+  /* 1 / 2 / 3 per row: simple line icons on white, like the filter dropdowns beside them */
+  [data-v6] .seg.cols { background: var(--card); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; gap: 0; height: 37px; overflow: hidden; }
+  [data-v6] .seg.cols button { padding: 0 9px; border-radius: 0; color: #8a8d96; }
+  [data-v6] .seg.cols button + button { border-left: 1px solid var(--line); }
+  [data-v6] .seg.cols button:hover { background: var(--hover); color: var(--ink); }
+  [data-v6] .seg.cols button.on { background: var(--tint); color: var(--accent); box-shadow: none; }
+  [data-v6] .seg.cols svg { fill: none; stroke: currentColor; stroke-width: 1.3; }
   [data-v6] .wa-brand img { display: inline-block; height: 22px; width: auto; }
   [data-v6] .side-search { position: relative; align-items: flex-start; }
   [data-v6] .side-search .sbox { display: none; }
