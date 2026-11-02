@@ -689,7 +689,7 @@
   [data-v8] .adddoc:hover { background: var(--tint); }
   [data-v8] .adddoc:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   /* the tick box: green slides in from the left, the box pops, then the check wipes in */
-  [data-v8] .doc8 .okbox { -webkit-appearance: none; appearance: none; position: absolute; top: 18px; right: 10px; width: 24px; height: 24px; margin: 0; border: 1.5px solid #a3a6af; border-radius: 8px; cursor: pointer;
+  [data-v8] .doc8 .okbox { -webkit-appearance: none; appearance: none; position: absolute; top: 12px; right: 10px; width: 24px; height: 24px; margin: 0; border: 1.5px solid #a3a6af; border-radius: 8px; cursor: pointer;
     background: #fff linear-gradient(#2e7d4f, #2e7d4f) no-repeat left center / 0% 100%; transition: border-color .2s, background-size .25s ease; }
   [data-v8] .doc8 .okbox::after { content: ""; position: absolute; left: 7.5px; top: 2px; width: 6px; height: 12px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); clip-path: inset(0 100% 0 0); }
   [data-v8] .doc8 .okbox:checked { border-color: #2e7d4f; background-size: 100% 100%; }
@@ -717,12 +717,13 @@
   [data-v8] .doc8 .dfields select { width: 100%; padding: 8px 8px; font-size: 14px; }
   [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
   [data-v8] .doc8 .dname { font-size: 14px; }
-  [data-v8] .doc8 .dacts { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-right: 34px; }   /* (top row, left of the tick box: the way round and the trash can) */
-  [data-v8] .doc8 .dori.seg { width: auto; height: 36px; }   /* (the same segmented pair as in the Size panel's header; each half is 36 x 36, like the trash can) */
-  [data-v8] .doc8 .dori.seg button { flex: none; width: 36px; min-width: 0; padding: 0; }
+  [data-v8] .doc8 .dacts { display: flex; justify-content: flex-start; align-items: center; gap: 8px; padding-right: 34px; }   /* (top row, left of the tick box: the way round and the trash can) */
+  [data-v8] .doc8 .dori.seg { width: auto; height: 24px; border-radius: 6px; }   /* (the same segmented pair as in the Size panel's header; each half is 36 x 36, like the trash can) */
+  [data-v8] .doc8 .dori.seg button { flex: none; width: 24px; height: 22px; min-width: 0; padding: 0; }
+  [data-v8] .doc8 .dori.seg svg { width: 13px; height: 13px; }
   [data-v8] .doc8 .thumb .tnum { position: absolute; top: 4px; left: 4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 22px; text-align: center; }   /* (navy circle, white number) */
-  [data-v8] .doc8 .dacts .ib { width: 36px; height: 36px; padding: 0; justify-content: center; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
-  [data-v8] .doc8 .dacts .ib .i { width: 16px; height: 16px; }
+  [data-v8] .doc8 .dacts .ib { width: 24px; height: 24px; border-radius: 6px; padding: 0; justify-content: center; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
+  [data-v8] .doc8 .dacts .ib .i { width: 13px; height: 13px; }
   [data-v8] .doc8 .dacts .ib.del { color: #b3261e; }
   [data-v8] .doc8 :is(.cust, .warn) { grid-column: 1 / -1; }
   /* Which document?: on phones a button and our own sheet (the phone's own list is dark and cramped) */
@@ -2062,6 +2063,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020838" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020847" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
