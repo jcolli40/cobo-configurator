@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020725';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020725';
-import { wallTexture, wallSwatch } from './env.js?v=202611020725';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020725';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020728';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020728';
+import { wallTexture, wallSwatch } from './env.js?v=202611020728';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020728';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -503,6 +503,7 @@ function photoBlurTexture(P) {
 }
 // v5 room photos (img/rooms/), loaded once each; the board is rebuilt when one arrives so its size is right
 const SITE_ROOT = new URL('../', import.meta.url);
+const SHOW_TEST_PHOTO = true;   // TEMPORARY: the "Load test image" button in the Add menu. Set to false (and delete img/test-wall.jpg) before going live
 const roomTex = new Map();
 function roomTexture(path) {
   if (roomTex.has(path)) return roomTex.get(path);
@@ -1701,6 +1702,18 @@ function wireSteps() {
     snapBox.append(snapL);
     dt.querySelector('.addline').after(own.querySelector('.opt + .help'));   // (what Snap does: under the first line, above the button)
     menu.append(snapBox, upL, sampRow); dt.querySelector('.addwrap').append(menu); sr2.remove();
+    if (SHOW_TEST_PHOTO) {                                      // TEMPORARY testing button: sends a saved wall photo through the same path as a snapped one
+      const tb = document.createElement('button'); tb.type = 'button'; tb.id = 'testPhoto'; tb.className = 'menurow testrow';
+      tb.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-image"/></svg><span>Load test image</span><small>testing only</small>';
+      tb.addEventListener('click', async () => {
+        try {
+          const blob = await (await fetch(new URL('img/test-wall.jpg', SITE_ROOT).href)).blob();
+          const dt2 = new DataTransfer(); dt2.items.add(new File([blob], 'test-wall.jpg', { type: 'image/jpeg' }));
+          const inp = $('#scanFile'); inp.files = dt2.files; inp.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch { toast("Couldn't load the test image."); }
+      });
+      snapBox.after(tb);
+    }
     const btn = $('#docTabOwn'), setMenu = (on) => { menu.hidden = !on; btn.setAttribute('aria-expanded', on); };
     btn.addEventListener('click', () => setMenu(menu.hidden));
     document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !e.target.closest('#addMenu, #docTabOwn')) setMenu(false); });
