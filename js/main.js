@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020630';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020630';
-import { wallTexture, wallSwatch } from './env.js?v=202611020630';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020630';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020632';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020632';
+import { wallTexture, wallSwatch } from './env.js?v=202611020632';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020632';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1604,7 +1604,7 @@ function wireSteps() {
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
-    own.querySelector('.opt + .help').textContent = 'Snap a single photo of all your docs and we\'ll detect & import them for your review below. You can also add individual photos & files.';
+    own.querySelector('.opt + .help').textContent = 'Snap a single photo of all your docs and we\'ll detect & import them for your review below. You can also add individual photos & files. We\'ll auto-select the board size to fit.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photos and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
@@ -1683,7 +1683,7 @@ function wireSteps() {
     const art = '<div class="camart"><svg viewBox="56 0 128 130" aria-hidden="true">'   // just documents on a wall, slightly tilted like the photo of detected documents, inside the camera corners
       + [[92, 16, 20, 40, -1.5], [118, 22, 32, 26, 2.5], [88, 64, 30, 24, -2], [122, 60, 30, 26, 1.5], [103, 92, 32, 24, -1]]
         .map(([x, y, w, h, r]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1" transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"/>').join('')
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Add your docs and we\'ll auto-select the board size to fit</p>';
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Add your documents and review them below.</p>';
     const plus = '<svg class="i plusico" aria-hidden="true"><use href="#i-plus-circle"/></svg>';
     dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + plus + '</button></div>';
     $('#optSheet .side-h').after(dt);
