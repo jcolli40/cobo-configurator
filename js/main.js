@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012237';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012237';
-import { wallTexture, wallSwatch } from './env.js?v=202611012237';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012237';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012239';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012239';
+import { wallTexture, wallSwatch } from './env.js?v=202611012239';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012239';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2028,6 +2028,7 @@ function packFresh(W, H, docs) {
   return P;
 }
 // "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
+let scanFull = null;                // v8: the last scan's whole photo with its boxes (the thumbnail is a square of it)
 async function scanWall(file, pre, add) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list
   const keepOld = add ? state.myCerts.slice() : [];
   const tmp = {};
@@ -2061,6 +2062,7 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     g.strokeStyle = '#2e7d4f'; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k);
     g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, tw, 22); g.fillStyle = '#fff'; g.fillText(label, b.x * k + 7, b.y * k + 17);
   });
+  if (V8) { scanFull = document.createElement('canvas'); scanFull.width = cv.width; scanFull.height = cv.height; scanFull.getContext('2d').drawImage(cv, 0, 0); }   // (the whole photo, for the lightbox)
   if (V8 && found.length) {                                  // a square around the documents (the photo is long: the wall around them isn't needed)
     const xs = found.flatMap(f => [f.box.x * k, (f.box.x + f.box.w) * k]), ys = found.flatMap(f => [f.box.y * k, (f.box.y + f.box.h) * k]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -2985,16 +2987,24 @@ function wireExtras() {
   $('#docAuto')?.addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
   $('#docDemo')?.addEventListener('click', loadExampleDocs);
   $('#scanDemo')?.addEventListener('click', scanExample);
+  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('click', (e) => { if (e.isTrusted) scanRetake = false; });   // (a real tap on Snap / Upload is a new photo, not a retake)
   for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => {
     const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
     let add = false;
-    if (V8 && state.myCerts.length) {                      // already on the list: add to it (the default), or start over
+    const retaking = scanRetake; scanRetake = false;
+    if (V8 && state.myCerts.length && !retaking) {                      // already on the list: add to it (the default), or start over
       const n = state.myCerts.length, pick = await askAddOrNew(`You already have ${n} document${n === 1 ? '' : 's'} on your list.`);
       if (!pick) return;
       add = pick === 'add';
     }
     for (const f of fs) { await scanWall(f, null, add); add = true; }   // (several files: each one is added after the first)
   });
+  // the snapped photo: tap it to see it large, with Retake below (Retake replaces that scan)
+  let scanRetake = false;
+  const bigScan = () => { if (scanFull) openLightbox({ img: scanFull, name: '' }, 0, () => { scanRetake = true; $('#scanCam').click(); }); };
+  $('#scanCanvas').addEventListener('click', bigScan);
+  $('#scanCanvas').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bigScan(); } });
+  $('#scanCanvas').tabIndex = 0; $('#scanCanvas').setAttribute('role', 'button'); $('#scanCanvas').setAttribute('aria-label', 'See your photo large');
   const list = $('#docList');
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
@@ -3118,17 +3128,23 @@ function openTypePicker(sel, title = 'Which document?') {
   dlg.querySelector('.tp-o.on')?.scrollIntoView({ block: 'center' });
 }
 // v8: a document's picture, large (tap anywhere or press Esc to close)
-function openLightbox(d, i) {
+function openLightbox(d, i, onRetake) {
   if (!d?.img) return;
   const k = Math.min(1, 1600 / Math.max(d.img.width, d.img.height)), c = document.createElement('canvas');
   c.width = Math.round(d.img.width * k); c.height = Math.round(d.img.height * k);
   c.getContext('2d').drawImage(d.img, 0, 0, c.width, c.height);
   const dlg = document.createElement('dialog'), pic = new Image();
-  dlg.className = 'lightbox'; dlg.setAttribute('aria-label', `Document ${i + 1}, large`);
+  dlg.className = 'lightbox'; dlg.setAttribute('aria-label', onRetake ? 'Your photo, large' : `Document ${i + 1}, large`);
   pic.alt = d.name ? `Your photo of ${d.name}` : `Your photo of document ${i + 1}`; pic.src = c.toDataURL('image/jpeg', 0.9);
   dlg.innerHTML = `<button type="button" class="lb-x" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>`;
   dlg.append(pic);
   if (d.name) dlg.insertAdjacentHTML('beforeend', `<p>${escHtml(d.name)}</p>`);
+  if (onRetake) {                                            // Retake sits just below the photo
+    const rb = document.createElement('button'); rb.type = 'button'; rb.className = 'lb-retake';
+    rb.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-camera"/></svg>Retake';
+    rb.addEventListener('click', (e) => { e.stopPropagation(); dlg.close(); onRetake(); });
+    dlg.append(rb);
+  }
   dlg.addEventListener('click', () => dlg.close());
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg); dlg.showModal();

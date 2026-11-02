@@ -552,10 +552,11 @@
   [data-v8] .docstabs .docsw { flex: 0 0 auto; }
   [data-v8] .docstabs button { flex: 1 1 auto; }
   /* the scan result: a square of the photo (half the width) with what we found beside it */
-  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 12px; border-radius: 16px; background: var(--tint); }
+  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 8px 12px; align-items: start; padding: 12px; border-radius: 16px; background: var(--tint); }
   [data-v8] .snapbox .scanres[hidden] { display: none; }
   [data-v8] .snapbox .scanres > .scanbusy { grid-column: 1 / -1; }
-  [data-v8] .snapbox .scanres canvas { grid-column: 1; width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; }
+  [data-v8] .snapbox .scanres canvas { grid-column: 1; width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; cursor: zoom-in; }
+  [data-v8] .snapbox .scanres canvas:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   [data-v8] .snapbox .scanres canvas[hidden] { display: none; }
   [data-v8] .snapbox .scanres:has(canvas:not([hidden])) > #scanText { grid-column: 2; margin: 0; font-size: 14px; line-height: 1.4; }
   [data-v8] .snapbox .scanres:not(:has(canvas:not([hidden]))) > #scanText { grid-column: 1 / -1; }
@@ -646,6 +647,8 @@
   dialog.lightbox { max-width: 100vw; max-height: 100dvh; width: 100vw; height: 100dvh; margin: 0; padding: 56px 16px 20px; border: 0; background: transparent; display: none; place-items: center; align-content: center; gap: 10px; cursor: zoom-out; }
   dialog.lightbox[open] { display: grid; }
   dialog.lightbox img { max-width: min(100%, 900px); max-height: calc(100dvh - 130px); object-fit: contain; border-radius: 6px; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+  dialog.lightbox .lb-retake { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 0; border-radius: 999px; background: #fff; color: var(--accent); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  dialog.lightbox .lb-retake .i { width: 18px; height: 18px; }
   dialog.lightbox p { margin: 0; color: #fff; font-size: 14px; font-weight: 600; }
   dialog.lightbox .lb-x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: #fff; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
   dialog.lightbox .lb-x .i { width: 20px; height: 20px; }
@@ -1913,6 +1916,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012237" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012239" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
