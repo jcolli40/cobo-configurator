@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012309';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012309';
-import { wallTexture, wallSwatch } from './env.js?v=202611012309';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012309';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012317';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012317';
+import { wallTexture, wallSwatch } from './env.js?v=202611012317';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012317';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1162,7 +1162,7 @@ function updateUI() {
     logo: sp.logo ? sp.logo.file : 'None',
     certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
     wall: `${envNow().name}${state.wallPhoto.img ? ' · your wall' : ''}`,
-    certs: showOwn() ? `${state.myCerts.length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
+    certs: showOwn() ? `${shownOwn().length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
     mywall: state.myCerts.length ? `${state.myCerts.length} document${state.myCerts.length === 1 ? '' : 's'}` : wallInfo ? 'Photo' : 'Snap it',
   };
   document.querySelectorAll('[data-v]').forEach(el => { if (v[el.dataset.v] != null) el.textContent = v[el.dataset.v]; });
@@ -1281,7 +1281,7 @@ function build() {
   $('#sheets').addEventListener('change', (e) => {
     state.sheets = e.target.checked;
     if (V6 && state.sheets && !sampleCount()) { state.certNeed = 1; if (!sizePicked && !state.myCerts.length) { useBestFit(); return rememberDesign(); } }   // (on with nothing counted: one Letter)
-    if (V8 && state.myCerts.length && !sizePicked) { useBestFit(); return rememberDesign(); }   // (v8: samples <-> their own: size for whichever shows)
+    if (V8 && shownOwn().length && !sizePicked) { useBestFit(); return rememberDesign(); }   // (v8: samples <-> their own: size for whichever shows)
     refresh(); if (V6) { updateUI(); rememberDesign(); }
   });
   $('#sheetTurn').addEventListener('change', (e) => { state.sheetTurn = e.target.checked; refresh(); });
@@ -1443,7 +1443,7 @@ function paintSteps() {
 // Preview: the board as it stands, line by line
 function paintSummary(sp) {
   const { w, h } = dims(), L = state.lamSel;
-  const own = state.myCerts.length, mix = !own && curDocs().length;
+  const own = shownOwn().length, mix = !own && !showOwn() && curDocs().length;
   const samples = !state.sheets ? 0 : mix ? lastDocs?.places.length || 0 : lastSheets?.primary ? lastSheets.n : 0;
   const rows = [
     ['Size', `${fmt(w)}" × ${fmt(h)}" ${state.orient}`],
@@ -1616,9 +1616,9 @@ function wireSteps() {
     own.querySelector('.opt + .help').after(box);                     // (inside "Add your own", right under its title)
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
-    $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
+    $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">Add all to board</button></div>');
     $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
-    $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
+    $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; if (!sizePicked) useBestFit(); else refresh(); });
     $('#bizBtn').addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
     $('#stateOk').addEventListener('click', () => {
@@ -1865,7 +1865,7 @@ function paintPrices() {
     if (V6) { const { w, h } = dims(); up.textContent = `${fmt(w)} × ${fmt(h)}`; up.hidden = false; }   // v6: the size itself
   }
   if (V6) {                                                    // Documents: how many are on the board (+ when none yet)
-    const up = badge($('.sec[data-sec="certs"] .sec-h')), n = (showOwn() ? state.myCerts.length : 0) || (state.sheets ? sampleCount() : 0);
+    const up = badge($('.sec[data-sec="certs"] .sec-h')), n = (showOwn() ? shownOwn().length : 0) || (state.sheets ? sampleCount() : 0);
     up.classList.add('size', 'docn'); if (n) up.textContent = n; else up.innerHTML = '<svg class="i"><use href="#i-plus"/></svg>'; up.hidden = false;
     up.setAttribute('aria-label', n ? `${n} document${n === 1 ? '' : 's'}` : 'None added yet');
     paintSizeAuto(n);
@@ -2080,7 +2080,7 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
   const names = ai && found.some(f => f.name) ? ` (${found.map(f => f.name || 'not sure').join(', ')})` : '';
   if (V8 && ai?.location) guessState(ai.location, 'photo');
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
-  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Tick each one below that\'s right, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
+  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Select each one to add it to your board, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
   if (V8) {                                                  // the result as a short list: the count (large), the sizes, each document by number, then what to do
     const t = $('#scanText'); t.textContent = '';
     const line = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; t.append(s); return s; };
@@ -2088,7 +2088,7 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     line('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', '));
     if (ai && found.some(f => f.name)) found.forEach((f, n) => line('sc-item', `${n + 1}. ${f.name || '(not sure / manual entry)'}`));
     if (skipped.length) line('sc-item sc-left', `Left off the board: ${skipped.join(', ')}.`);
-    line('sc-ask', ai ? "Tick each one below that's right, or fix its name or size." : 'Wrong? Change sizes or remove extras below.');
+    line('sc-ask', ai ? "Select each one to add it to your board, or fix its name or size." : 'Wrong? Change sizes or remove extras below.');
   }
   state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
@@ -2755,7 +2755,8 @@ function mixDocs() {
 }
 const letterTurned = () => state.sheetTurn === true || state.sheetTurn === 'wide';   // Letter samples in a size mix
 const showOwn = () => state.myCerts.length > 0 && !(V8 && state.sheets);   // (v8: the samples switch shows samples instead; their own are kept)
-const curDocs = () => (showOwn() ? state.myCerts : mixDocs());   // what's packed on the board (none: the 8.5x11 grid)
+const shownOwn = () => (V8 ? state.myCerts.filter(d => d.ok !== false) : state.myCerts);   // (v8: only the ticked ones go on the board; ok is false until they tick it)
+const curDocs = () => (showOwn() ? shownOwn() : mixDocs());   // what's packed on the board (none: the 8.5x11 grid)
 const sampleCount = () => state.certNeed + MIX_SIZES.reduce((s, id) => s + (state.sampleMix[id] || 0), 0);
 const docsFit = (W, H) => packDocs(W, H, curDocs().map(d => ({ ...d, px: null }))).missing.length === 0;
 // smallest board that holds all of the customer's documents
@@ -2792,6 +2793,7 @@ function bestFit(n) {
   return { custom: true, w: Math.min(w, CUSTOM.maxShort), h: Math.min(h, CUSTOM.maxLong), fit: fitsOn(Math.min(w, CUSTOM.maxShort), Math.min(h, CUSTOM.maxLong)) };
 }
 function useBestFit() {
+  if (V8 && showOwn() && !curDocs().length) return refresh();     // (their documents are listed but none is ticked yet: nothing to size for)
   const b = curDocs().length ? bestFitDocs() : bestFit(state.certNeed);
   if (b?.tooBig) return;
   curDocs().forEach(d => { d.px = d.py = null; });
@@ -3017,7 +3019,7 @@ function wireExtras() {
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
     const d = state.myCerts[+li.dataset.i];
-    if (e.target.matches('[data-ok]')) { d.ok = e.target.checked; tickPop = d.ok ? [+li.dataset.i] : []; docsKey = ''; return refresh(); }
+    if (e.target.matches('[data-ok]')) { d.ok = e.target.checked; tickPop = d.ok ? [+li.dataset.i] : []; docsKey = ''; if (!sizePicked) { useBestFit(); return rememberDesign(); } return refresh(); }
     if (e.target.matches('[data-type]')) { d.typeId = e.target.value || null; d.name = CAT?.byId[d.typeId]?.name || 'Document'; d.ok = !!d.typeId; docsKey = ''; return refresh(); }
     if (e.target.matches('select:not([data-type])')) { d.size = e.target.value; if (d.size === 'custom') { [d.cw, d.ch] = docDims({ ...d, size: 'letter', turn: false }); } }
     if (e.target.matches('[data-cw]')) d.cw = Math.max(2, Math.min(96, +e.target.value || 8.5));
@@ -3044,7 +3046,7 @@ function wireExtras() {
 // parts of the panel that depend on the extras (called from updateUI)
 let docsKey = '';   // redraw the document list only when the documents change (keeps focus in its inputs)
 function paintDocs() {
-  const docs = state.myCerts, miss = new Set(lastDocs?.missing || []);
+  const docs = state.myCerts, onBoard = shownOwn(), miss = new Set((lastDocs?.missing || []).map(k => docs.indexOf(onBoard[k])));
   const key = docs.map(d => [d.imgId, d.size, d.turn, d.cw, d.ch, d.ok, d.typeId].join(':')).join('|') + '/' + [...miss].join(',') + (CAT ? '+' : '');
   if ($('#docTools')) $('#docTools').hidden = !docs.length;
   if (key === docsKey) return;
@@ -3068,7 +3070,7 @@ function paintDocs8(docs, miss, opts) {
   // left: the picture (tap to see it large) with Retake just below it; right: the type and size (full width), then Rotate and Delete;
   // the tick box sits in the top right corner of the box
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc doc8${miss.has(i) ? ' miss' : ''}${d.ok ? ' ok' : ''}" data-i="${i}">
-      <input type="checkbox" class="okbox" data-ok aria-label="Document ${i + 1} is right"${d.ok ? ' checked' : ''}>
+      <input type="checkbox" class="okbox" data-ok aria-label="Add document ${i + 1} to the board"${d.ok ? ' checked' : ''}>
       <span class="dpic"><button type="button" class="thumb" data-act="zoom" title="See it large" aria-label="See document ${i + 1} large"><img alt=""></button>
         <button type="button" class="retakebtn" data-act="retake" aria-label="Retake the photo of document ${i + 1}"><svg class="i"><use href="#i-camera"/></svg>Retake</button></span>
       <span class="dfields"><span class="dnum">Document ${i + 1}</span>${types ? `<select data-type aria-label="Which document">${types}</select><button type="button" class="typebtn" data-act="type" aria-haspopup="dialog" aria-label="Which document, document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select><button type="button" class="typebtn sizebtn" data-act="size" aria-haspopup="dialog" aria-label="Size of document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
@@ -3085,7 +3087,7 @@ function paintDocs8(docs, miss, opts) {
   tickPop = [];
   const okN = docs.filter(d => d.ok).length;
   $('#dlHead').hidden = !docs.length; $('#okAll').hidden = okN === docs.length;
-  $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} checked` : `Tick each one that's right (${okN} of ${docs.length})`;
+  $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} added to the board` : `Select to add to your board (${okN} of ${docs.length})`;
 }
 // v8: "are you sure?" before a document is deleted (a real <dialog>: Esc cancels, focus stays inside, starts on Cancel)
 function askSure(question, okLabel) {
@@ -3171,7 +3173,7 @@ function paintExtras() {
   if (V8) paintDocTabs();
   if (V8) { $('#ownDocs').classList.toggle('dim', !!state.myCerts.length && state.sheets); paintState(); }
   // how many certificates (or: which of your documents) -> advice + highlight the best-fit size tile
-  const own = showOwn() ? state.myCerts.length : 0, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)
+  const own = showOwn() ? shownOwn().length : 0, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)
   document.querySelector('.certcount .opt').hidden = !!own;
   if (V6) {
     $('#mixRows').hidden = !!own;
