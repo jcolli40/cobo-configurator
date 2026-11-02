@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020723';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020723';
-import { wallTexture, wallSwatch } from './env.js?v=202611020723';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020723';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020725';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020725';
+import { wallTexture, wallSwatch } from './env.js?v=202611020725';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020725';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2068,7 +2068,7 @@ async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer 
   if (V8 && replaceIdx == null && !add) scans = [];
   const tmp = {};
   try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
-  if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); }
+  if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); paintDocTabs(); }
   // dev copy: Gemini finds the documents and names each one's type (Part A "detect"). Types that usually aren't posted
   // on a board (signs, tags, wallet cards, on-file papers) are left off. The home-made finder is the fallback when
   // Gemini isn't set up or fails.
@@ -2107,7 +2107,7 @@ async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer 
     const sq = document.createElement('canvas'); sq.width = sq.height = side; sq.getContext('2d').drawImage(cv, sx, sy, side, side, 0, 0, side, side);
     cv.width = cv.height = side; cv.getContext('2d').drawImage(sq, 0, 0);
   }
-  $('#scanResult').hidden = false; $('#scanCanvas').hidden = !!V8; $('#scanBusy')?.classList.remove('on');
+  $('#scanResult').hidden = false; $('#scanCanvas').hidden = !!V8; $('#scanBusy')?.classList.remove('on'); if (V8) paintDocTabs();
   if (!found.length) {
     $('#scanText').dataset.msg = '1'; $('#scanText').hidden = false;
     $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
@@ -3237,14 +3237,14 @@ function paintDocTabs() {
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
   $('#docSw').checked = s;
   $('#docTabs').classList.toggle('compact', state.myCerts.length > 0);
-  $('#docTabs').classList.toggle('center', !state.myCerts.length && !state.sheets);   // (nothing added yet: the group sits in the middle of the panel)
+  $('#docTabs').classList.toggle('center', !state.myCerts.length && !state.sheets && !$('#scanBusy')?.classList.contains('on'));   // (nothing added yet: the group sits in the middle of the panel)
   // documents on the list (their own, not samples): the Add button moves up into the light blue result box, above "Found N"; otherwise it lives in the panel's own group
-  const wrap = $('#docTabs .addwrap, #scanResult .addwrap'), res = $('#scanResult'), inBox = !!res && state.myCerts.length > 0 && !state.sheets;
+  const wrap = $('#docTabs .addwrap, #scanResult .addwrap'), res = $('#scanResult'), scanning = !!$('#scanBusy')?.classList.contains('on'), listed = state.myCerts.length > 0 && !state.sheets, inBox = !!res && (listed || scanning);   // (while it reads the photo the button already sits in the blue box)
   if (wrap) {
     if (inBox && wrap.parentElement !== res) res.prepend(wrap);
     else if (!inBox && wrap.parentElement === res) $('#docTabs').append(wrap);
   }
-  $('#docTabs').classList.toggle('gone', inBox);   // (found documents: the panel folds down to the button)
+  $('#docTabs').classList.toggle('gone', !!res && listed);   // (found documents: the panel folds down to the button)
 }
 function paintExtras() {
   paintDocs();
