@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012357';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012357';
-import { wallTexture, wallSwatch } from './env.js?v=202611012357';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012357';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020016';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020016';
+import { wallTexture, wallSwatch } from './env.js?v=202611020016';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020016';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1607,7 +1607,7 @@ function wireSteps() {
     own.querySelector('.opt + .help').textContent = 'On your wall, or laid out on a table: snap one photo of all your documents and we\'ll find each one, name it, straighten it and size a board to fit. Or add them one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
-    res.insertAdjacentHTML('beforeend', '<button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photo and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>');
+    res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photos and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
     res.querySelector('#scFold').addEventListener('click', () => {            // the arrow folds the box: only "Found 4" and the state stay
       const on = res.classList.toggle('folded'), f = res.querySelector('#scFold');
       f.setAttribute('aria-expanded', !on); f.setAttribute('aria-label', on ? 'Show the photo and the list' : 'Hide the photo and the list');
@@ -2050,9 +2050,10 @@ function packFresh(W, H, docs) {
 }
 // "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
 const chk = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i chk'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<use href="#i-check-circle"/>'; return s; };   // (the green check before "Found 4")
-let scanFull = null;                // v8: the last scan's whole photo with its boxes (the thumbnail is a square of it)
-async function scanWall(file, pre, add) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list
-  const keepOld = add ? state.myCerts.slice() : [];
+let scans = [];                     // v8: each snapped photo: { full: the whole photo with its boxes, thumb: a square around the documents }
+async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list. replaceIdx: redo that earlier photo
+  const keepOld = replaceIdx != null ? state.myCerts.filter(d => d.scanNo !== replaceIdx) : add ? state.myCerts.slice() : [];
+  if (V8 && replaceIdx == null && !add) scans = [];
   const tmp = {};
   try { await loadArt(tmp, file); } catch { return toast("Sorry, that photo couldn't be read. Try a JPG or PNG."); }
   if (V8) { $('#scanResult').hidden = false; $('#scanCanvas').hidden = true; $('#scanText').textContent = 'Reading your wall…'; $('#scanBusy')?.classList.add('on'); }
@@ -2084,7 +2085,8 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     g.strokeStyle = '#2e7d4f'; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k);
     g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, tw, 22); g.fillStyle = '#fff'; g.fillText(label, b.x * k + 7, b.y * k + 17);
   });
-  if (V8) { scanFull = document.createElement('canvas'); scanFull.width = cv.width; scanFull.height = cv.height; scanFull.getContext('2d').drawImage(cv, 0, 0); }   // (the whole photo, for the lightbox)
+  let fullShot = null;
+  if (V8) { fullShot = document.createElement('canvas'); fullShot.width = cv.width; fullShot.height = cv.height; fullShot.getContext('2d').drawImage(cv, 0, 0); }   // (the whole photo, for the lightbox)
   if (V8 && found.length) {                                  // a square around the documents (the photo is long: the wall around them isn't needed)
     const xs = found.flatMap(f => [f.box.x * k, (f.box.x + f.box.w) * k]), ys = found.flatMap(f => [f.box.y * k, (f.box.y + f.box.h) * k]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -2093,28 +2095,19 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     const sq = document.createElement('canvas'); sq.width = sq.height = side; sq.getContext('2d').drawImage(cv, sx, sy, side, side, 0, 0, side, side);
     cv.width = cv.height = side; cv.getContext('2d').drawImage(sq, 0, 0);
   }
-  $('#scanResult').hidden = false; $('#scanCanvas').hidden = false; $('#scanBusy')?.classList.remove('on');
+  $('#scanResult').hidden = false; $('#scanCanvas').hidden = !!V8; $('#scanBusy')?.classList.remove('on');
   if (!found.length) {
+    $('#scanText').dataset.msg = '1'; $('#scanText').hidden = false;
     $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
     return { found, img: tmp.img };
   }
+  delete $('#scanText').dataset.msg;                         // (found some: the box is drawn from the documents again)
   const counts = {};
   for (const f of found) { const s = DOC_SIZES.find(x => x.id === f.size); const n = `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}`; counts[n] = (counts[n] || 0) + 1; }
   const names = ai && found.some(f => f.name) ? ` (${found.map(f => f.name || 'not sure').join(', ')})` : '';
   if (V8 && ai?.location) guessState(ai.location, 'photo');
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
-  $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Select each one to add it to your board, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
-  if (V8) {                                                  // the result: photo beside the count and sizes; the numbered documents under them, full width
-    const t = $('#scanText'); t.textContent = '';
-    const span = (cls, txt) => { const s = document.createElement('span'); s.className = cls; if (txt != null) s.textContent = txt; return s; };
-    const top = span('sc-top'), head = span('sc-head', `Found ${found.length}`); head.prepend(chk());
-    top.append(head, span('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', '))); t.append(top);
-    const list = span('sc-list');
-    if (ai && found.some(f => f.name)) found.forEach((f, n) => list.append(span('sc-item', `${n + 1}. ${f.name || '(not sure / manual entry)'}`)));
-    if (skipped.length) list.append(span('sc-item sc-left', `Left off the board: ${skipped.join(', ')}.`));
-    if (list.childNodes.length) t.append(list);
-    $('#scanResult').classList.remove('folded'); $('#scFold')?.setAttribute('aria-expanded', 'true');   // (a new scan opens the box again)
-  }
+  if (!V8) $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Select each one to add it to your board, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
   state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
     const d = { sample: true, title: f.name || (ai ? 'Compliance Document' : SHEETS.titles[i % SHEETS.titles.length]), size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
@@ -2122,14 +2115,41 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     return d;
   });
   if (V8 && ai) state.myCerts = found.map(f => wallDoc(tmp.img, f));   // v8: their real certificates, cut out of the photo
+  if (V8) {                                                  // remember this photo, and tag its documents with it
+    const no = replaceIdx != null ? replaceIdx : scans.length;
+    scans[no] = { full: fullShot, thumb: cv.toDataURL('image/jpeg', 0.8) };
+    state.myCerts.forEach(d => { d.scanNo = no; });
+    $('#scanResult').classList.remove('folded'); $('#scFold')?.setAttribute('aria-expanded', 'true');   // (a new scan opens the box again)
+  }
   if (keepOld.length) state.myCerts = [...keepOld, ...state.myCerts];   // (added to the list, ticks and edits kept)
   state.sheets = !(V8 && ai); $('#sheets').checked = state.sheets;   // (v8: their own documents, so samples off)
   docsKey = '';
   useBestFit();
+  if (V8) paintScan();
   if (LAYOUT !== 'v4') toast(`Found ${found.length} document${found.length === 1 ? '' : 's'}. Here's a board that fits them.`);
   return { found, img: tmp.img };
 }
 
+// v8: the result box, drawn from state: "Found N", a thumbnail for each snapped photo, the sizes, and the documents by number
+function paintScan() {
+  const res = $('#scanResult'); if (!res || $('#scanBusy')?.classList.contains('on')) return;
+  const docs = state.myCerts.filter(d => d.scanNo != null), any = state.myCerts.length > 0, t = $('#scanText');
+  if (!docs.length && !scans.length && !any) return;
+  if (t.dataset.msg) return;                                 // (a "couldn't spot them" message stays until the next scan finds something)
+  res.hidden = !any;
+  const scanned = docs.length > 0;
+  $('#scBar').hidden = !scanned; $('#scThumbs').hidden = !scanned; t.hidden = !scanned;
+  if (!scanned) return;
+  const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Found ${docs.length}`);
+  $('#scThumbs').replaceChildren(...scans.map((s, i) => (s && docs.some(d => d.scanNo === i) ? Object.assign(document.createElement('button'),
+    { type: 'button', className: 'scthumb', innerHTML: '<img alt="">' }) : null)).map((btn, i) => { if (btn) { btn.dataset.i = i; btn.setAttribute('aria-label', `See snapped photo ${i + 1} large`); btn.firstChild.src = scans[i].thumb; } return btn; }).filter(Boolean));
+  const span = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; return s; };
+  const counts = {};
+  for (const d of docs) { const s = DOC_SIZES.find(x => x.id === d.size), n = s ? `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}` : `custom ${fmt(d.cw)}×${fmt(d.ch)}`; counts[n] = (counts[n] || 0) + 1; }
+  t.textContent = '';
+  t.append(span('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')));
+  if (docs.some(d => d.typeId)) docs.forEach((d) => t.append(span('sc-item', `${state.myCerts.indexOf(d) + 1}. ${d.typeId && d.typeId !== 'other' && CAT?.byId[d.typeId] ? CAT.byId[d.typeId].name : '(not sure / manual entry)'}`)));
+}
 // v8: trim (and straighten) a photo added as one document down to the certificate in it
 function trimDoc(own, item) {
   const crop = straightenCertificate(own.img, item);
@@ -3018,24 +3038,22 @@ function wireExtras() {
   $('#docAuto')?.addEventListener('click', () => { state.myCerts.forEach(d => { d.px = d.py = null; }); refresh(); });
   $('#docDemo')?.addEventListener('click', loadExampleDocs);
   $('#scanDemo')?.addEventListener('click', scanExample);
-  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('click', (e) => { if (e.isTrusted) scanRetake = false; });   // (a real tap on Snap / Upload is a new photo, not a retake)
+  for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('click', (e) => { if (e.isTrusted) scanRetake = -1; });   // (a real tap on Snap / Upload is a new photo, not a retake)
   for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', async (e) => {
     const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return;
     let add = false;
-    const retaking = scanRetake; scanRetake = false;
-    if (V8 && state.myCerts.length && !retaking) {                      // already on the list: add to it (the default), or start over
+    const retaking = scanRetake; scanRetake = -1;
+    if (V8 && state.myCerts.length && retaking < 0) {                      // already on the list: add to it (the default), or start over
       const n = state.myCerts.length, pick = await askAddOrNew(`You already have ${n} document${n === 1 ? '' : 's'} on your list.`);
       if (!pick) return;
       add = pick === 'add';
     }
-    for (const f of fs) { await scanWall(f, null, add); add = true; }   // (several files: each one is added after the first)
+    for (const f of fs) { await scanWall(f, null, add, retaking >= 0 && f === fs[0] ? retaking : undefined); add = true; }   // (several files: each one is added after the first)
   });
   // the snapped photo: tap it to see it large, with Retake below (Retake replaces that scan)
-  let scanRetake = false;
-  const bigScan = () => { if (scanFull) openLightbox({ img: scanFull, name: '' }, 0, () => { scanRetake = true; $('#scanCam').click(); }); };
-  $('#scanCanvas').addEventListener('click', bigScan);
-  $('#scanCanvas').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bigScan(); } });
-  $('#scanCanvas').tabIndex = 0; $('#scanCanvas').setAttribute('role', 'button'); $('#scanCanvas').setAttribute('aria-label', 'See your photo large');
+  let scanRetake = -1;               // which snapped photo is being redone (-1: none)
+  const bigScan = (i) => { if (scans[i]) openLightbox({ img: scans[i].full, name: '' }, 0, () => { scanRetake = i; $('#scanCam').click(); }); };
+  document.addEventListener('click', (e) => { const b = e.target.closest('.scthumb'); if (b) bigScan(+b.dataset.i); });
   const list = $('#docList');
   list.addEventListener('change', (e) => {
     const li = e.target.closest('.doc'); if (!li) return;
@@ -3149,10 +3167,11 @@ function askAddOrNew(question) {
     dlg.innerHTML = `<p id="sureQ">${escHtml(question)}</p><p class="sure-s">Add the new ones to your list, or start over with just these?</p>`
       + '<div class="sure-b"><button type="button" class="sure-add" autofocus>Add to list</button><button type="button" class="sure-no">Start over</button></div>';
     let pick = null;
-    dlg.querySelector('.sure-add').addEventListener('click', () => { pick = 'add'; dlg.close(); });
-    dlg.querySelector('.sure-no').addEventListener('click', () => { pick = 'new'; dlg.close(); });
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-    dlg.addEventListener('close', () => { dlg.remove(); resolve(pick); });
+    const done = () => { dlg.remove(); resolve(pick); };      // (answers on the tap itself, not on the dialog's close event)
+    dlg.querySelector('.sure-add').addEventListener('click', () => { pick = 'add'; done(); });
+    dlg.querySelector('.sure-no').addEventListener('click', () => { pick = 'new'; done(); });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) done(); });
+    dlg.addEventListener('cancel', done);
     document.body.append(dlg); dlg.showModal();
   });
 }
@@ -3207,7 +3226,7 @@ function paintDocTabs() {
 }
 function paintExtras() {
   paintDocs();
-  if (V8) paintDocTabs();
+  if (V8) { paintDocTabs(); paintScan(); }
   if (V8) { $('#ownDocs').classList.toggle('dim', !!state.myCerts.length && state.sheets); paintState(); }
   // how many certificates (or: which of your documents) -> advice + highlight the best-fit size tile
   const own = showOwn() ? shownOwn().length : 0, docs = curDocs().length, word = own ? 'document' : 'certificate';   // (docs: own, or a v6 size mix)

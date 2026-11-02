@@ -573,32 +573,26 @@
   [data-v8] .docstabs .docsw { flex: 0 0 auto; }
   [data-v8] .docstabs button { flex: 1 1 auto; }
   /* the scan result: a square of the photo (half the width) with what we found beside it */
-  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 8px 12px; align-items: start; padding: 12px; border-radius: 16px; background: var(--tint); }
+  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; border: 1.5px solid #9fb4d6; border-radius: 16px; background: none; }
   [data-v8] .snapbox .scanres[hidden] { display: none; }
-  [data-v8] .snapbox .scanres > .scanbusy { grid-column: 1 / -1; }
-  [data-v8] #scanText:has(.sc-top) { display: contents; }   /* (the photo, the count + sizes, and the list are the box's own grid items) */
+  [data-v8] .snapbox .scanres > canvas { display: none; }   /* (the working canvas: the photos show as thumbnails) */
+  [data-v8] .sc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  [data-v8] .sc-bar[hidden], [data-v8] .sc-thumbs[hidden], [data-v8] #scanText[hidden] { display: none; }
+  [data-v8] .sc-head { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 750; letter-spacing: -.01em; color: var(--accent); }   /* (the same size as the panel title) */
+  [data-v8] .sc-head .chk { width: 22px; height: 22px; color: #2e7d4f; flex: none; }
+  [data-v8] .sc-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+  [data-v8] .scthumb { width: 68px; height: 84px; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #f4f4f6; cursor: zoom-in; }   /* (the same size as the pictures in the list) */
+  [data-v8] .scthumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  [data-v8] .scthumb:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  [data-v8] #scanText { margin: 0; font-size: 14px; line-height: 1.45; }
   [data-v8] #scanText span { display: block; }
-  [data-v8] #scanText .sc-top { grid-column: 2; padding-right: 34px; }
-  [data-v8] #scanText .sc-head { font-size: 22px; font-weight: 800; line-height: 1.2; color: var(--ink); }
-  [data-v8] #scanText .sc-sizes { margin-top: 2px; font-size: 14px; color: var(--muted); }
-  [data-v8] #scanText .sc-list { grid-column: 1 / -1; margin-top: 2px; }
-  [data-v8] #scanText .sc-item { font-size: 14px; line-height: 1.45; color: var(--ink); }
+  [data-v8] #scanText .sc-sizes { margin-bottom: 6px; color: var(--muted); }
+  [data-v8] #scanText .sc-item { color: var(--ink); }
   [data-v8] #scanText .sc-left { margin-top: 4px; color: var(--muted); }
-  [data-v8] .snapbox .scanres { position: relative; }
-  [data-v8] .snapbox .scanres .sc-fold { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .75); color: var(--accent); cursor: pointer; }
-  [data-v8] .snapbox .scanres .sc-fold .i { width: 20px; height: 20px; stroke-width: 2; transition: transform .25s ease; }
-  [data-v8] .snapbox .scanres.folded .sc-fold .i { transform: rotate(180deg); }
-  [data-v8] .snapbox .scanres.folded canvas { display: none; }
-  [data-v8] #scanResult.folded #scanText :is(.sc-sizes, .sc-list) { display: none; }
-  [data-v8] #scanResult.folded #stateRow { display: none; }   /* (the state question folds away with the rest) */
-  [data-v8] #scanResult.folded #scanText .sc-top { grid-column: 1 / -1; }
-  [data-v8] .snapbox .scanres:not(:has(.sc-top)) .sc-fold { display: none; }
-  [data-v8] #scanText .chk { width: 22px; height: 22px; margin-right: 6px; vertical-align: -4px; color: #2e7d4f; }
-  [data-v8] .snapbox .scanres canvas { grid-column: 1; width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; cursor: zoom-in; }
-  [data-v8] .snapbox .scanres canvas:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
-  [data-v8] .snapbox .scanres canvas[hidden] { display: none; }
-  [data-v8] .snapbox .scanres:has(canvas:not([hidden])) > #scanText { grid-column: 2; margin: 0; font-size: 14px; line-height: 1.4; }
-  [data-v8] .snapbox .scanres:not(:has(canvas:not([hidden]))) > #scanText { grid-column: 1 / -1; }
+  [data-v8] .sc-fold { display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--tint); color: var(--accent); cursor: pointer; }
+  [data-v8] .sc-fold .i { width: 20px; height: 20px; stroke-width: 2; transition: transform .25s ease; }
+  [data-v8] #scanResult.folded .sc-fold .i { transform: rotate(180deg); }
+  [data-v8] #scanResult.folded :is(.sc-thumbs, #scanText, #stateRow) { display: none; }   /* (folded: just "Found N") */
   [data-v8] .camico .bd { fill: #fff; stroke: #b4b7bf; stroke-width: 3; }
   [data-v8] .camico .sh { fill: #cfe0f7; stroke: none; }
   [data-v8] .camico .cap { fill: #b4b7bf; stroke: none; }
@@ -648,7 +642,7 @@
     [data-v8] .doc8 .okbox.pop:checked { animation: okPop .38s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--d, 0s); }
     [data-v8] .doc8 .okbox.pop:checked::after { animation: okWipe .28s ease-out both; animation-delay: calc(var(--d, 0s) + .14s); }
     [data-v8] .doc8 { transition: background-color .4s ease, border-color .4s ease; }
-    [data-v8] #scanText .chk { animation: chkIn .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+    [data-v8] .sc-head .chk { animation: chkIn .5s cubic-bezier(.3, 1.4, .5, 1) both; }
   }
   @keyframes okPop { from { transform: scale(.82); background-size: 0% 100%; } 55% { transform: scale(1.16); } to { transform: scale(1); background-size: 100% 100%; } }
   @keyframes okWipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
@@ -987,6 +981,14 @@
   [data-v6] .wa-brand { position: relative; display: flex; align-items: center; gap: 12px; padding: 13px 16px 9px; }   /* (up 6px: room under the row before the swatches scroll past) */
   [data-v6] .wa-brand #lamFilters { flex: 1; min-width: 0; justify-content: flex-end; position: static; }   /* (the open list spans the whole row) */
   [data-v6] .wa-brand details.fgroup { flex: 1 1 88px; max-width: 150px; }
+  @media (max-width: 860px) {
+    [data-v6] .wa-brand { gap: 8px; }
+    [data-v6] .wa-brand img { height: 18px; }
+    [data-v6] .wa-brand #lamFilters { flex-wrap: nowrap; gap: 6px; }
+    [data-v6] .wa-brand details.fgroup { flex: 1 1 0; min-width: 0; max-width: none; }
+    [data-v6] .wa-brand details.fgroup summary { padding: 7px 6px 7px 10px; font-size: 13px; }
+    [data-v6] .wa-brand #lamFilters:has(details:nth-child(3)) { flex-wrap: wrap; }   /* (Woodgrains adds Cut and Match: those two wrap) */
+  }
   [data-v6] .side-search { display: none; }
   /* swatches per row (header): the solid colors follow it too */
   [data-v6] .side-h .seg.cols { height: 36px; flex: none; }
@@ -1976,6 +1978,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012357" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020016" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
