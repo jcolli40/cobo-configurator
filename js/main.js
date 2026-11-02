@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020741';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020741';
-import { wallTexture, wallSwatch } from './env.js?v=202611020741';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020741';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020743';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020743';
+import { wallTexture, wallSwatch } from './env.js?v=202611020743';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020743';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1622,6 +1622,7 @@ function wireSteps() {
     $('#scanFile').accept = 'image/*,application/pdf,.pdf'; $('#scanFile').multiple = true;          // (no camera forced: phones offer Photo Library, Take Photo and Files)
     $('#scanFile').closest('label').insertAdjacentHTML('afterbegin', '<svg class="i" aria-hidden="true"><use href="#i-share"/></svg>');   // (the same upload arrow as Share)
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
+    $('#scanFile').closest('label').insertAdjacentHTML('beforeend', '<small class="ftypes">PDF · JPG · PNG · HEIC</small>');   // (the file types it takes, to the right)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
     own.querySelector('.opt + .help').textContent = 'Snap all your docs at once or add them individually. We\'ll import them & auto-select the board size to fit.';
