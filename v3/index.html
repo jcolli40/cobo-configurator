@@ -560,11 +560,11 @@
   [data-v8] .docstabs .camart .cap { fill: #bdbdc2; }
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
-  /* just blue text with the plus-in-brackets icon on the right */
-  [data-v8] .docstabs > .addwrap > #docTabOwn { flex: 0 0 auto; padding: 6px 8px; background: none; color: var(--accent); font-size: 18px; font-weight: 750; }
-  [data-v8] .docstabs > .addwrap > #docTabOwn .camico { margin: 0 0 0 10px; width: 28px; height: 28px; }
+  /* the same grey card as the panel buttons (Documents, Size, Board...): grey fill, 12px corners, dark label, navy icon on the right */
+  [data-v8] .docstabs > .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
+  [data-v8] .docstabs > .addwrap > #docTabOwn:hover { background: #ececf0; }
+  [data-v8] .docstabs > .addwrap > #docTabOwn .camico { margin: 0 0 0 10px; width: 26px; height: 26px; }
   [data-v8] .docstabs > .addwrap > #docTabOwn .camico .vf { stroke: var(--accent); }
-  [data-v8] .docstabs.compact > .addwrap > #docTabOwn { background: var(--tint); padding: 10px 16px; font-size: 16px; }
   [data-v8] .docstabs > .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
   [data-v8] .docstabs > .addwrap > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
   [data-v8] .addmenu { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(340px, 100%); display: grid; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .2); }
@@ -2014,6 +2014,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020556" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020559" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
