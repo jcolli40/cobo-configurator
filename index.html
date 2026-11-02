@@ -553,6 +553,7 @@
   [data-v8] .docstabs.center { flex: 1 1 auto; justify-content: center; }
   [data-v8] #optSheet:has(.docstabs.center) #optBody { flex: 0 0 auto; }
   [data-v8] .docstabs .addwrap { margin-top: 15px; }
+  [data-v8] .docstabs.gone { display: none; }
   [data-v8] .docstabs.compact { gap: 0; margin: 0; padding: 6px 16px 10px; }
   [data-v8] .docstabs.compact .addwrap { margin-top: 0; }
   [data-v8] .docstabs.compact :is(.camart, .addline, .help) { display: none; }
@@ -568,11 +569,11 @@
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
   /* the same grey card as the panel buttons (Documents, Size, Board...): grey fill, 12px corners, dark label, navy icon on the right */
-  [data-v8] .docstabs > .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
-  [data-v8] .docstabs > .addwrap > #docTabOwn:hover { background: #ececf0; }
-  [data-v8] .docstabs > .addwrap > #docTabOwn .plusico { margin: 0 0 0 10px; width: 24px; height: 24px; flex: none; color: var(--accent); }
-  [data-v8] .docstabs > .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
-  [data-v8] .docstabs > .addwrap > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  [data-v8] .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
+  [data-v8] .addwrap > #docTabOwn:hover { background: #ececf0; }
+  [data-v8] .addwrap > #docTabOwn .plusico { margin: 0 0 0 10px; width: 24px; height: 24px; flex: none; color: var(--accent); }
+  [data-v8] .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
+  [data-v8] .addwrap > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
   [data-v8] .addmenu { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(340px, 100%); display: grid; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .2); }
   [data-v8] .addmenu[hidden] { display: none; }
   [data-v8] .side .addmenu .menurow { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 52px; padding: 10px 12px; box-sizing: border-box; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
@@ -612,7 +613,12 @@
   [data-v8] .docstabs .docsw { flex: 0 0 auto; }
   [data-v8] .docstabs button { flex: 1 1 auto; }
   /* the scan result: a square of the photo (half the width) with what we found beside it */
-  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; border: 1.5px solid #9fb4d6; border-radius: 16px; background: none; }
+  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 12px 12px; border: 0; border-radius: 16px; background: var(--tint); }
+  [data-v8] .scanres > .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
+  [data-v8] .scanres .addwrap > #docTabOwn { background: #fff; }
+  [data-v8] .scanres .addmenu { bottom: auto; top: calc(100% + 6px); }   /* (up in the panel: the menu opens downward) */
+  @keyframes menuPopDown { 0% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.82); } 55% { opacity: 1; transform: translateX(-50%) translateY(1.4px) scale(1.028); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
+  @media (prefers-reduced-motion: no-preference) { [data-v8] .scanres .addmenu:not([hidden]) { transform-origin: 50% 0; animation-name: menuPopDown; } }
   [data-v8] .snapbox .scanres[hidden] { display: none; }
   [data-v8] .snapbox .scanres > canvas { display: none; }   /* (the working canvas: the photos show as thumbnails) */
   [data-v8] .sc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -2037,6 +2043,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020707" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020714" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
