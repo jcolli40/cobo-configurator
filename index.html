@@ -549,6 +549,18 @@
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
   [data-v8] .docstabs button .camico { width: 24px; height: 24px; margin-right: 8px; flex: none; fill: none; stroke: none; }
+  [data-v8] .docstabs { position: relative; justify-content: center; }
+  [data-v8] .docstabs > #docTabOwn { flex: 0 0 auto; padding: 10px 16px; background: var(--tint); color: var(--accent); }
+  [data-v8] .docstabs > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
+  [data-v8] .docstabs > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  [data-v8] .addmenu { position: absolute; top: calc(100% - 6px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(340px, calc(100% - 32px)); display: grid; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .2); }
+  [data-v8] .addmenu[hidden] { display: none; }
+  [data-v8] .side .addmenu .menurow { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 52px; padding: 10px 12px; box-sizing: border-box; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
+  [data-v8] .side .addmenu .menurow:hover { background: var(--hover); }
+  [data-v8] .side .addmenu .menurow > .i { width: 22px; height: 22px; color: var(--accent); }
+  [data-v8] .addmenu .sampsw { margin: 0; }
+  [data-v8] .addmenu .sampsw > span { flex: 1; }
+  [data-v8] .addmenu .menurow + .menurow { border-top: 1px solid #f0f0f3; }
   [data-v8] .docstabs .docsw { flex: 0 0 auto; }
   [data-v8] .docstabs button { flex: 1 1 auto; }
   /* the scan result: a square of the photo (half the width) with what we found beside it */
@@ -1954,6 +1966,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012339" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012348" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

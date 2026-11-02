@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012339';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012339';
-import { wallTexture, wallSwatch } from './env.js?v=202611012339';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012339';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012348';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012348';
+import { wallTexture, wallSwatch } from './env.js?v=202611012348';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012348';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1014,6 +1014,7 @@ function closeOptSheet(switching) {
   $('#docBar')?.classList.remove('on');
   placeOrient(false);
   if ($('#docTabs')) $('#docTabs').hidden = true;
+  if ($('#addMenu')) $('#addMenu').hidden = true;
   $('#optSheet').classList.remove('full');
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
@@ -1677,11 +1678,21 @@ function wireSteps() {
     or.hidden = true; $('.certcount').id = 'docSamples';
     const board = '<svg class="i camico" viewBox="56 0 128 130" aria-hidden="true"><path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/><path class="vf pl" d="M120 40v50M95 65h50"/></svg>';
     const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
-    dt.innerHTML = '<button type="button" id="docTabOwn" aria-controls="ownDocs">' + board + 'Add Your Documents</button>'
-      + '<label class="docsw" id="docSwLbl"><span>Use Samples</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples"></label>';
+    // one centered button; it opens a small menu: Snap your docs, Upload Files, Use samples for now (a switch)
+    dt.innerHTML = '<button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">' + board + 'Add Your Documents<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></button>';
     $('#optSheet .side-h').after(dt);
-    $('#docTabOwn').addEventListener('click', () => { if (state.sheets) $('#sheets').click(); });          // (back to their own documents)
-    $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
+    const menu = document.createElement('div'); menu.id = 'addMenu'; menu.className = 'addmenu'; menu.hidden = true; menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', 'Add your documents');
+    const sr2 = own.querySelector('.scanrow'), snapL = sr2.querySelector('label.upload'), upL = sr2.querySelector('label.scanup');
+    snapL.classList.add('menurow'); upL.classList.add('menurow');
+    const sampRow = document.createElement('label'); sampRow.className = 'menurow sampsw'; sampRow.id = 'docSwLbl';
+    sampRow.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-cert"/></svg><span>Use samples for now</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples">';
+    menu.append(snapL, upL, sampRow); dt.append(menu); sr2.remove();
+    const btn = $('#docTabOwn'), setMenu = (on) => { menu.hidden = !on; btn.setAttribute('aria-expanded', on); };
+    btn.addEventListener('click', () => setMenu(menu.hidden));
+    document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !e.target.closest('#addMenu, #docTabOwn')) setMenu(false); });
+    menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMenu(false); btn.focus(); } });
+    for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', () => setMenu(false));
+    $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); setMenu(false); });
   }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
@@ -3190,7 +3201,7 @@ function openLightbox(d, i, onRetake) {
 function paintDocTabs() {
   const s = !!state.sheets;
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
-  $('#docTabOwn').setAttribute('aria-pressed', !s); $('#docSw').checked = s; $('#docSwLbl').classList.toggle('on', s);
+  $('#docSw').checked = s;
 }
 function paintExtras() {
   paintDocs();
