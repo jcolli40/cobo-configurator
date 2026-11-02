@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021224';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021224';
-import { wallTexture, wallSwatch } from './env.js?v=202611021224';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021224';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021231';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021231';
+import { wallTexture, wallSwatch } from './env.js?v=202611021231';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021231';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1719,7 +1719,7 @@ function wireSteps() {
           .map(([x, y, w, h, r], i) => '<g transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"><rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1"/>'
           + '<text class="num" x="' + (x + w / 2) + '" y="' + (y + h / 2) + '">' + (i + 1) + '</text>'
           + '<path class="spk" transform="translate(' + (x + w) + ' ' + y + ')" d="M0-4.5L1.2-1.2 4.5 0 1.2 1.2 0 4.5-1.2 1.2-4.5 0-1.2-1.2z"/></g>').join('')   // (each document: a thin blue outline and an AI sparkle on its corner, like a detected one)
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Snap your docs &bull; Review for accuracy &bull; Add to Board</p>';
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Snap &bull; Review &bull; Add</p>';
     const plus = '<svg class="i plusico" aria-hidden="true"><use href="#i-plus-circle"/></svg>';
     dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + plus + '</button></div>';
     $('#optSheet .side-h').after(dt);
