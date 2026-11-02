@@ -548,16 +548,20 @@
   [data-v8] .side .side-body .owndocs { background: none; padding: 0; }   /* (no blue card) */
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
-  [data-v8] .addhead { display: flex; align-items: center; gap: 12px; }
-  [data-v8] .addhead b { font-size: 18px; font-weight: 750; color: var(--accent); }
-  [data-v8] .camart { flex: none; display: block; padding: 6px 8px; border-radius: 12px; background: #f4f4f6; }
-  [data-v8] .camart svg { display: block; width: 46px; height: auto; }
-  [data-v8] .sampsw { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 8px 14px; border-radius: 14px; background: #f4f4f6; font-size: 15px; font-weight: 650; color: var(--ink); cursor: pointer; }
-  [data-v8] #docSamples > .sampsw { margin-bottom: 4px; }
-  [data-v8] .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
-  [data-v8] .camart .sh { fill: #cfe0f7; }
-  [data-v8] .camart .cap { fill: #bdbdc2; }
-  [data-v8] .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  [data-v8] .docstabs .camico { width: 24px; height: 26px; margin-right: 8px; flex: none; fill: none; stroke: none; }
+  [data-v8] .docstabs .docsw { flex: 0 0 auto; }
+  [data-v8] .docstabs button { flex: 1 1 auto; }
+  /* the scan result: a square of the photo (half the width) with what we found beside it */
+  [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 12px; align-items: start; }
+  [data-v8] .snapbox .scanres > .scanbusy { grid-column: 1 / -1; }
+  [data-v8] .snapbox .scanres canvas { grid-column: 1; width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; }
+  [data-v8] .snapbox .scanres canvas[hidden] { display: none; }
+  [data-v8] .snapbox .scanres:has(canvas:not([hidden])) > #scanText { grid-column: 2; margin: 0; font-size: 14px; line-height: 1.4; }
+  [data-v8] .snapbox .scanres:not(:has(canvas:not([hidden]))) > #scanText { grid-column: 1 / -1; }
+  [data-v8] .camico .bd { fill: #fff; stroke: #b4b7bf; stroke-width: 3; }
+  [data-v8] .camico .sh { fill: #cfe0f7; stroke: none; }
+  [data-v8] .camico .cap { fill: #b4b7bf; stroke: none; }
+  [data-v8] .camico .vf { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .side .snapbox .help { margin-top: -6px; }
   [data-v8] .side .snapbox .upload { flex: 1 1 calc(50% - 4px); justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
   [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
@@ -1899,6 +1903,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012142" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012227" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

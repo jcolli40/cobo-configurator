@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012142';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012142';
-import { wallTexture, wallSwatch } from './env.js?v=202611012142';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012142';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012227';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012227';
+import { wallTexture, wallSwatch } from './env.js?v=202611012227';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012227';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1660,19 +1660,18 @@ function wireSteps() {
   const bar = document.createElement('div'); bar.id = 'docBar'; bar.className = 'docbar';
   bar.append($('#certAdvice'), qn);
   $('#optSheet .side-h').after(bar);
-  if (V8) {                                                  // Your Documents: a small camera-frame board beside "Add Your Documents", the buttons, then the Use Samples switch
+  if (V8) {                                                  // Your Documents: a strip at the top, [small board icon + Add Your Documents] [Use Samples switch]
     or.hidden = true; $('.certcount').id = 'docSamples';
-    const sw = (id) => '<label class="sampsw" data-sw><span>Use Samples</span><input type="checkbox" class="switch" id="' + id + '" aria-controls="docSamples"></label>';
-    own.querySelector('.scanrow').insertAdjacentHTML('afterend', sw('docSw'));                    // (under Snap your docs and Upload Files)
-    $('#docSamples').insertAdjacentHTML('afterbegin', sw('docSw2'));                              // (the same switch at the top of the samples screen, to go back)
-    for (const id of ['#docSw', '#docSw2']) $(id).addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
-    // the picture: a board with a camera frame around it, drawn like the size cards
-    const art = document.createElement('div'); art.className = 'addhead';
-    art.innerHTML = '<span class="camart" aria-hidden="true"><svg viewBox="56 0 128 130"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
+    const board = '<svg class="i camico" viewBox="56 0 128 130" aria-hidden="true"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
       + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
       + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></span><b>Add Your Documents</b>';
-    own.querySelector('.opt + .help').before(art);
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg>';
+    const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
+    dt.innerHTML = '<button type="button" id="docTabOwn" aria-controls="ownDocs">' + board + 'Add Your Documents</button>'
+      + '<label class="docsw" id="docSwLbl"><span>Use Samples</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples"></label>';
+    $('#optSheet .side-h').after(dt);
+    $('#docTabOwn').addEventListener('click', () => { if (state.sheets) $('#sheets').click(); });          // (back to their own documents)
+    $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
   }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
@@ -2058,6 +2057,14 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
     g.strokeStyle = '#2e7d4f'; g.strokeRect(b.x * k, b.y * k, b.w * k, b.h * k);
     g.fillStyle = '#2e7d4f'; g.fillRect(b.x * k, b.y * k, tw, 22); g.fillStyle = '#fff'; g.fillText(label, b.x * k + 7, b.y * k + 17);
   });
+  if (V8 && found.length) {                                  // a square around the documents (the photo is long: the wall around them isn't needed)
+    const xs = found.flatMap(f => [f.box.x * k, (f.box.x + f.box.w) * k]), ys = found.flatMap(f => [f.box.y * k, (f.box.y + f.box.h) * k]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const side = Math.round(Math.min(Math.min(cv.width, cv.height), Math.max(x1 - x0, y1 - y0) * 1.15 + 24));
+    const sx = Math.max(0, Math.min(cv.width - side, (x0 + x1) / 2 - side / 2)), sy = Math.max(0, Math.min(cv.height - side, (y0 + y1) / 2 - side / 2));
+    const sq = document.createElement('canvas'); sq.width = sq.height = side; sq.getContext('2d').drawImage(cv, sx, sy, side, side, 0, 0, side, side);
+    cv.width = cv.height = side; cv.getContext('2d').drawImage(sq, 0, 0);
+  }
   $('#scanResult').hidden = false; $('#scanCanvas').hidden = false; $('#scanBusy')?.classList.remove('on');
   if (!found.length) {
     $('#scanText').textContent = "We couldn't spot the certificates in that photo. Try again closer up, with the wall behind them in view, or set the number with − / +.";
@@ -3123,7 +3130,7 @@ function openLightbox(d, i) {
 function paintDocTabs() {
   const s = !!state.sheets;
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
-  $('#docSw').checked = s; $('#docSw2').checked = s;
+  $('#docTabOwn').setAttribute('aria-pressed', !s); $('#docSw').checked = s; $('#docSwLbl').classList.toggle('on', s);
 }
 function paintExtras() {
   paintDocs();
