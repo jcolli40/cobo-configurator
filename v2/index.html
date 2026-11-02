@@ -1519,10 +1519,37 @@
     /* Collapse: just above the column, a see-through white bubble, no outline */
     [data-v8] #dockMini { position: fixed; z-index: 17; right: 16px; top: 20px; order: 0; align-self: auto; margin: 0; height: 30px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--muted); pointer-events: auto; }
     [data-v8].dmini #dockMini { padding: 0 8px; }
+    /* the column folded to icons: each step's icons sit under its own number, with a line between the groups */
+    [data-v8].dmini .stepbar { display: contents; }
+    [data-v8].dmini .stepbar button[data-st="build"] { order: 10; }
+    [data-v8].dmini .stepbar button[data-st="style"] { order: 20; }
+    [data-v8].dmini .stepbar button[data-st="preview"] { order: 30; }
+    [data-v8].dmini .p-body .sec[data-sec="certs"] { order: 11; }
+    [data-v8].dmini .p-body .sec[data-sec="size"] { order: 12; }
+    [data-v8].dmini .p-body .sec[data-sec="boardgrp"] { order: 21; }
+    [data-v8].dmini .p-body .sec[data-sec="edge"] { order: 22; }
+    [data-v8].dmini .p-body .sec[data-sec="caps"] { order: 23; }
+    [data-v8].dmini .p-body .sec[data-sec="arview"] { order: 31; }
+    [data-v8].dmini .p-body .sec[data-sec="sharelink"] { order: 32; }
+    [data-v8].dmini .p-body .sec[data-sec="saveit"] { order: 33; }
+    [data-v8].dmini .p-body .sec[data-sec="summary"] { order: 34; }
+    [data-v8].dmini .stepbar button[data-st="style"], [data-v8].dmini .stepbar button[data-st="preview"] { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); border-radius: 0; }
+    [data-v8].dmini .p-body .sec:is([data-sec="certs"], [data-sec="boardgrp"], [data-sec="arview"]) { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); border-radius: 0; }
+    [data-v8].dmini .stepbar button { font-size: 0; }
+    [data-v8].dmini .p-body .sec-h { padding: 6px 0; }
+    [data-v8].dmini .stepbar button { padding-top: 6px; padding-bottom: 6px; }
+    [data-v8].dmini .stepbar button:is([data-st="style"], [data-st="preview"]) { padding-top: 10px; }
+    /* the cart button keeps a small "Add" under its icon */
+    [data-v8].dmini #colCta { flex-direction: column; gap: 3px; height: auto; padding: 9px 0 8px; }
+    [data-v8].dmini .p-body #colCtaLbl { display: block !important; font-size: 0; }
+    [data-v8].dmini .p-body #colCtaLbl::after { content: "Add"; font-size: 11px; font-weight: 650; }
     /* the cart: it opens upward from the chip, and the chip turns into Collapse with a down arrow */
     [data-v8] .buysheet .grab { order: 9; }
     [data-v8] .buysheet .grab .gclose { display: none; }
-    [data-v8] .buysheet.open .grab { justify-content: center; padding: 12px 18px; border-top: 1px solid var(--line); }
+    [data-v8] .buysheet.open { overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; gap: 8px; }
+    [data-v8] .buysheet .cartcard { order: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--card); box-shadow: 0 10px 30px rgba(0, 0, 0, .14); }
+    [data-v8] .buysheet:not(.open) .cartcard { display: none; }
+    [data-v8] .buysheet.open .grab { align-self: flex-end; width: max-content; justify-content: center; padding: 10px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
     [data-v8] .buysheet.open .grab :is(.cic, .gamt, .gtxt) { display: none; }
     [data-v8] .buysheet.open .grab .gclose { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 14px; font-weight: 650; }
     [data-v8] .buysheet.open .grab .gclose .i { width: 18px; height: 18px; }
@@ -2121,6 +2148,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021236" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021241" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021236';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021236';
-import { wallTexture, wallSwatch } from './env.js?v=202611021236';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021236';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021241';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021241';
+import { wallTexture, wallSwatch } from './env.js?v=202611021241';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021241';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1815,6 +1815,7 @@ function wireSteps() {
     new ResizeObserver(place).observe($('.p-body')); addEventListener('resize', place); place();
     // the cart: Your cart + total at the top of the pop-up; the chip at the bottom turns into Collapse with a down arrow while it's open
     $('#sheetGrab').insertAdjacentHTML('beforeend', '<span class="gclose" aria-hidden="true"><span>Collapse</span><svg class="i"><use href="#i-chev"/></svg></span>');
+    { const card = document.createElement('div'); card.className = 'cartcard'; $('#sheetBody').before(card); card.append($('#sheetBody'), $('#editBar'), $('.buysheet .buybar')); }   // (the cart's contents are one white card; the chip stays its own bubble underneath)
     $('#sheetBody').insertAdjacentHTML('afterbegin', '<div class="cart-h"><b>Your cart <span id="cartHCount"></span></b><b id="cartHAmt">$0.00</b></div>');
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !phone.matches && $('#buysheet').classList.contains('open')) { setSheet(false); $('#sheetGrab').focus(); } });
   }
@@ -1822,6 +1823,7 @@ function wireSteps() {
     document.documentElement.classList.toggle('dmini', on);
     $('#dockMini').setAttribute('aria-pressed', on);
     $('#dockMini').setAttribute('aria-label', on ? 'Show the option names' : 'Collapse the options to icons');
+    if (V8) refresh();                                             // (the icons regroup under the step numbers)
     setTimeout(() => setInset(inset.target), 220);                 // re-frame the board once the column has its new width
   };
   try { if (localStorage.getItem('cobo.mini') === '1') mini(true); } catch { /* storage blocked */ }
@@ -1868,7 +1870,8 @@ function paintLayout(sp) {
   if (LAYOUT === 'v1') return;
   if (V6) paintSteps();
   const main = V6 ? STEPS6[step6] : LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
-  document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
+  const allSteps = V8 && !phone.matches && document.documentElement.classList.contains('dmini');   // (v8, computers, column folded to icons: every step's icons show, each under its step number)
+  document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !(allSteps ? STEP_ORDER.some(k => STEPS6[k].includes(s.dataset.sec)) : main.includes(s.dataset.sec)); });
   if (LAYOUT === 'v2') {
     document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
     $('#forkStd').textContent = `$${(SIZES.find(s => s.id === state.sizeId)?.price ?? SIZES[0].price).toFixed(2)}`;
