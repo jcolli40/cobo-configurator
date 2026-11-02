@@ -1482,13 +1482,8 @@
   @keyframes docFlash { 0% { fill: #cfe0f7; } 28% { fill: #fff; } 60% { fill: #8db3e6; } 100% { fill: #cfe0f7; } }
   @keyframes spkFlash { 0%, 20% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
   @media (prefers-reduced-motion: no-preference) {
-    [data-v8] .docstabs .camart .sh { animation: docFlash .85s ease both; }
-    [data-v8] .docstabs .camart .spk { animation: spkFlash .85s ease both; }
-    [data-v8] .docstabs .camart g:nth-child(1) :is(.sh, .spk) { animation-delay: .25s; }
-    [data-v8] .docstabs .camart g:nth-child(2) :is(.sh, .spk) { animation-delay: .45s; }
-    [data-v8] .docstabs .camart g:nth-child(3) :is(.sh, .spk) { animation-delay: .65s; }
-    [data-v8] .docstabs .camart g:nth-child(4) :is(.sh, .spk) { animation-delay: .85s; }
-    [data-v8] .docstabs .camart g:nth-child(5) :is(.sh, .spk) { animation-delay: 1.05s; }
+    [data-v8] .docstabs .camart .sh { animation: docFlash .85s ease .3s both; }
+    [data-v8] .docstabs .camart .spk { animation: spkFlash .85s ease .3s both; }
   }
   /* the checklist: a light green bubble with a check, and each document's "Add to Board" bubble turns green once it's on the board */
   [data-v8] .dlhead { padding: 10px 12px; border-radius: 12px; background: #e3f3e8; color: #1f5f3a; font-size: 14px; }
