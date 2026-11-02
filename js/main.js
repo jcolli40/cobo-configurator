@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021248';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021248';
-import { wallTexture, wallSwatch } from './env.js?v=202611021248';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021248';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021250';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021250';
+import { wallTexture, wallSwatch } from './env.js?v=202611021250';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021250';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2541,7 +2541,7 @@ function swayFrame() {
     const d = Math.max(h / 2 / 0.6, w / 2 / aspect / 0.8) / Math.tan(fov) + 2;
     return { tgt: new THREE.Vector3(0, 0, 0.5), d };
   }
-  if (phone.matches || aspect < 1) {
+  if (phone.matches || aspect < 1 || (V8 && step() === 'intro')) {   // (v8 welcome on computers too: the card is centered at the bottom, the board above it)
     // the part of the screen above the card is free (v6: measured, less the COBO icon on the card's edge; the board fills it)
     const cardEl = V6 && step() === 'intro' ? $('.t-intro .t-card') : null, card = cardEl?.getBoundingClientRect();
     const slide = cardEl ? new DOMMatrix(getComputedStyle(cardEl).transform).m42 : 0;   // (the card slides up as it appears: measure where it ends up)
@@ -2552,7 +2552,7 @@ function swayFrame() {
   }
   const room = 0.62;                                         // right 62% of the screen is free
   const d = Math.max(h / 2, w / 2 / (aspect * room)) / Math.tan(fov) * 1.3 * k + 2;
-  return { tgt: new THREE.Vector3((V8 ? d : -d) * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };   // (v8: the welcome card is on the right, so the board sits on the left)
+  return { tgt: new THREE.Vector3(-d * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };
 }
 // the camera for a sway framing: a little to the side, at the same slight downward look as the options view
 function swayPose(f) {
