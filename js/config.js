@@ -59,6 +59,16 @@ export const WOODS = [
   { name: 'Teak',     hex: '#a9783d', grain: '#6e4a1f', light: '#c99a5c', rings: 0.65, contrast: 1.4 },
 ];
 
+// ---- Metallic edge banding (drawn in the browser: a brushed-metal look with a bright reflection). rough = how blurry the reflection is ----
+export const METALS = [
+  { name: 'Gold',     hex: '#d9b13e', rough: 0.3,  brush: 0.9 },
+  { name: 'Silver',   hex: '#c8ccd2', rough: 0.3,  brush: 0.9 },
+  { name: 'Copper',   hex: '#b8693a', rough: 0.32, brush: 0.9 },
+  { name: 'Chrome',   hex: '#e6eaee', rough: 0.07, brush: 0.2 },
+  { name: 'Brass',    hex: '#b9983c', rough: 0.34, brush: 1.0 },
+  { name: 'Graphite', hex: '#3b3e44', rough: 0.35, brush: 0.9 },
+];
+
 // ---- Fastener (1" dia aluminum cap) finishes ----
 export const FASTENERS = [
   { id: 'chrome', name: 'Silver',           color: '#eef0f2', metal: 1.0, rough: 0.24, brushed: true },
@@ -106,6 +116,8 @@ export const STYLES = [
 export const UPCHARGES = {
   customColor: 25,                         // any color outside the stock list
   laminate: { '6x12': 20, '12x12': 30, '12x24': 45, '12x36': 60, '24x24': 75, '24x36': 95, custom: 95 },   // Wilsonart laminate face ("Textures")
+  edgeWood: { '6x12': 6, '12x12': 8, '12x24': 12, '12x36': 15, '24x24': 16, '24x36': 20, custom: 20 },    // wood edge banding (PLACEHOLDER amounts)
+  edgeMetal: { '6x12': 9, '12x12': 12, '12x24': 18, '12x36': 23, '24x24': 24, '24x36': 30, custom: 30 },  // metallic edge banding (PLACEHOLDER amounts)
   edgeCustom: 10,                          // edge banding in a non-stock color (stock colors are included)
   caps: { chrome: 0, black: 0, brass: 0 },  // per board (4 caps): every finish is the same price
   logo: 45,                                // printed logo

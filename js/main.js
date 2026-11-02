@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021434';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021434';
-import { wallTexture, wallSwatch } from './env.js?v=202611021434';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021434';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021442';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021442';
+import { wallTexture, wallSwatch } from './env.js?v=202611021442';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021442';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -91,8 +91,10 @@ const state = {
 
 /* ------------------------------------------------------------------ helpers */
 const $ = (s) => document.querySelector(s);
-const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? WOODS.find(c => c.name === v)?.hex ?? '#888888');
+const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? WOODS.find(c => c.name === v)?.hex ?? METALS.find(c => c.name === v)?.hex ?? '#888888');
 const woodOf = (v) => WOODS.find(w => w.name === v) || null;
+const metalOf = (v) => METALS.find(m => m.name === v) || null;
+const edgeKind = (v) => woodOf(v) ? 'wood' : metalOf(v) ? 'metal' : 'colors';   // which Edge banding tab a choice lives on
 // v5 shows photo rooms (plus Studio); a drawn room asked for by a link or popular board shows its photo twin
 const PHOTO_ROOMS = LAYOUT === 'v5';
 const ROOMS = ENVIRONMENTS.filter(e => e.wall === 'color' || !!e.wall.photo === PHOTO_ROOMS);
@@ -259,6 +261,29 @@ function woodCanvas(wd) {
   return cv;
 }
 const woodSwatch = (wd) => woodCanvas(wd).toDataURL('image/jpeg', 0.8);
+// brushed metal: fine streaks along the edge on a base color, with a soft lighter sheen band
+const metalCache = new Map();
+function metalCanvas(m) {
+  if (metalCache.has(m.name)) return metalCache.get(m.name);
+  const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d');
+  let seed = 11 + m.name.charCodeAt(0) * 31; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const lg = g.createLinearGradient(0, 0, 0, N); lg.addColorStop(0, m.hex); lg.addColorStop(0.5, '#ffffff'); lg.addColorStop(1, m.hex);   // (a soft highlight across the middle, like light on a strip of metal)
+  g.fillStyle = m.hex; g.fillRect(0, 0, N, N); g.globalAlpha = 0.22; g.fillStyle = lg; g.fillRect(0, 0, N, N);
+  for (let i = 0; i < 900 * m.brush; i++) {                                  // the brushing: thin light and dark lines along the length
+    const y = rnd() * N, x0 = rnd() * N, len = 80 + rnd() * 300;
+    g.globalAlpha = (0.05 + rnd() * 0.12) * m.brush; g.strokeStyle = rnd() < 0.5 ? '#000000' : '#ffffff'; g.lineWidth = 0.6 + rnd() * 0.9;
+    g.beginPath(); g.moveTo(x0, y); g.lineTo(x0 + len, y + (rnd() - 0.5) * 1.5); g.stroke();
+    if (x0 + len > N) { g.beginPath(); g.moveTo(x0 - N, y); g.lineTo(x0 + len - N, y); g.stroke(); }   // (wrapped, so the tile repeats cleanly)
+  }
+  g.globalAlpha = 1; metalCache.set(m.name, cv); return cv;
+}
+const metalSwatch = (m) => metalCanvas(m).toDataURL('image/jpeg', 0.85);
+function metalMat(m, lengthIn, side) {
+  const t = new THREE.CanvasTexture(metalCanvas(m)); t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; t.center.set(0.5, 0.5);
+  t.rotation = side ? Math.PI / 2 : 0; t.repeat.set(lengthIn / 8, HW.boardT / 8);
+  return new THREE.MeshStandardMaterial({ map: t, metalness: 0.92, roughness: m.rough, envMap: envTex, envMapIntensity: 1.2 });
+}
 // a band's material: its streaks run along the edge (top and bottom edges along x; the left and right ones turned a quarter)
 function woodMat(wd, lengthIn, side) {
   const t = new THREE.CanvasTexture(woodCanvas(wd)); t.colorSpace = THREE.SRGBColorSpace;
@@ -681,8 +706,8 @@ function buildBoard() {
   }
   root.add(boxMesh(iw, ih, lam, frontMat, 0, 0, T - lam / 2));
   // 1 mm PVC edge banding
-  const wood = woodOf(state.edge);
-  const bm = wood ? woodMat(wood, w, false) : bandMat(edgeHex), bmSide = wood ? woodMat(wood, ih, true) : bm;
+  const wood = woodOf(state.edge), metal = metalOf(state.edge);
+  const bm = wood ? woodMat(wood, w, false) : metal ? metalMat(metal, w, false) : bandMat(edgeHex), bmSide = wood ? woodMat(wood, ih, true) : metal ? metalMat(metal, ih, true) : bm;
   root.userData.mats = [frontMat, bm];                     // (the welcome's morph blends their color)
   root.add(boxMesh(w, b, T, bm, 0, h / 2 - b / 2, T / 2));
   root.add(boxMesh(w, b, T, bm, 0, -h / 2 + b / 2, T / 2));
@@ -1042,11 +1067,24 @@ function openSection(name) {
 // Phones: one option at a time in a pop-up sheet. The section's own controls are moved into the sheet while it's open.
 let optOpen = null;   // { sec, body }
 // v8: the Edge banding panel's two tabs: Solid Colors (the colors and the custom color) or Textured (the woods)
+let edgeTab = 'colors';
 function setEdgeTab(t) {
+  edgeTab = t;
   for (const b of document.querySelectorAll('#edgeTabs [data-etab]')) { const on = b.dataset.etab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
-  for (const c of document.querySelectorAll('#edgeSw .swc')) c.style.display = !!woodOf(c.querySelector('.sw')?.dataset.k) === (t === 'tex') ? '' : 'none';
-  $('#edgeCustom').closest('.opt').style.display = t === 'tex' ? 'none' : '';
+  for (const c of document.querySelectorAll('#edgeSw .swc')) c.style.display = edgeKind(c.querySelector('.sw')?.dataset.k) === t ? '' : 'none';
+  $('#edgeCustom').closest('.opt').style.display = t === 'colors' ? '' : 'none';
+  paintEdgeUp();
 }
+// Wood and Metallic: a line over the swatches with how many there are, and the upcharge for this board size (same chip as Textures & Patterns)
+function paintEdgeUp() {
+  const row = $('#edgeUpRow'); if (!row) return;
+  row.hidden = edgeTab === 'colors';
+  if (row.hidden) return;
+  const std = SIZES.find(x => x.id === state.sizeId), { w, h } = dims(), n = edgeTab === 'wood' ? WOODS.length : METALS.length;
+  row.querySelector('.lbl').textContent = n + (edgeTab === 'wood' ? ' woods' : ' metals');
+  $('#edgeUp').textContent = '+$' + upAmt(edgeTab === 'wood' ? UPCHARGES.edgeWood : UPCHARGES.edgeMetal) + ' for ' + (std ? std.a + ' × ' + std.b : fmt(w) + ' × ' + fmt(h));
+}
+const edgeUpAmount = () => woodOf(state.edge) ? upAmt(UPCHARGES.edgeWood) : metalOf(state.edge) ? upAmt(UPCHARGES.edgeMetal) : state.edge[0] === '#' ? upAmt(UPCHARGES.edgeCustom) : 0;
 // v8: Edge banding and Caps & studs show what is chosen in a sticky strip at the bottom of their panel
 function paintSelBar() {
   const bar = $('#selBar'); if (!bar) return;
@@ -1057,7 +1095,7 @@ function paintSelBar() {
   else {
     const L = state.lamSel, face = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(c => c.name === state.face) || COLORS[0];
     if (state.edge === 'match') { name = L ? 'Matches the board (Wilsonart ' + L.n + ')' : face.name + ' (matches the board)'; color = face.hex; img = L?.thumb || null; }
-    else { const wd = woodOf(state.edge), c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || wd || COLORS[0]; name = c.name; color = c.hex; if (wd) img = woodSwatch(wd); }
+    else { const wd = woodOf(state.edge), c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || wd || COLORS[0]; name = c.name; color = c.hex; if (wd) img = woodSwatch(wd); const mt = metalOf(state.edge); if (mt) { name = mt.name; color = mt.hex; img = metalSwatch(mt); } }
   }
   bar.hidden = false;
   bar.querySelector('.sb-sw').style.background = img ? 'center / cover url("' + img + '")' : color;
@@ -1096,7 +1134,7 @@ function openOptSheet(sec) {
     }
   }
   optOpen = { sec, body };
-  if (V8 && sec.dataset.sec === 'edge') setEdgeTab(woodOf(state.edge) ? 'tex' : 'colors');   // (opens on the tab that holds the current edge)
+  if (V8 && sec.dataset.sec === 'edge') setEdgeTab(edgeKind(state.edge));   // (opens on the tab that holds the current edge)
   if (V8) paintSelBar();
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1206,7 +1244,9 @@ function upcharges(L, G, B) {
   const U = UPCHARGES, out = [];
   if (L) out.push({ label: `Wilsonart laminate ${L.n}`, amount: upAmt(U.laminate) });
   else if (state.face[0] === '#') out.push({ label: 'Custom board color', amount: upAmt(U.customColor) });
-  if (state.edge[0] === '#') out.push({ label: 'Custom edge color', amount: upAmt(U.edgeCustom) });
+  if (woodOf(state.edge)) out.push({ label: state.edge + ' wood edge banding', amount: upAmt(U.edgeWood) });
+  else if (metalOf(state.edge)) out.push({ label: state.edge + ' metallic edge banding', amount: upAmt(U.edgeMetal) });
+  else if (state.edge[0] === '#') out.push({ label: 'Custom edge color', amount: upAmt(U.edgeCustom) });
   const cap = upAmt(U.caps[state.fastener]);
   if (cap) out.push({ label: `${FASTENERS.find(f => f.id === state.fastener).name} caps`, amount: cap });
   if (G?.img) out.push({ label: 'Printed logo', amount: upAmt(U.logo) });
@@ -1329,8 +1369,9 @@ function build() {
     state.edge = e.target.checked ? 'match' : (state.lastEdge || (state.face === 'Black' ? 'White' : 'Black'));
     refresh();
   });
-  swatchRow($('#edgeSw'), V8 ? COLORS.concat(WOODS) : COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
+  swatchRow($('#edgeSw'), V8 ? COLORS.concat(WOODS, METALS) : COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
   if (V8) for (const wd of WOODS) { const b = $('#edgeSw').querySelector('.sw[data-k="' + wd.name + '"]'); if (b) b.style.background = 'center / cover url("' + woodSwatch(wd) + '")'; }   // (real-wood swatches)
+  if (V8) for (const m of METALS) { const b = $('#edgeSw').querySelector('.sw[data-k="' + m.name + '"]'); if (b) b.style.background = 'center / cover url("' + metalSwatch(m) + '")'; }   // (brushed-metal swatches)
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
 
@@ -1838,9 +1879,12 @@ function wireSteps() {
     $('#edgeMatchNote').after($('#edgeCustom').closest('.opt'));   // Edge banding: the custom color row sits right under Match board color
     { const tabs = document.createElement('div'); tabs.id = 'edgeTabs'; tabs.className = 'styletabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Edge banding');   // Edge banding: Solid Colors | Textured (+$), like Board Style
       tabs.innerHTML = '<button type="button" role="tab" data-etab="colors">Solid Colors</button>'
-        + '<button type="button" role="tab" data-etab="tex">Textured<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>';
+        + '<button type="button" role="tab" data-etab="wood">Wood<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>'
+        + '<button type="button" role="tab" data-etab="metal">Metallic<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>';
       tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-etab]'); if (b) setEdgeTab(b.dataset.etab); });
-      $('#edgeSw').closest('.sec-b').prepend(tabs); }
+      $('#edgeSw').closest('.sec-b').prepend(tabs);
+      const up = document.createElement('div'); up.id = 'edgeUpRow'; up.className = 'rowsb'; up.hidden = true;
+      up.innerHTML = '<span class="lbl"></span><span id="edgeUp" class="lamup"></span>'; tabs.after(up); }
     $('#faceSw').before($('#faceCustom').closest('.opt'));                      // Solid Colors: "Any other color" sits at the top of its panel
     { const sb = document.createElement('div'); sb.id = 'selBar'; sb.hidden = true; sb.setAttribute('role', 'status');   // Edge and Caps: the chosen swatch in a sticky strip at the bottom, like the Solid Colors and Textures panels
       sb.innerHTML = '<span class="sb-sw" aria-hidden="true"></span><span class="sb-nm"><small>Selected</small><b></b></span>'; $('#optSheet').append(sb); }                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
@@ -2015,7 +2059,7 @@ function paintPrices() {
   };
   const head = {
     color: state.face[0] === '#' && !state.lamSel ? upAmt(U.customColor) : 0,
-    laminate: upAmt(U.laminate), edge: state.edge[0] === '#' ? upAmt(U.edgeCustom) : 0,
+    laminate: upAmt(U.laminate), edge: edgeUpAmount(),
     caps: upAmt(U.caps[state.fastener]), logo: upAmt(U.logo), bgimg: upAmt(U.background),
   };
   for (const [k, n] of Object.entries(head)) {
@@ -2060,6 +2104,7 @@ function paintPrices() {
   });
   const extra = (input, n) => { const row = $(input)?.closest('.opt'); if (!row) return; let up = row.querySelector('.up'); if (!up) { up = document.createElement('em'); up.className = 'up'; row.insertBefore(up, $(input)); } set(up, n); };
   extra('#faceCustom', upAmt(U.customColor)); extra('#edgeCustom', upAmt(U.edgeCustom));
+  if (V8) paintEdgeUp();
   // priced instead of quoted
   const sz = state.sizeId === 'custom' ? 'custom-size' : state.sizeId.replace('x', '×');
   const words = { laminate: `Wilsonart laminate adds $${upAmt(U.laminate)} to a ${sz} board.`, background: `A printed background adds $${upAmt(U.background)} per board.`, logo: `A printed logo adds $${upAmt(U.logo)} per board.` };

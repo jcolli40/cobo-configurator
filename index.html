@@ -1532,7 +1532,9 @@
     [data-v8] .sc-grab:not([hidden]) { display: block; height: 22px; margin: -8px 0 -4px; cursor: grab; touch-action: none; position: relative; }   /* (a roomy touch area; the visible bar is the same as the cart's handle) */
     [data-v8] .sc-grab::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 5px; margin-left: -20px; border-radius: 3px; background: #d4d4d8; }
   }
-  [data-v8] #edgeTabs { padding-left: 0; padding-right: 0; }   /* (the tabs line up with the panel's own side padding) */
+  [data-v8] #edgeTabs { padding-left: 0; padding-right: 0; }
+  [data-v8] #edgeUpRow { margin: 2px 0 -2px; }
+  [data-v8] #edgeUpRow[hidden] { display: none; }   /* (the tabs line up with the panel's own side padding) */
   [data-v8] .sc-title { margin: 0; text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -2190,6 +2192,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021434" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021442" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
