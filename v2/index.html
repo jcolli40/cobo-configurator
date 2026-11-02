@@ -1579,6 +1579,14 @@
     [data-v8] #cartEmpty:not([hidden]) { padding: 30px 0; }   /* (60px taller, so the empty cart stands out) */
   }
 
+  /* ===== v8: ONE style for the sub-headers (the tab strips under a panel header: Board Style, Edge Banding) =====
+     Standard = Board Style's Solid Colors | Textures & Patterns tabs; the tab that is not selected is two weight steps lighter */
+  [data-v8] { --sh-size: 14px; --sh-weight: 650; --sh-weight-off: 450; --sh-pad: 10px 10px; --sh-radius: 12px; }
+  [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) { gap: 8px; padding-top: 6px; padding-bottom: 10px; }
+  [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) button { flex: 1 1 auto; white-space: nowrap; padding: var(--sh-pad); border: 0; border-radius: var(--sh-radius); font-size: var(--sh-size); font-weight: var(--sh-weight-off); }
+  [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) button:is([aria-selected="true"], [aria-pressed="true"]) { font-weight: var(--sh-weight); }
+  [data-v8] :is(#lamPanel > .styletabs button[data-tab="colors"], #edgeTabs button[data-etab="colors"]) { flex: 0 1 auto; padding-left: 14px; padding-right: 14px; }
+
   /* ===== v8: ONE style for every panel header (Your Cart, Your Documents, Size, Board Style, Edge Banding, Caps & Studs, See it on your wall, Share, Summary) =====
      Change a number here and every header follows. */
   [data-v8] { --ph-pad: 18px 16px 10px 18px; --ph-gap: 12px; --ph-size: 19px; --ph-weight: 750; --ph-color: var(--accent); --ph-track: -.01em; --ph-icon: 28px; --ph-stroke: 1.2; }
@@ -2185,6 +2193,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021757" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021810" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
