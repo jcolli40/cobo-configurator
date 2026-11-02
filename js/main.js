@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012317';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012317';
-import { wallTexture, wallSwatch } from './env.js?v=202611012317';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012317';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012319';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012319';
+import { wallTexture, wallSwatch } from './env.js?v=202611012319';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012319';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1608,10 +1608,11 @@ function wireSteps() {
     srHelp?.remove();
     box.append(sr, res);
     // "Your business is in ___": guessed from the photo (or their connection), confirmed by them (Part B checks by state)
-    box.insertAdjacentHTML('beforeend', '<div class="staterow" id="stateRow" hidden><label for="bizState">Your business is in</label>'
-      + '<div class="stctl"><select id="bizState"><option value="">Choose your state</option>'
-      + Object.entries(US_STATES).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}">${n}</option>`).join('')
-      + '</select><button type="button" class="typebtn" id="bizBtn" aria-haspopup="dialog" aria-label="Your business state"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><button type="button" class="stok" id="stateOk">Confirm</button></div><p class="help" id="stateWhy"></p></div>');
+    box.insertAdjacentHTML('beforeend', '<div class="staterow" id="stateRow" hidden><span class="st-l">Your business is in</span>'
+      + '<button type="button" class="st-pill" id="bizBtn" aria-haspopup="dialog" aria-label="Your business state"><span></span></button>'
+      + '<button type="button" class="st-edit" id="bizEdit" aria-label="Change your business state"><svg class="i" aria-hidden="true"><use href="#i-pencil"/></svg></button>'
+      + '<select id="bizState" hidden aria-hidden="true" tabindex="-1"><option value="">Choose your state</option>'
+      + Object.entries(US_STATES).sort((x, y) => x[1].localeCompare(y[1])).map(([c, n]) => `<option value="${c}">${n}</option>`).join('') + '</select></div>');
     res.append(box.querySelector('#stateRow'));                       // (the state question lives in the blue result box)
     own.querySelector('.opt + .help').after(box);                     // (inside "Add your own", right under its title)
     or2.remove();
@@ -1619,12 +1620,8 @@ function wireSteps() {
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">Add all to board</button></div>');
     $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; if (!sizePicked) useBestFit(); else refresh(); });
-    $('#bizBtn').addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
-    $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
-    $('#stateOk').addEventListener('click', () => {
-      if (state.bizStateOk) state.bizStateOk = false; else if (state.bizState) state.bizStateOk = true; else $('#bizState').focus();
-      paintState();
-    });
+    for (const id of ['#bizBtn', '#bizEdit']) $(id).addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
+    $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = !!e.target.value; paintState(); });   // (picking one is confirming it)
     detectStatus().then(s => { if (s?.country === 'US' && s.region) guessState({ state: s.region }, 'ip'); });   // (the Worker knows the visitor's state)
   }
   // ...in any mix of paper sizes: Letter (the count), then Legal, Tabloid and Half letter; each can be turned sideways
@@ -2133,12 +2130,8 @@ function guessState(loc, from) {
 function paintState() {
   const row = $('#stateRow'); if (!row) return;
   row.hidden = !state.myCerts.length;                       // (asked once there are documents to check)
-  $('#bizState').value = state.bizState || ''; $('#bizState').disabled = !!state.bizStateOk;
-  $('#bizBtn').querySelector('span').textContent = $('#bizState').selectedOptions[0]?.text || 'Choose your state'; $('#bizBtn').disabled = !!state.bizStateOk;
-  row.classList.toggle('done', !!state.bizStateOk);
-  $('#stateOk').textContent = state.bizStateOk ? 'Change' : 'Confirm';
-  $('#stateWhy').textContent = state.bizStateOk ? 'Thanks. We use it to check which documents your business needs.'
-    : state.bizState ? (state.bizWhy ? `Is this right? We guessed it ${state.bizWhy}.` : 'Tap Confirm if this is right.') : 'Choose your state so we can check which documents your business needs.';
+  $('#bizState').value = state.bizState || '';
+  $('#bizBtn').querySelector('span').textContent = $('#bizState').selectedOptions[0]?.text || 'Choose your state';
 }
 // "See an example" (also ?scan=demo): a drawn photo of a wall with 6 certificates, run through the same scan
 async function scanExample() {
