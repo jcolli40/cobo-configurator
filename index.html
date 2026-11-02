@@ -1535,7 +1535,7 @@
   [data-v8] #edgeTabs { padding-left: 0; padding-right: 0; }
   [data-v8] #edgeUpRow { margin: 2px 0 -2px; }
   [data-v8] #edgeUpRow[hidden] { display: none; }   /* (the tabs line up with the panel's own side padding) */
-  [data-v8] .sc-title { margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
+  [data-v8] .sc-title { margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); text-align: center; font-size: var(--sh-size); font-weight: var(--sh-weight); color: var(--accent); }   /* (a sub-header: same size and weight as the tabs) */
   [data-v8] .scdetails #stateRow { padding-top: 10px; border-top: 1px solid var(--line-2); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -2192,6 +2192,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021810" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021814" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
