@@ -1520,6 +1520,7 @@
   [data-v8] #scanResult .addmenu { top: auto; bottom: calc(100% + 6px); }
   @media (prefers-reduced-motion: no-preference) { [data-v8] #scanResult .addmenu:not([hidden]) { transform-origin: 50% 100%; animation-name: menuPop; } }
   [data-v8] .cart-h { display: none; }
+  [data-v8] .buysheet .grab .gclose { display: none; }   /* (phones: no Collapse text; computers show it while the cart is open) */
   @media (min-width: 861px) {
     /* the hint under the steps wraps instead of being cut off */
     [data-v8] .stephint:not([hidden]) { white-space: normal; align-items: flex-start; font-size: 13px; }
@@ -2165,6 +2166,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021338" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021341" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
