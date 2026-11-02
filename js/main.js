@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020738';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020738';
-import { wallTexture, wallSwatch } from './env.js?v=202611020738';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020738';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020739';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020739';
+import { wallTexture, wallSwatch } from './env.js?v=202611020739';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020739';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -503,7 +503,10 @@ function photoBlurTexture(P) {
 }
 // v5 room photos (img/rooms/), loaded once each; the board is rebuilt when one arrives so its size is right
 const SITE_ROOT = new URL('../', import.meta.url);
-const SHOW_TEST_PHOTO = new URLSearchParams(location.search).get('test') === '1';   // the "Load test image" button in the Add menu: only when the address has ?test=1 (the Shopify page passes it along)
+const SHOW_TEST_PHOTO = (() => {   // the "Load test image" button in the Add menu: on when the configurator is opened on its own (the GitHub Pages address), or with ?test=1; off inside the Shopify page unless that page's address has ?test=1; ?test=0 forces it off
+  const t = new URLSearchParams(location.search).get('test');
+  return t === '1' || (t !== '0' && window.top === window.self);
+})();
 const roomTex = new Map();
 function roomTexture(path) {
   if (roomTex.has(path)) return roomTex.get(path);
