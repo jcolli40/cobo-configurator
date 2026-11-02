@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021445';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021445';
-import { wallTexture, wallSwatch } from './env.js?v=202611021445';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021445';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021447';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021447';
+import { wallTexture, wallSwatch } from './env.js?v=202611021447';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021447';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -744,6 +744,12 @@ function buildBoard() {
   // acrylic panel (same size as board, flush edges)
   const acr = boxMesh(w, h, HW.acrylicT, acrylicMat, 0, 0, T + HW.sheetGap + HW.acrylicT / 2, false);
   acr.receiveShadow = false; acr.castShadow = true; root.add(acr);
+  if (V8) {                                                  // v8: the acrylic's polished edge catches the light: a thin, slightly cool, glassy rim around the sheet (the face stays clear, so the board color and documents are untouched)
+    const eW = 0.04, zc = T + HW.sheetGap + HW.acrylicT / 2;
+    const rim = new THREE.MeshStandardMaterial({ color: '#c9ece6', emissive: '#8fd3c8', emissiveIntensity: 0.35, transparent: true, opacity: 0.5, roughness: 0.08, metalness: 0, depthWrite: false });
+    for (const sy of [-1, 1]) root.add(boxMesh(w, eW, HW.acrylicT, rim, 0, sy * (h / 2 - eW / 2), zc, false));
+    for (const sx of [-1, 1]) root.add(boxMesh(eW, h - 2 * eW, HW.acrylicT, rim, sx * (w / 2 - eW / 2), 0, zc, false));
+  }
 
   // aluminum caps + M6 studs + recessed T-nuts
   const fm = fastenerMaterial();
