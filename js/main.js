@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020524';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020524';
-import { wallTexture, wallSwatch } from './env.js?v=202611020524';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020524';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020536';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020536';
+import { wallTexture, wallSwatch } from './env.js?v=202611020536';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020536';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1684,14 +1684,14 @@ function wireSteps() {
       + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
       + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
       + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div>';
-    dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">' + board + 'Add Your Documents<svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="adddetails" id="addDetails"></div>';
+    dt.innerHTML = '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + board + '</button></div><div class="adddetails" id="addDetails"></div>';
     $('#optSheet .side-h').after(dt);
     const menu = document.createElement('div'); menu.id = 'addMenu'; menu.className = 'addmenu'; menu.hidden = true; menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', 'Add your documents');
     const sr2 = own.querySelector('.scanrow'), snapL = sr2.querySelector('label.upload'), upL = sr2.querySelector('label.scanup');
     snapL.classList.add('menurow'); upL.classList.add('menurow');
     const sampRow = document.createElement('label'); sampRow.className = 'menurow sampsw'; sampRow.id = 'docSwLbl';
     sampRow.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-cert"/></svg><span>Use samples for now</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples">';
-    const ex = document.createElement('img'); ex.className = 'snapex'; ex.alt = 'Example: five certificates pinned to a corkboard, each one marked and named'; ex.src = new URL('img/snap-example.jpg', SITE_ROOT).href;
+    const ex = document.createElement('img'); ex.className = 'snapex'; ex.alt = 'Example: five certificates, each one marked and named'; ex.src = new URL('img/snap-example.png', SITE_ROOT).href;
     $('#addDetails').append(ex, own.querySelector('.opt + .help'));        // (what Snap does: the example and the blurb live in the panel now)
     menu.append(snapL, upL, sampRow); dt.querySelector('.addwrap').append(menu); sr2.remove();
     const btn = $('#docTabOwn'), setMenu = (on) => { menu.hidden = !on; btn.setAttribute('aria-expanded', on); };
@@ -3662,6 +3662,21 @@ function goFull() {
   const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
   if (!embedded || !req || document.fullscreenElement || document.webkitFullscreenElement) return;
   try { req.call(el, { navigationUI: 'hide' })?.catch?.(() => {}); } catch { /* not allowed here: stays as it is */ }
+}
+// In the store on phones: tell the page when a panel or pop-up covers our top bar, so it can hide its
+// "Back to store" button meanwhile ({ type: 'cobo:ui', sheet: true/false })
+if (embedded) {
+  let was = null;
+  const covered = () => phone.matches && [...document.querySelectorAll('[role="dialog"], .modal, .side, #buysheet.open')].some(el => {
+    if (el.hidden || !el.getClientRects().length || getComputedStyle(el).visibility === 'hidden') return false;
+    const r = el.getBoundingClientRect();
+    return r.top < 64 && r.bottom > 64 && r.width > innerWidth * 0.6;
+  });
+  const check = () => { const c = covered(); if (c !== was) { was = c; window.parent.postMessage({ type: 'cobo:ui', sheet: c }, '*'); } };
+  const soon = () => { requestAnimationFrame(check); setTimeout(check, 450); };   // (and again once a sheet has slid into place)
+  new MutationObserver(soon).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  phone.addEventListener('change', soon);
+  check();
 }
 const localCart = [];
 let cartItems = [];
