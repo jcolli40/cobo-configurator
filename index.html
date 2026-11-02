@@ -633,7 +633,7 @@
   [data-v8] .snapbox .scanres > canvas { display: none; }   /* (the working canvas: the photos show as thumbnails) */
   [data-v8] .sc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   [data-v8] .sc-bar[hidden], [data-v8] .sc-thumbs[hidden], [data-v8] #scanText[hidden] { display: none; }
-  [data-v8] .sc-head { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 650; color: var(--accent); }   /* (the same size as the Add Your Documents button text) */
+  [data-v8] .sc-head { display: flex; align-items: center; gap: 8px; white-space: nowrap; min-width: 0; font-size: 16px; font-weight: 650; color: var(--accent); }   /* (the same size as the Add Your Documents button text) */
   [data-v8] .sc-head .chk { width: 22px; height: 22px; color: #2e7d4f; flex: none; }
   [data-v8] .sc-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
   [data-v8] .scthumb { width: 68px; height: 84px; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #f4f4f6; cursor: zoom-in; }   /* (the same size as the pictures in the list) */
@@ -645,8 +645,8 @@
   [data-v8] #scanText .sc-item { color: var(--ink); display: grid; grid-template-columns: 1.7em minmax(0, 1fr); }
   [data-v8] #scanText .sc-item > span { display: block; }
   [data-v8] #scanText .sc-left { margin-top: 4px; color: var(--muted); }
-  [data-v8] .sc-fold { display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--tint); color: var(--accent); cursor: pointer; }
-  [data-v8] .sc-fold .i { width: 20px; height: 20px; stroke-width: 2; transition: transform .25s ease; }
+  [data-v8] .sc-fold { display: inline-flex; align-items: center; gap: 4px; flex: none; height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 16px; background: var(--tint); color: var(--accent); font: inherit; font-size: 13px; font-weight: 650; white-space: nowrap; cursor: pointer; }   /* (a pill: Details with the arrow, Collapse when open) */
+  [data-v8] .sc-fold .i { width: 18px; height: 18px; stroke-width: 2; transition: transform .25s ease; }
   [data-v8] #scanResult:not(.folded) .sc-fold .i { transform: rotate(180deg); }   /* (open: arrow up = fold it; folded: arrow down = open it) */
   [data-v8] #scanResult.folded :is(.sc-thumbs, #scanText, #stateRow) { display: none; }   /* (folded: just "Found N") */
   [data-v8] .camico .bd { fill: #fff; stroke: #b4b7bf; stroke-width: 3; }
@@ -2063,6 +2063,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020818" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020825" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

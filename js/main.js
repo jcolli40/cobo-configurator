@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020818';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020818';
-import { wallTexture, wallSwatch } from './env.js?v=202611020818';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020818';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020825';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020825';
+import { wallTexture, wallSwatch } from './env.js?v=202611020825';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020825';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1628,12 +1628,11 @@ function wireSteps() {
     own.querySelector('.opt + .help').textContent = 'Snap all your docs at once or add them individually. We\'ll import them & auto-select the board size to fit.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
-    res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photos and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
+    res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="false" aria-label="Show the photos and the list"><span class="fl">Details</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
     { const card = document.createElement('div'); card.className = 'scdetails'; res.querySelector('#scBar').before(card);   // the details sit on a white card inside the blue box
       card.append(res.querySelector('#scBar'), res.querySelector('#scThumbs'), res.querySelector('#scanText')); }
     res.querySelector('#scFold').addEventListener('click', () => {            // the arrow folds the box: only "Found 4" and the state stay
-      const on = res.classList.toggle('folded'), f = res.querySelector('#scFold');
-      f.setAttribute('aria-expanded', !on); f.setAttribute('aria-label', on ? 'Show the photo and the list' : 'Hide the photo and the list');
+      setScanFold(!res.classList.contains('folded'));
     });
     box.append(sr, res);
     // "Your business is in ___": guessed from the photo (or their connection), confirmed by them (Part B checks by state)
@@ -2164,7 +2163,7 @@ async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer 
     const no = replaceIdx != null ? replaceIdx : scans.length;
     scans[no] = { full: fullShot, thumb: cv.toDataURL('image/jpeg', 0.8) };
     state.myCerts.forEach(d => { d.scanNo = no; });
-    $('#scanResult').classList.remove('folded'); $('#scFold')?.setAttribute('aria-expanded', 'true');   // (a new scan opens the box again)
+    setScanFold(true);                                       // (a new scan: the details start closed)
   }
   if (keepOld.length) state.myCerts = [...keepOld, ...state.myCerts];   // (added to the list, ticks and edits kept)
   state.sheets = !(V8 && ai); $('#sheets').checked = state.sheets;   // (v8: their own documents, so samples off)
@@ -2175,6 +2174,13 @@ async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer 
   return { found, img: tmp.img };
 }
 
+// v8: open or close the details in the result box; the button says Details when closed and Collapse when open
+function setScanFold(closed) {
+  const res = $('#scanResult'), f = $('#scFold'); if (!res || !f) return;
+  res.classList.toggle('folded', closed);
+  f.setAttribute('aria-expanded', !closed); f.setAttribute('aria-label', closed ? 'Show the photos and the list' : 'Hide the photos and the list');
+  f.querySelector('.fl').textContent = closed ? 'Details' : 'Collapse';
+}
 // v8: the result box, drawn from state: "Found N", a thumbnail for each snapped photo, the sizes, and the documents by number
 function paintScan() {
   const res = $('#scanResult'); if (!res || $('#scanBusy')?.classList.contains('on')) return;
@@ -2185,7 +2191,7 @@ function paintScan() {
   const scanned = docs.length > 0;
   $('#scBar').hidden = !scanned; $('#scThumbs').hidden = !scanned; t.hidden = !scanned;
   if (!scanned) return;
-  const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Found ${docs.length} document${docs.length === 1 ? '' : 's'}`);
+  const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Added ${docs.length} document${docs.length === 1 ? '' : 's'}`);
   $('#scThumbs').replaceChildren(...scans.map((s, i) => (s && docs.some(d => d.scanNo === i) ? Object.assign(document.createElement('button'),
     { type: 'button', className: 'scthumb', innerHTML: '<img alt="">' }) : null)).map((btn, i) => { if (btn) { btn.dataset.i = i; btn.setAttribute('aria-label', `See snapped photo ${i + 1} large`); btn.firstChild.src = scans[i].thumb; } return btn; }).filter(Boolean));
   const span = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; return s; };
