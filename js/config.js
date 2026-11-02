@@ -33,6 +33,7 @@ export const COLORS = [
   { name: 'Lime Green',         hex: '#8fd01f' },
   { name: 'Emerald Green',        hex: '#0a9a58' },
   { name: 'Forest Green',       hex: '#1d5a3a' },
+  { name: 'Seafoam',              hex: '#7dd8b5' },
   { name: 'Teal',               hex: '#0e8a8a' },
   { name: 'Powder Blue',        hex: '#79b0d8' },
   { name: 'Royal Blue',         hex: '#2b50c8' },
