@@ -1521,6 +1521,7 @@
     [data-v8] .t-intro .t-card { left: 0; right: 0; margin-inline: auto; width: min(640px, calc(100% - 64px)); justify-items: center; text-align: center; }
     [data-v8] .t-intro .t-card :is(h1, .t-sub) { text-align: center; }
     [data-v8] .t-intro .t-logo { justify-self: center; }
+    [data-v8] .t-intro .t-acts { justify-self: center; width: 50%; }   /* (the Start button: half the card width) */
     [data-v8] .t-intro .t-card { bottom: clamp(16px, 14vh, 240px); }   /* (the group sits higher, closer under the board) */
     [data-v8] .t-intro .t-card.cont { bottom: calc(clamp(16px, 14vh, 240px) + 62px); }
     [data-v8] .t-intro .t-cont { left: 0; right: 0; margin-inline: auto; width: max-content; }
@@ -2156,6 +2157,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021252" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021253" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
