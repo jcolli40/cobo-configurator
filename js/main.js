@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021420';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021420';
-import { wallTexture, wallSwatch } from './env.js?v=202611021420';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021420';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021422';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021422';
+import { wallTexture, wallSwatch } from './env.js?v=202611021422';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021422';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1035,6 +1035,12 @@ function openSection(name) {
 }
 // Phones: one option at a time in a pop-up sheet. The section's own controls are moved into the sheet while it's open.
 let optOpen = null;   // { sec, body }
+// v8: the Edge banding panel's two tabs: Solid Colors (the colors and the custom color) or Textured (the woods)
+function setEdgeTab(t) {
+  for (const b of document.querySelectorAll('#edgeTabs [data-etab]')) { const on = b.dataset.etab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
+  for (const c of document.querySelectorAll('#edgeSw .swc')) c.style.display = !!woodOf(c.querySelector('.sw')?.dataset.k) === (t === 'tex') ? '' : 'none';
+  $('#edgeCustom').closest('.opt').style.display = t === 'tex' ? 'none' : '';
+}
 // v8: Edge banding and Caps & studs show what is chosen in a sticky strip at the bottom of their panel
 function paintSelBar() {
   const bar = $('#selBar'); if (!bar) return;
@@ -1084,6 +1090,7 @@ function openOptSheet(sec) {
     }
   }
   optOpen = { sec, body };
+  if (V8 && sec.dataset.sec === 'edge') setEdgeTab(woodOf(state.edge) ? 'tex' : 'colors');   // (opens on the tab that holds the current edge)
   if (V8) paintSelBar();
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1823,6 +1830,11 @@ function wireSteps() {
     { const note = document.createElement('p'); note.id = 'edgeMatchNote'; note.className = 'help'; note.hidden = true;
       note.textContent = 'Matching the board is only available with solid colors. Pick an edge color for your texture or pattern.'; $('#edgeMatch').closest('.opt').after(note); }
     $('#edgeMatchNote').after($('#edgeCustom').closest('.opt'));   // Edge banding: the custom color row sits right under Match board color
+    { const tabs = document.createElement('div'); tabs.id = 'edgeTabs'; tabs.className = 'styletabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Edge banding');   // Edge banding: Solid Colors | Textured (+$), like Board Style
+      tabs.innerHTML = '<button type="button" role="tab" data-etab="colors">Solid Colors</button>'
+        + '<button type="button" role="tab" data-etab="tex">Textured<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>';
+      tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-etab]'); if (b) setEdgeTab(b.dataset.etab); });
+      $('#edgeSw').closest('.sec-b').prepend(tabs); }
     $('#faceSw').before($('#faceCustom').closest('.opt'));                      // Solid Colors: "Any other color" sits at the top of its panel
     { const sb = document.createElement('div'); sb.id = 'selBar'; sb.hidden = true; sb.setAttribute('role', 'status');   // Edge and Caps: the chosen swatch in a sticky strip at the bottom, like the Solid Colors and Textures panels
       sb.innerHTML = '<span class="sb-sw" aria-hidden="true"></span><span class="sb-nm"><small>Selected</small><b></b></span>'; $('#optSheet').append(sb); }                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
