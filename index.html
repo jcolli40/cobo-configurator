@@ -549,21 +549,38 @@
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
   [data-v8] .docstabs button .camico { width: 24px; height: 24px; margin-right: 8px; flex: none; fill: none; stroke: none; }
-  [data-v8] .docstabs { position: relative; justify-content: center; }
-  [data-v8] .docstabs > #docTabOwn { flex: 0 0 auto; padding: 10px 16px; background: var(--tint); color: var(--accent); }
-  [data-v8] .docstabs > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
-  [data-v8] .docstabs > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
-  [data-v8] .addmenu { position: absolute; top: calc(100% - 6px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(340px, calc(100% - 32px)); display: grid; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .2); }
+  [data-v8] .docstabs { flex-direction: column; align-items: center; gap: 14px; margin: 6px 16px 10px; padding: 18px 16px 16px; border-radius: 18px; background: var(--tint); }
+  [data-v8] .docstabs.compact { gap: 0; margin: 0; padding: 6px 16px 10px; border-radius: 0; background: none; }
+  [data-v8] .docstabs.compact :is(.camart, .adddetails) { display: none; }
+  [data-v8] .docstabs .camart svg { display: block; width: min(100%, 190px); height: auto; margin: 0 auto; }
+  [data-v8] .docstabs .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
+  [data-v8] .docstabs .camart .sh { fill: #cfe0f7; }
+  [data-v8] .docstabs .camart .cap { fill: #bdbdc2; }
+  [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
+  [data-v8] .docstabs .adddetails { display: grid; gap: 12px; justify-items: center; }
+  [data-v8] .docstabs .adddetails .help { margin: 0 !important; font-size: 14px; line-height: 1.45; color: var(--ink); }
+  [data-v8] .docstabs > .addwrap > #docTabOwn { flex: 0 0 auto; padding: 12px 18px; background: var(--accent); color: #fff; font-size: 16px; }
+  [data-v8] .docstabs > .addwrap > #docTabOwn .camico .vf { stroke: #fff; }
+  [data-v8] .docstabs.compact > .addwrap > #docTabOwn { padding: 10px 16px; background: var(--tint); color: var(--accent); font-size: inherit; }
+  [data-v8] .docstabs.compact > .addwrap > #docTabOwn .camico .vf { stroke: var(--accent); }
+  [data-v8] .docstabs > .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
+  [data-v8] .docstabs > .addwrap > #docTabOwn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  [data-v8] .addmenu { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(340px, 100%); display: grid; gap: 2px; padding: 8px; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(0, 0, 0, .2); }
   [data-v8] .addmenu[hidden] { display: none; }
   [data-v8] .side .addmenu .menurow { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 52px; padding: 10px 12px; box-sizing: border-box; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
   [data-v8] .side .addmenu .menurow:hover { background: var(--hover); }
   [data-v8] .side .addmenu .menurow > .i { width: 22px; height: 22px; color: var(--accent); }
+  [data-v8] .side .addmenu > label.upload.menurow { justify-content: center; min-height: 58px; margin-bottom: 4px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; }
+  [data-v8] .side .addmenu > label.upload.menurow:hover { background: #24497f; }
+  [data-v8] .side .addmenu > label.upload.menurow > .i { color: #fff; width: 24px; height: 24px; }
   [data-v8] .addmenu .menusnap { display: grid; gap: 10px; margin-bottom: 4px; padding: 12px; border-radius: 14px; background: var(--tint); }
   [data-v8] .side .addmenu .menusnap .menurow { justify-content: center; min-height: 58px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; }
   [data-v8] .side .addmenu .menusnap .menurow:hover { background: #24497f; }
   [data-v8] .side .addmenu .menusnap .menurow > .i { color: #fff; width: 24px; height: 24px; }
   [data-v8] .side .addmenu .menusnap > .help { margin: 0 !important; font-size: 14px; line-height: 1.45; color: var(--ink); }
-  [data-v8] .addmenu .menusnap .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: min(258px, calc(100dvh - 520px)); min-height: 90px; margin: 0 auto; border-radius: 10px; }   /* (shrinks, same proportions, so the whole menu fits on the screen) */
+  [data-v8] .addmenu .menusnap .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: min(258px, calc(100dvh - 520px)); min-height: 90px; margin: 0 auto; border-radius: 10px; }
+  [data-v8] .docstabs .adddetails .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: 300px; margin: 0 auto; border-radius: 10px; }   /* (shrinks, same proportions, so the whole menu fits on the screen) */
   [data-v8] .addmenu .sampsw { margin: 0; }
   [data-v8] .addmenu .sampsw > span { flex: 1; }
   /* Use samples for now: greyed out while it's off, back to full color when it's on */
@@ -1997,6 +2014,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020518" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020524" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
