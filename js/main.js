@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020922';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020922';
-import { wallTexture, wallSwatch } from './env.js?v=202611020922';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020922';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021224';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021224';
+import { wallTexture, wallSwatch } from './env.js?v=202611021224';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021224';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1020,6 +1020,7 @@ function openOptSheet(sec) {
   if ($('#docBar')) { $('#docBar').classList.toggle('on', ['certs', 'size'].includes(sec.dataset.sec)); $('#docBar').dataset.for = sec.dataset.sec; }   // (the best-fit line is on Size; Your Documents shows only the custom-board note)
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   $('#optSheet').classList.toggle('full', V8 && sec.dataset.sec === 'certs');   // (phones: Your Documents covers the whole screen)
+  $('#optSheet').classList.toggle('docsopen', V8 && sec.dataset.sec === 'certs');   // (shows the sticky strip at the bottom)
   optOpen = { sec, body };
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1035,7 +1036,7 @@ function closeOptSheet(switching) {
   placeOrient(false);
   if ($('#docTabs')) $('#docTabs').hidden = true;
   if ($('#addMenu')) $('#addMenu').hidden = true;
-  $('#optSheet').classList.remove('full');
+  $('#optSheet').classList.remove('full', 'docsopen');
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
@@ -1223,8 +1224,17 @@ function build() {
     if (SHEETS_ONLY()) return openOptSheet(h.closest('.sec'));     // phones: pop-up sheet instead of folding open
     setSec(h.closest('.sec'), h.getAttribute('aria-expanded') !== 'true');
   }));
-  $('#optSheet [data-close]').addEventListener('click', () => closeOptSheet());
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && optOpen && $('#lamPanel').hidden) closeOptSheet(); });
+  // v8: closing Your Documents with documents listed but none added to the board asks first
+  const closeDocs = async () => {
+    if (V8 && optOpen?.sec.dataset.sec === 'certs' && state.myCerts.length && !state.myCerts.some(d => d.ok) && !state.sheets) {
+      const pick = await askNoneAdded();
+      if (pick === 'stay') return;
+      if (pick === 'add') $('#okAll').click();
+    }
+    closeOptSheet();
+  };
+  $('#optSheet [data-close]').addEventListener('click', () => closeDocs());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && optOpen && $('#lamPanel').hidden && !document.querySelector('dialog[open]')) closeDocs(); });
   addEventListener('scroll', () => {                               // phones: shrink the pinned 3D view as you scroll
     if (stageQueued) return;
     stageQueued = true;
@@ -1627,12 +1637,12 @@ function wireSteps() {
     $('#scanFile').closest('label').insertAdjacentHTML('beforeend', '<small class="ftypes">PDF · JPG · PNG · HEIC</small>');   // (the file types it takes, to the right)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
-    own.querySelector('.opt + .help').textContent = 'Snap all your docs at once or add them individually. We\'ll import them & auto-select the board size to fit.';
+    own.querySelector('.opt + .help').textContent = 'Review for accuracy, then confirm & add to board by checking the box beside each.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="false" aria-label="Show the photos and the list"><span class="fl">Details</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
     { const card = document.createElement('div'); card.className = 'scdetails'; res.querySelector('#scBar').before(card);   // the details sit on a white card inside the blue box
-      card.append(res.querySelector('#scBar'), res.querySelector('#scThumbs'), res.querySelector('#scanText')); }
+      card.append(res.querySelector('#scThumbs'), res.querySelector('#scanText')); card.before(res.querySelector('#scBar')); }   // (the bar stays in the sticky strip; the card pops up above it)
     res.querySelector('#scFold').addEventListener('click', () => {            // the arrow folds the box: only "Found 4" and the state stay
       setScanFold(!res.classList.contains('folded'));
     });
@@ -1643,7 +1653,7 @@ function wireSteps() {
       + '<button type="button" class="st-edit" id="bizEdit" aria-label="Change your business state"><svg class="i" aria-hidden="true"><use href="#i-pencil"/></svg></button>'
       + '<select id="bizState" hidden aria-hidden="true" tabindex="-1"><option value="">Choose your state</option>'
       + Object.entries(US_STATES).sort((x, y) => x[1].localeCompare(y[1])).map(([c, n]) => `<option value="${c}">${n}</option>`).join('') + '</select></div>');
-    res.append(box.querySelector('#stateRow'));                       // (the state question lives in the blue result box)
+    res.querySelector('.scdetails').append(box.querySelector('#stateRow'));   // (the state question lives in the details pop-up)
     own.querySelector('.opt + .help').after(box);                     // (inside "Add your own", right under its title)
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
@@ -1709,7 +1719,7 @@ function wireSteps() {
           .map(([x, y, w, h, r], i) => '<g transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"><rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1"/>'
           + '<text class="num" x="' + (x + w / 2) + '" y="' + (y + h / 2) + '">' + (i + 1) + '</text>'
           + '<path class="spk" transform="translate(' + (x + w) + ' ' + y + ')" d="M0-4.5L1.2-1.2 4.5 0 1.2 1.2 0 4.5-1.2 1.2-4.5 0-1.2-1.2z"/></g>').join('')   // (each document: a thin blue outline and an AI sparkle on its corner, like a detected one)
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Add your documents and review them below.</p>';
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Snap your docs &bull; Review for accuracy &bull; Add to Board</p>';
     const plus = '<svg class="i plusico" aria-hidden="true"><use href="#i-plus-circle"/></svg>';
     dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + plus + '</button></div>';
     $('#optSheet .side-h').after(dt);
@@ -1718,7 +1728,7 @@ function wireSteps() {
     snapL.classList.add('menurow'); upL.classList.add('menurow');
     snapL.querySelector('use')?.setAttribute('href', '#i-snap-spark');   // (viewfinder with a sparkle: it finds the documents for you)
     const sampRow = document.createElement('label'); sampRow.className = 'menurow sampsw'; sampRow.id = 'docSwLbl';
-    sampRow.innerHTML = '<span>Use samples for now</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples">';
+    sampRow.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-cert"/></svg><span>Use samples for now</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples">';
     const snapBox = document.createElement('div'); snapBox.className = 'menusnap';                 // a pale blue section in the menu: the example, Snap your docs, and what it does
     snapBox.append(snapL);
     dt.querySelector('.addline').after(own.querySelector('.opt + .help'));   // (what Snap does: under the first line, above the button)
@@ -1741,6 +1751,7 @@ function wireSteps() {
     menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMenu(false); btn.focus(); } });
     for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', () => setMenu(false));
     $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); setMenu(false); });
+    $('#optSheet').append($('#scanResult'));                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
   }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
@@ -1790,6 +1801,15 @@ function wireSteps() {
   $('#colCta').addEventListener('click', () => $('#cta').click());
   $('#sumCta').addEventListener('click', () => { closeOptSheet(); $('#cta').click(); });
   $('#dockMini').hidden = false;
+  if (V8) {                                                  // computers: Collapse sits just above the column, in a see-through white bubble (not inside it)
+    const mb = $('#dockMini'); $('.panel').append(mb);
+    const place = () => { const r = $('.p-body').getBoundingClientRect(); mb.style.top = `${Math.max(8, Math.round(r.top - 40))}px`; mb.style.visibility = r.height > 0 ? '' : 'hidden'; };
+    new ResizeObserver(place).observe($('.p-body')); addEventListener('resize', place); place();
+    // the cart: Your cart + total at the top of the pop-up; the chip at the bottom turns into Collapse with a down arrow while it's open
+    $('#sheetGrab').insertAdjacentHTML('beforeend', '<span class="gclose" aria-hidden="true"><span>Collapse</span><svg class="i"><use href="#i-chev"/></svg></span>');
+    $('#sheetBody').insertAdjacentHTML('afterbegin', '<div class="cart-h"><b>Your cart <span id="cartHCount"></span></b><b id="cartHAmt">$0.00</b></div>');
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !phone.matches && $('#buysheet').classList.contains('open')) { setSheet(false); $('#sheetGrab').focus(); } });
+  }
   const mini = (on) => {
     document.documentElement.classList.toggle('dmini', on);
     $('#dockMini').setAttribute('aria-pressed', on);
@@ -3187,7 +3207,7 @@ function paintDocs8(docs, miss, opts) {
   // left: the picture (tap to see it large) with Retake just below it; right: the type and size (full width), then Rotate and Delete;
   // the tick box sits in the top right corner of the box
   $('#docList').innerHTML = docs.map((d, i) => `<li class="doc doc8${miss.has(i) ? ' miss' : ''}${d.ok ? ' ok' : ''}" data-i="${i}">
-      <input type="checkbox" class="okbox" data-ok aria-label="Add document ${i + 1} to the board"${d.ok ? ' checked' : ''}>
+      <label class="okpill"><input type="checkbox" class="okbox" data-ok aria-label="Add document ${i + 1} to the board"${d.ok ? ' checked' : ''}><span>Add to Board</span></label>
       <span class="dpic"><button type="button" class="thumb" data-act="zoom" title="See it large" aria-label="See document ${i + 1} large"><img alt=""><span class="tnum" aria-hidden="true">${i + 1}</span></button>
         <button type="button" class="retakebtn" data-act="retake" aria-label="Retake the photo of document ${i + 1}"><svg class="i"><use href="#i-camera"/></svg>Retake</button>
 </span>
@@ -3204,7 +3224,8 @@ function paintDocs8(docs, miss, opts) {
   if ($('#addDoc')) $('#addDoc').hidden = !docs.length || !CAT;
   const okN = docs.filter(d => d.ok).length;
   $('#dlHead').hidden = !docs.length; $('#okAll').hidden = okN === docs.length;
-  $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} added to the board` : `Select to add to your board (${okN} of ${docs.length})`;
+  $('#dlCount').innerHTML = '<svg class="i chk" aria-hidden="true"><use href="#i-check-circle"/></svg><span></span>';   // (a green check, then the words, in a light green bubble)
+  $('#dlCount span').textContent = okN === docs.length ? `All ${docs.length} added to the board` : `Select to add to your board (${okN} of ${docs.length})`;
 }
 // v8: "are you sure?" before a document is deleted (a real <dialog>: Esc cancels, focus stays inside, starts on Cancel)
 function askSure(question, okLabel) {
@@ -3218,6 +3239,22 @@ function askSure(question, okLabel) {
     dlg.querySelector('.sure-no').addEventListener('click', () => dlg.close());
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });       // (a tap on the dimmed part cancels)
     dlg.addEventListener('close', () => { dlg.remove(); resolve(yes); });
+    document.body.append(dlg); dlg.showModal();
+  });
+}
+// v8: closing Your Documents when none of the listed documents is on the board yet: add them all, close anyway, or stay
+function askNoneAdded() {
+  return new Promise((resolve) => {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'sure'; dlg.setAttribute('aria-labelledby', 'sureQ');
+    dlg.innerHTML = '<p id="sureQ">None of your documents are on the board yet</p><p class="sure-s">Check the box beside each document to add it to your board, or add them all now.</p>'
+      + '<div class="sure-b stack"><button type="button" class="sure-add" autofocus>Add all to board</button><button type="button" class="sure-no" data-r="close">Close anyway</button><button type="button" class="sure-no" data-r="stay">Go back and review</button></div>';
+    let pick = 'stay';
+    const done = () => { dlg.remove(); resolve(pick); };
+    dlg.querySelector('.sure-add').addEventListener('click', () => { pick = 'add'; done(); });
+    dlg.querySelectorAll('.sure-no').forEach(b => b.addEventListener('click', () => { pick = b.dataset.r; done(); }));
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) done(); });
+    dlg.addEventListener('cancel', done);
     document.body.append(dlg); dlg.showModal();
   });
 }
@@ -3555,7 +3592,7 @@ function wireStyle() {
     e.preventDefault(); const t = e.key === 'ArrowLeft' || e.key === 'Home' ? 'colors' : 'tex'; setStyleTab(t); $('#tabBtn' + (t === 'tex' ? 'Tex' : 'Colors')).focus();
   });
   setStyleTab('colors');
-  const g = $('.sec[data-sec="boardgrp"]'); g.querySelector('.sec-t').textContent = 'Board style'; g.querySelector('.sec-t').dataset.full = 'Board Style';
+  const g = $('.sec[data-sec="boardgrp"]'); g.querySelector('.sec-t').textContent = V8 ? 'Board Style' : 'Board style'; g.querySelector('.sec-t').dataset.full = 'Board Style';
   g.querySelector('.sec-h').setAttribute('aria-haspopup', 'dialog');
 }
 function selectLam(item) {
@@ -3753,6 +3790,7 @@ function renderCart(cart) {
   $('#cartCheckout').hidden = !count && (V6 || !phone.matches);
   if (V6) $('#cartView2').hidden = !count;   // (computers: View full cart beside Checkout)   // phones (v1-v5): Checkout always sits beside Add to cart; v6: only once the cart has a board
   $('#sheetCount').textContent = count ? `(${count})` : '';
+  if ($('#cartHCount')) $('#cartHCount').textContent = count ? `(${count})` : '';
   $('#cartCount').textContent = count ? `${count} board${count === 1 ? '' : 's'}${cart.demo ? ' · preview only' : ''}` : '';
   // price breakdown + volume discount. Preview cart: worked out here from DISCOUNTS; in Shopify: the store's own
   // automatic discount (cart.discount), so what's shown always matches checkout.
@@ -3770,6 +3808,7 @@ function renderCart(cart) {
   $('#discHint').textContent = !next ? '' : count ? `Add ${next.min - count} more board${next.min - count === 1 ? '' : 's'} to save ${next.pct}%.` : `Save ${DISCOUNTS[0].pct}% when you order ${DISCOUNTS[0].min} or more boards.`;
   if (!V6) $('#cartTotal').textContent = `$${total.toFixed(2)}`;      // the bar always shows the cart total (v6: the board's price)
   $('#cartChipAmt').textContent = `$${total.toFixed(2)}`;             // v6 computers: the cart chip
+  if ($('#cartHAmt')) $('#cartHAmt').textContent = `$${total.toFixed(2)}`;
   $('#sheetGrab').setAttribute('aria-label', `Cart: ${count} board${count === 1 ? '' : 's'}, $${total.toFixed(2)}`);
   const list = $('#cartList'); list.innerHTML = '';
   cart.items.forEach((it, i) => {

@@ -1470,6 +1470,69 @@
     [data-v6] .t-logo img { height: 34px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
+  /* ---------- v8 round of edits (kept last so it wins over the older rules) ---------- */
+  /* Your Documents: the Add button is pale blue with navy text; Use samples in the same grey as the file types, icon left, switch right */
+  [data-v8] .addwrap > #docTabOwn { background: var(--tint); color: var(--accent); }
+  [data-v8] .addwrap > #docTabOwn:hover { background: var(--tint-2); }
+  [data-v8] .side .addmenu .sampsw { justify-content: flex-start; gap: 12px; }
+  [data-v8] .addmenu .sampsw > span { flex: 1 1 auto; font-weight: 400; }
+  [data-v8] .addmenu .sampsw > input.switch { margin-left: auto; }
+  [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) { color: var(--muted); }
+  [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) > .i { color: var(--muted); }
+  /* the illustration flashes, one document after another, each time the screen opens */
+  @keyframes docFlash { 0% { fill: #cfe0f7; } 28% { fill: #fff; } 60% { fill: #8db3e6; } 100% { fill: #cfe0f7; } }
+  @keyframes spkFlash { 0%, 20% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-v8] .docstabs .camart .sh { animation: docFlash .85s ease both; }
+    [data-v8] .docstabs .camart .spk { animation: spkFlash .85s ease both; }
+    [data-v8] .docstabs .camart g:nth-child(1) :is(.sh, .spk) { animation-delay: .25s; }
+    [data-v8] .docstabs .camart g:nth-child(2) :is(.sh, .spk) { animation-delay: .45s; }
+    [data-v8] .docstabs .camart g:nth-child(3) :is(.sh, .spk) { animation-delay: .65s; }
+    [data-v8] .docstabs .camart g:nth-child(4) :is(.sh, .spk) { animation-delay: .85s; }
+    [data-v8] .docstabs .camart g:nth-child(5) :is(.sh, .spk) { animation-delay: 1.05s; }
+  }
+  /* the checklist: a light green bubble with a check, and each document's "Add to Board" bubble turns green once it's on the board */
+  [data-v8] .dlhead { padding: 10px 12px; border-radius: 12px; background: #e3f3e8; color: #1f5f3a; font-size: 14px; }
+  [data-v8] #dlCount { display: flex; align-items: center; gap: 8px; }
+  [data-v8] #dlCount .chk { width: 20px; height: 20px; flex: none; color: #2e7d4f; }
+  [data-v8] #okAll { display: none !important; }
+  [data-v8] .doc8 .okpill { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 7px; padding: 3px 11px 3px 3px; border: 1.5px solid #c9ccd3; border-radius: 999px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; cursor: pointer; transition: background-color .25s, border-color .25s, color .25s; }
+  [data-v8] .doc8 .okpill .okbox { position: relative; top: auto; right: auto; flex: none; }
+  [data-v8] .doc8 .okpill:has(.okbox:checked) { background: #e3f3e8; border-color: #2e7d4f; color: #1f5f3a; }
+  [data-v8] .doc8 .okpill:has(.okbox:focus-visible) { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  dialog.sure .sure-b.stack { grid-template-columns: 1fr; }
+  /* Your Documents with documents added: a sticky white strip at the bottom (Add button, then "Added N" + Details); Details pops up above it */
+  [data-v8] #scanResult { position: relative; display: grid; gap: 8px; flex: none; margin: 0; padding: 10px 16px 12px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: #fff; box-shadow: 0 -8px 20px rgba(0, 0, 0, .06); }
+  [data-v8] #scanResult[hidden], [data-v8] #optSheet:not(.docsopen) > #scanResult { display: none; }
+  [data-v8] #scanResult > canvas { display: none; }
+  [data-v8] #scanResult > .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
+  [data-v8] #scanResult .addwrap > #docTabOwn { width: 100%; padding: 9px 16px; border-radius: 12px; background: var(--tint); }
+  [data-v8] #scanResult .addwrap > #docTabOwn:hover { background: var(--tint-2); }
+  [data-v8] #scanResult .sc-head { font-size: 14px; font-weight: 700; }   /* (the same size as "Your business is in") */
+  [data-v8] #scanResult .sc-head .chk { width: 20px; height: 20px; }
+  [data-v8] #scanResult .scdetails { position: absolute; left: 12px; right: 12px; bottom: calc(100% + 8px); z-index: 6; display: grid; gap: 10px; max-height: min(60vh, 440px); overflow-y: auto; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 14px 40px rgba(0, 0, 0, .22); }
+  [data-v8] #scanResult .scdetails:not(:has(> :not([hidden]))) { display: none; }
+  [data-v8] #scanResult.folded .scdetails { display: none; }
+  [data-v8] #scanResult .addmenu { top: auto; bottom: calc(100% + 6px); }
+  @media (prefers-reduced-motion: no-preference) { [data-v8] #scanResult .addmenu:not([hidden]) { transform-origin: 50% 100%; animation-name: menuPop; } }
+  [data-v8] .cart-h { display: none; }
+  @media (min-width: 861px) {
+    /* the hint under the steps wraps instead of being cut off */
+    [data-v8] .stephint:not([hidden]) { white-space: normal; align-items: flex-start; font-size: 13px; }
+    [data-v8] .stephint span { overflow: visible; text-overflow: clip; }
+    [data-v8] .stephint .i { margin-top: 1px; }
+    /* Collapse: just above the column, a see-through white bubble, no outline */
+    [data-v8] #dockMini { position: fixed; z-index: 17; right: 16px; top: 20px; order: 0; align-self: auto; margin: 0; height: 30px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--muted); pointer-events: auto; }
+    [data-v8].dmini #dockMini { padding: 0 8px; }
+    /* the cart: it opens upward from the chip, and the chip turns into Collapse with a down arrow */
+    [data-v8] .buysheet .grab { order: 9; }
+    [data-v8] .buysheet .grab .gclose { display: none; }
+    [data-v8] .buysheet.open .grab { justify-content: center; padding: 12px 18px; border-top: 1px solid var(--line); }
+    [data-v8] .buysheet.open .grab :is(.cic, .gamt, .gtxt) { display: none; }
+    [data-v8] .buysheet.open .grab .gclose { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 14px; font-weight: 650; }
+    [data-v8] .buysheet.open .grab .gclose .i { width: 18px; height: 18px; }
+    [data-v8] .cart-h { display: flex; align-items: center; justify-content: space-between; color: var(--accent); font-size: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -2063,6 +2126,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020922" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021224" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
