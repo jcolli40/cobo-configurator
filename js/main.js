@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021342';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021342';
-import { wallTexture, wallSwatch } from './env.js?v=202611021342';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021342';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021344';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021344';
+import { wallTexture, wallSwatch } from './env.js?v=202611021344';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021344';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3333,13 +3333,14 @@ function paintDocTabs() {
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
   $('#docSw').checked = s;
   $('#docTabs').classList.toggle('compact', state.myCerts.length > 0);
-  $('#docTabs').classList.toggle('center', !state.myCerts.length && !state.sheets && !$('#scanBusy')?.classList.contains('on'));   // (nothing added yet: the group sits in the middle of the panel)
+  $('#docTabs').classList.toggle('center', !state.myCerts.length && !state.sheets);   // (nothing added yet, even while a photo is being read: the group stays in the middle of the panel)
   // documents on the list (their own, not samples): the Add button moves up into the light blue result box, above "Found N"; otherwise it lives in the panel's own group
-  const wrap = $('#docTabs .addwrap, #scanResult .addwrap'), res = $('#scanResult'), scanning = !!$('#scanBusy')?.classList.contains('on'), listed = state.myCerts.length > 0 && !state.sheets, inBox = !!res && (listed || scanning);   // (while it reads the photo the button already sits in the blue box)
+  const wrap = $('#docTabs .addwrap, #scanResult .addwrap'), res = $('#scanResult'), scanning = !!$('#scanBusy')?.classList.contains('on'), listed = state.myCerts.length > 0 && !state.sheets, inBox = !!res && listed;   // (the button moves down to the bar once documents are listed; while the first photo is being read it stays put, so the illustration does not move)
   if (wrap) {
     if (inBox && wrap.parentElement !== res) res.prepend(wrap);
     else if (!inBox && wrap.parentElement === res) $('#docTabs').append(wrap);
   }
+  res?.classList.toggle('floatbar', scanning && !listed);   // (reading the first photo: the status strip floats over the bottom, so the illustration stays exactly where it was)
   $('#docTabs').classList.toggle('gone', !!res && listed);   // (found documents: the panel folds down to the button)
 }
 function paintExtras() {

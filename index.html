@@ -1502,6 +1502,7 @@
   /* Your Documents with documents added: a sticky white strip at the bottom (Add button, then "Added N" + Details); Details pops up above it */
   [data-v8] #scanResult { position: relative; display: grid; gap: 8px; flex: none; margin: 0; padding: 10px 16px 12px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: #fff; box-shadow: 0 -8px 20px rgba(0, 0, 0, .06); }
   [data-v8] #scanResult[hidden], [data-v8] #optSheet:not(.docsopen) > #scanResult { display: none; }
+  [data-v8] #scanResult.floatbar { position: absolute; left: 0; right: 0; bottom: 0; }
   [data-v8] #scanResult > canvas { display: none; }
   [data-v8] #scanResult > .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
   [data-v8] #scanResult .addwrap > #docTabOwn { width: 100%; padding: 9px 16px; border-radius: 12px; background: var(--tint); }
@@ -2167,6 +2168,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021342" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021344" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
