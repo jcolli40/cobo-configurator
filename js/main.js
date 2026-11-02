@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011846';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011846';
-import { wallTexture, wallSwatch } from './env.js?v=202611011846';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011846';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011954';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011954';
+import { wallTexture, wallSwatch } from './env.js?v=202611011954';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011954';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1657,7 +1657,7 @@ function wireSteps() {
   $('#optSheet .side-h').after(bar);
   if (V8) {                                                  // Your Documents: tabs, Use Your Own | Use Samples (the tab is the samples switch)
     const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs'; dt.hidden = true; dt.setAttribute('role', 'tablist'); dt.setAttribute('aria-label', 'Your documents or samples');
-    dt.innerHTML = '<button type="button" role="tab" id="docTabOwn" data-dt="own" aria-controls="ownDocs">Use Your Own</button><button type="button" role="tab" id="docTabSamples" data-dt="samples" aria-controls="docSamples">Use Samples</button>';
+    dt.innerHTML = '<button type="button" role="tab" id="docTabOwn" data-dt="own" aria-controls="ownDocs"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Use Your Own</button><button type="button" role="tab" id="docTabSamples" data-dt="samples" aria-controls="docSamples">Use Samples</button>';
     $('#optSheet .side-h').after(dt);
     or.hidden = true; $('.certcount').id = 'docSamples';
     dt.addEventListener('click', (e) => {
