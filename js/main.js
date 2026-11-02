@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020743';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020743';
-import { wallTexture, wallSwatch } from './env.js?v=202611020743';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020743';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020746';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020746';
+import { wallTexture, wallSwatch } from './env.js?v=202611020746';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020746';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2425,8 +2425,8 @@ function tourStep(s) {
 }
 // v6 welcome: every few seconds the board glides to another size and color (the certificates step aside while it
 // changes, then fill the new board). Their own design is kept aside by the welcome and comes back when they move on.
-const MORPH = [['24x36', 'Black', 'chrome'], ['24x24', 'Forest Green', 'brass'], ['12x36', 'Red', 'black'], ['24x24', '', 'black', 'Y0822'],
-  ['12x24', 'Light Blue', 'chrome'], ['24x36', 'White', 'black'], ['24x36', '', 'brass', '5084'], ['24x24', 'Orange', 'brass']];   // size, color, caps, Wilsonart texture
+const MORPH = [['24x36', 'Black', 'chrome'], ['24x24', 'Forest Green', 'brass'], ['12x36', 'Red', 'black', '', 'landscape'], ['24x24', '', 'black', 'Y0822'],
+  ['12x24', 'Light Blue', 'chrome'], ['24x36', 'White', 'black'], ['24x36', '', 'brass', '5084'], ['24x24', 'Orange', 'brass']];   // size, color, caps, Wilsonart texture, way round (v8: the tall red board lies on its side)
 let morph = null;   // { i, timer, raf } while the welcome is showing
 const keepDesign = () => ({ sizeId: state.sizeId, customA: state.customA, customB: state.customB, orient: state.orient, face: state.face, fastener: state.fastener,
   edge: state.edge, lamSel: state.lamSel, sheets: state.sheets, sampleMix: { ...state.sampleMix }, sampleTurn: { ...state.sampleTurn }, sheetTurn: state.sheetTurn });
@@ -2459,7 +2459,8 @@ function morphNext() {
   if (!morph || step() !== 'intro') return stopMorph();
   if (morphRest) { morph.waiting = true; return; }
   morph.i = (morph.i + 1) % MORPH.length;
-  const [id, face, capFinish, lamN] = MORPH[morph.i], to = SIZES.find(x => x.id === id);
+  const [id, face, capFinish, lamN, turn] = MORPH[morph.i], to = SIZES.find(x => x.id === id);
+  const orient = V8 && turn === 'landscape' ? 'landscape' : 'portrait', tw = orient === 'landscape' ? to.b : to.a, th = orient === 'landscape' ? to.a : to.b;   // (the board's width and height when it lands)
   const L = lamN && libraryReady ? findByNumber(lamN) : null;          // (a texture: blend toward its average color, then lay it on)
   if (lamN && !L) return morphNext();                                  // (textures not loaded yet: skip that one)
   // one rebuild without the certificates (a texture board as its average color), then the glide only stretches it
@@ -2472,7 +2473,7 @@ function morphNext() {
     if (!morph) { root.scale.set(1, 1, 1); return; }
     const p = Math.min(1, (now - t0) / dur), e = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;   // ease in-out
     if (p < 1) {
-      const sx = (w0 + (to.a - w0) * e) / w0, sy = (h0 + (to.b - h0) * e) / h0;
+      const sx = (w0 + (tw - w0) * e) / w0, sy = (h0 + (th - h0) * e) / h0;
       root.scale.set(sx, sy, 1);
       caps.forEach(c => c.scale.set(1 / sx, 1 / sy, 1));   // (the caps stay round while the board stretches)
       root.children.find(o => o.name === 'floorShadow')?.scale.set(1 / sx, 1 / sy, 1);   // (so does the floor shadow)
@@ -2481,8 +2482,8 @@ function morphNext() {
       morph.raf = requestAnimationFrame(frame);
     } else {
       root.scale.set(1, 1, 1);
-      Object.assign(state, { sizeId: id, orient: 'portrait', face: L ? 'Black' : face, lamSel: L || null, fastener: capFinish });   // (the caps and any texture land with it)
-      state.certNeed = Math.min(8, fitsOn(to.a, to.b));
+      Object.assign(state, { sizeId: id, orient, face: L ? 'Black' : face, lamSel: L || null, fastener: capFinish });   // (the caps and any texture land with it)
+      state.certNeed = Math.min(8, fitsOn(tw, th));
       refresh();
       morph.timer = setTimeout(morphNext, 2000);
     }
