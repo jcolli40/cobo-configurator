@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021235';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021235';
-import { wallTexture, wallSwatch } from './env.js?v=202611021235';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021235';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021236';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021236';
+import { wallTexture, wallSwatch } from './env.js?v=202611021236';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021236';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1021,11 +1021,11 @@ function openOptSheet(sec) {
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   $('#optSheet').classList.toggle('full', V8 && sec.dataset.sec === 'certs');   // (phones: Your Documents covers the whole screen)
   $('#optSheet').classList.toggle('docsopen', V8 && sec.dataset.sec === 'certs');   // (shows the sticky strip at the bottom)
-  if (V8 && sec.dataset.sec === 'certs') {                      // the documents flash only on a person's first visit
-    let seen = null; try { seen = localStorage.getItem('cobo.flashSeen'); } catch { /* storage blocked */ }
+  if (V8 && sec.dataset.sec === 'certs') {                      // the documents flash once per visit (browser session)
+    let seen = null; try { seen = sessionStorage.getItem('cobo.flashSeen'); } catch { /* storage blocked */ }
     if (!seen && !document.documentElement.classList.contains('docflash')) {
       document.documentElement.classList.add('docflash');
-      try { localStorage.setItem('cobo.flashSeen', '1'); } catch { /* storage blocked */ }
+      try { sessionStorage.setItem('cobo.flashSeen', '1'); } catch { /* storage blocked */ }
       setTimeout(() => document.documentElement.classList.remove('docflash'), 3000);
     }
   }
