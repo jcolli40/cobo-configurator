@@ -559,8 +559,17 @@
   [data-v8] .side .addmenu .menurow { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; min-height: 52px; padding: 10px 12px; box-sizing: border-box; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; position: relative; }
   [data-v8] .side .addmenu .menurow:hover { background: var(--hover); }
   [data-v8] .side .addmenu .menurow > .i { width: 22px; height: 22px; color: var(--accent); }
+  [data-v8] .addmenu .menusnap { display: grid; gap: 10px; margin-bottom: 4px; padding: 12px; border-radius: 14px; background: var(--tint); }
+  [data-v8] .side .addmenu .menusnap .menurow { justify-content: center; min-height: 58px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 700; }
+  [data-v8] .side .addmenu .menusnap .menurow:hover { background: #24497f; }
+  [data-v8] .side .addmenu .menusnap .menurow > .i { color: #fff; width: 24px; height: 24px; }
+  [data-v8] .side .addmenu .menusnap > .help { margin: 0 !important; font-size: 14px; line-height: 1.45; color: var(--ink); }
   [data-v8] .addmenu .sampsw { margin: 0; }
   [data-v8] .addmenu .sampsw > span { flex: 1; }
+  /* Use samples for now: greyed out while it's off, back to full color when it's on */
+  [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) { color: #9a9aa0; }
+  [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) > .i { color: #b4b7bf; }
+  [data-v8] .addmenu .sampsw > span { transition: color .2s; }
   [data-v8] .addmenu .menurow + .menurow { border-top: 1px solid #f0f0f3; }
   [data-v8] .docstabs .docsw { flex: 0 0 auto; }
   [data-v8] .docstabs button { flex: 1 1 auto; }
@@ -582,6 +591,7 @@
   [data-v8] .snapbox .scanres.folded .sc-fold .i { transform: rotate(180deg); }
   [data-v8] .snapbox .scanres.folded canvas { display: none; }
   [data-v8] #scanResult.folded #scanText :is(.sc-sizes, .sc-list) { display: none; }
+  [data-v8] #scanResult.folded #stateRow { display: none; }   /* (the state question folds away with the rest) */
   [data-v8] #scanResult.folded #scanText .sc-top { grid-column: 1 / -1; }
   [data-v8] .snapbox .scanres:not(:has(.sc-top)) .sc-fold { display: none; }
   [data-v8] #scanText .chk { width: 22px; height: 22px; margin-right: 6px; vertical-align: -4px; color: #2e7d4f; }
@@ -1967,6 +1977,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012348" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012357" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
