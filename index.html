@@ -920,6 +920,7 @@
   [data-v6] .t-card { background: none; color: var(--ink); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }   /* (the text sits right on the background) */
   [data-v6] .t-card .t-go { background: var(--accent); color: #fff; box-shadow: 0 8px 22px rgba(27, 58, 107, .3); }
   [data-v6] .t-card .t-go:hover { background: #24497f; }
+  @media (max-width: 860px) { [data-v8] .t-intro .t-card { margin-bottom: 25px; } }   /* (phones: the welcome text, Start and Continue sit 25px higher) */
   @media (min-width: 861px) { [data-v6] .t-card { width: min(387px, calc(100% - 32px)); } }   /* 10% narrower than the old 430 */
   /* "Continue where you left off": a red bubble just under the card (the card moves up to make room) */
   .t-cont { display: none; }
@@ -2032,6 +2033,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020701" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020704" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
