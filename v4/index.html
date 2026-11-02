@@ -1522,6 +1522,8 @@
     [data-v8] .t-intro .t-card { left: 0; right: 0; margin-inline: auto; width: min(640px, calc(100% - 64px)); justify-items: center; text-align: center; }
     [data-v8] .t-intro .t-card :is(h1, .t-sub) { text-align: center; }
     [data-v8] .t-intro .t-logo { justify-self: center; }
+    [data-v8] .t-intro .t-card { bottom: clamp(16px, 14vh, 240px); }   /* (the group sits higher, closer under the board) */
+    [data-v8] .t-intro .t-card.cont { bottom: calc(clamp(16px, 14vh, 240px) + 62px); }
     [data-v8] .t-intro .t-cont { left: 0; right: 0; margin-inline: auto; width: max-content; }
     /* Collapse: just above the column, a see-through white bubble, no outline */
     [data-v8] #dockMini { position: fixed; z-index: 17; right: 16px; top: 20px; order: 0; align-self: auto; margin: 0; height: 30px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--muted); pointer-events: auto; }
@@ -2155,6 +2157,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021250" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021252" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
