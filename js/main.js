@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021447';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021447';
-import { wallTexture, wallSwatch } from './env.js?v=202611021447';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021447';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021450';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021450';
+import { wallTexture, wallSwatch } from './env.js?v=202611021450';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021450';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -145,7 +145,7 @@ controls.minDistance = 8;
 // The board turns at most 60 degrees from straight-on in every direction: from the front, or from the back in the Back view.
 // v5: left / right only (35 degrees, so the room photo behind it stays believable), at a fixed slight downward look.
 const FLAT = LAYOUT === 'v5';
-const TURN = FLAT ? Math.PI * 35 / 180 : Math.PI / 3;
+const TURN = FLAT ? Math.PI * 35 / 180 : V8 ? Math.PI * 70 / 180 : Math.PI / 3;   // (v8: 70 degrees, 10 more than the others)
 const PITCH = 0.08;                          // v5: radians the camera looks down at the board
 if (FLAT) controls.enablePan = false;        // v5: no sliding the view sideways (it would show the room photo's edge)
 function lockAngles(view) {
