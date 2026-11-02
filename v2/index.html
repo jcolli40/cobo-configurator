@@ -556,12 +556,22 @@
   [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 8px 12px; align-items: start; padding: 12px; border-radius: 16px; background: var(--tint); }
   [data-v8] .snapbox .scanres[hidden] { display: none; }
   [data-v8] .snapbox .scanres > .scanbusy { grid-column: 1 / -1; }
-  [data-v8] #scanText > span { display: block; }
+  [data-v8] #scanText:has(.sc-top) { display: contents; }   /* (the photo, the count + sizes, and the list are the box's own grid items) */
+  [data-v8] #scanText span { display: block; }
+  [data-v8] #scanText .sc-top { grid-column: 2; padding-right: 34px; }
   [data-v8] #scanText .sc-head { font-size: 22px; font-weight: 800; line-height: 1.2; color: var(--ink); }
-  [data-v8] #scanText .sc-sizes { margin: 2px 0 8px; font-size: 14px; color: var(--muted); }
-  [data-v8] #scanText .sc-item { font-size: 14px; line-height: 1.4; color: var(--ink); }
+  [data-v8] #scanText .sc-sizes { margin-top: 2px; font-size: 14px; color: var(--muted); }
+  [data-v8] #scanText .sc-list { grid-column: 1 / -1; margin-top: 2px; }
+  [data-v8] #scanText .sc-item { font-size: 14px; line-height: 1.45; color: var(--ink); }
   [data-v8] #scanText .sc-left { margin-top: 4px; color: var(--muted); }
-  [data-v8] #scanText .sc-ask { margin-top: 10px; font-size: 14px; font-weight: 700; line-height: 1.35; color: var(--ink); }
+  [data-v8] .snapbox .scanres { position: relative; }
+  [data-v8] .snapbox .scanres .sc-fold { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .75); color: var(--accent); cursor: pointer; }
+  [data-v8] .snapbox .scanres .sc-fold .i { width: 20px; height: 20px; stroke-width: 2; transition: transform .25s ease; }
+  [data-v8] .snapbox .scanres.folded .sc-fold .i { transform: rotate(180deg); }
+  [data-v8] .snapbox .scanres.folded canvas { display: none; }
+  [data-v8] #scanResult.folded #scanText :is(.sc-sizes, .sc-list) { display: none; }
+  [data-v8] #scanResult.folded #scanText .sc-top { grid-column: 1 / -1; }
+  [data-v8] .snapbox .scanres:not(:has(.sc-top)) .sc-fold { display: none; }
   [data-v8] #scanText .chk { width: 22px; height: 22px; margin-right: 6px; vertical-align: -4px; color: #2e7d4f; }
   [data-v8] .snapbox .scanres canvas { grid-column: 1; width: 100%; height: auto; aspect-ratio: 1; border-radius: 12px; cursor: zoom-in; }
   [data-v8] .snapbox .scanres canvas:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
@@ -1940,6 +1950,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012319" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012328" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

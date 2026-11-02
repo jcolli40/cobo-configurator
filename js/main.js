@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012319';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012319';
-import { wallTexture, wallSwatch } from './env.js?v=202611012319';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012319';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012328';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012328';
+import { wallTexture, wallSwatch } from './env.js?v=202611012328';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012328';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1606,6 +1606,11 @@ function wireSteps() {
     own.querySelector('.opt + .help').textContent = 'On your wall, or laid out on a table: snap one photo of all your documents and we\'ll find each one, name it, straighten it and size a board to fit. Or add them one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
+    res.insertAdjacentHTML('beforeend', '<button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photo and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>');
+    res.querySelector('#scFold').addEventListener('click', () => {            // the arrow folds the box: only "Found 4" and the state stay
+      const on = res.classList.toggle('folded'), f = res.querySelector('#scFold');
+      f.setAttribute('aria-expanded', !on); f.setAttribute('aria-label', on ? 'Show the photo and the list' : 'Hide the photo and the list');
+    });
     box.append(sr, res);
     // "Your business is in ___": guessed from the photo (or their connection), confirmed by them (Part B checks by state)
     box.insertAdjacentHTML('beforeend', '<div class="staterow" id="stateRow" hidden><span class="st-l">Your business is in</span>'
@@ -2078,14 +2083,16 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
   if (V8 && ai?.location) guessState(ai.location, 'photo');
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
   $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Select each one to add it to your board, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
-  if (V8) {                                                  // the result as a short list: the count (large), the sizes, each document by number, then what to do
+  if (V8) {                                                  // the result: photo beside the count and sizes; the numbered documents under them, full width
     const t = $('#scanText'); t.textContent = '';
-    const line = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; t.append(s); return s; };
-    line('sc-head', `Found ${found.length}`).prepend(chk());
-    line('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', '));
-    if (ai && found.some(f => f.name)) found.forEach((f, n) => line('sc-item', `${n + 1}. ${f.name || '(not sure / manual entry)'}`));
-    if (skipped.length) line('sc-item sc-left', `Left off the board: ${skipped.join(', ')}.`);
-    line('sc-ask', ai ? "Select each one to add it to your board, or fix its name or size." : 'Wrong? Change sizes or remove extras below.');
+    const span = (cls, txt) => { const s = document.createElement('span'); s.className = cls; if (txt != null) s.textContent = txt; return s; };
+    const top = span('sc-top'), head = span('sc-head', `Found ${found.length}`); head.prepend(chk());
+    top.append(head, span('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', '))); t.append(top);
+    const list = span('sc-list');
+    if (ai && found.some(f => f.name)) found.forEach((f, n) => list.append(span('sc-item', `${n + 1}. ${f.name || '(not sure / manual entry)'}`)));
+    if (skipped.length) list.append(span('sc-item sc-left', `Left off the board: ${skipped.join(', ')}.`));
+    if (list.childNodes.length) t.append(list);
+    $('#scanResult').classList.remove('folded'); $('#scFold')?.setAttribute('aria-expanded', 'true');   // (a new scan opens the box again)
   }
   state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
