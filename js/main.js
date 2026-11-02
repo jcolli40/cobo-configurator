@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021315';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021315';
-import { wallTexture, wallSwatch } from './env.js?v=202611021315';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021315';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021338';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021338';
+import { wallTexture, wallSwatch } from './env.js?v=202611021338';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021338';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2547,7 +2547,8 @@ function swayFrame() {
     const slide = cardEl ? new DOMMatrix(getComputedStyle(cardEl).transform).m42 : 0;   // (the card slides up as it appears: measure where it ends up)
     const room = card?.height ? Math.min(0.7, Math.max(0.3, (card.top - slide - 14 - r.top) / r.height)) : 0.42;
     const d = Math.max(h / 2 / room, w / 2 / aspect) / Math.tan(fov) * (card?.height ? 1.14 : 1.35) * k + 2;
-    const lift = card?.height ? 0.015 : 0;                   // (the board rides a little high in the free space, clear of the card)
+    // (the board rides a little high in the free space, clear of the card; v8 welcome: the board AND its floor shadow are centered between the top of the screen and the card, so the board rides up a little for the shadow below it)
+    const lift = V8 && step() === 'intro' && cardEl ? (w * 0.045) / (2 * d * Math.tan(fov)) : card?.height ? 0.015 : 0;
     return { tgt: new THREE.Vector3(0, -d * Math.tan(fov) * (1 - room + 2 * lift), 0.5), d };
   }
   const room = 0.62;                                         // right 62% of the screen is free
