@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021832';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021832';
-import { wallTexture, wallSwatch } from './env.js?v=202611021832';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021832';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021838';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021838';
+import { wallTexture, wallSwatch } from './env.js?v=202611021838';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021838';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2042,12 +2042,26 @@ function paintLayout(sp) {
     }
   }
   if (PRICED) paintPrices();
+  placeSizeTag();
 }
 // v6: the size follows the documents until they pick one themselves: say so on the Size button, in its pop-up, and (before any
 // documents) in a hint under the step bar
+// v8, phones: the Auto-fit / Your pick tag sits on one centered line with the size chip (computers keep it under the name)
+function placeSizeTag() {
+  if (!V8) return;
+  const tag = $('#sizeTag'), sec = $('.sec[data-sec="size"]'); if (!tag || !sec) return;
+  const head = sec.querySelector('.sec-h'); let wrap = head.querySelector('.szrow');
+  if (phone.matches) {
+    const chip = head.querySelector('.up'); if (!chip) return;
+    if (!wrap) { wrap = document.createElement('span'); wrap.className = 'szrow'; chip.before(wrap); wrap.append(tag, chip); }
+  } else if (wrap) {
+    const chip = wrap.querySelector('.up'); sec.querySelector('.sec-t').append(tag); wrap.replaceWith(chip);
+  }
+}
+phone.addEventListener('change', () => placeSizeTag());
 function paintSizeAuto(n) {
   const tag = $('#sizeTag'), note = $('#sizeNote'), hint = $('#stepHint'); if (!tag || !note || !hint) return;
-  tag.hidden = !n; tag.textContent = sizePicked ? 'Your pick' : 'Auto-fit';
+  tag.hidden = !n; tag.textContent = sizePicked ? 'Your pick' : 'Auto-fit'; placeSizeTag();
   tag.classList.toggle('auto', !sizePicked);
   hint.hidden = !!n || step6 !== 'build';
   note.innerHTML = !n ? 'Not sure what size? <button type="button" class="link" data-adddocs>Add your documents</button> and we\'ll pick the board that fits.'
