@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021430';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021430';
-import { wallTexture, wallSwatch } from './env.js?v=202611021430';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021430';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021431';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021431';
+import { wallTexture, wallSwatch } from './env.js?v=202611021431';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021431';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2754,7 +2754,7 @@ const COACH = [
   { el: () => [onScreen('.sec[data-sec="boardgrp"] .sec-h')], k: 'Step 2 · Style', t: 'Pick a color or texture',
     s: 'Solid colors, or Wilsonart textures and patterns.',
     go: () => { goStep('style', false); },
-    every: 850, seq: [...COLORS.slice(0, 3).map(c => () => { state.lamSel = null; state.face = c.name; refresh(); }), ...COACH_TEX.map(coachLam)] },
+    every: 850, seq: [...['Black', 'White', 'Red'].map(n => COLORS.find(c => c.name === n)).map(c => () => { state.lamSel = null; state.face = c.name; refresh(); }), ...COACH_TEX.map(coachLam)] },
   { el: () => [onScreen('.sec[data-sec="edge"] .sec-h'), 'board'], k: 'Step 2 · Style', t: 'Edge banding', s: 'Match the board, or pick a contrasting edge.',
     go: () => { $('.p-body').classList.remove('bopen'); focusPart('edge'); }, every: 1100, seq: ['White', 'Red', 'Black'].map(c => () => { state.edge = c; refresh(); }) },
   { el: () => [onScreen('.sec[data-sec="caps"] .sec-h'), 'board'], k: 'Step 2 · Style', t: 'Caps', s: 'Silver, black or brass.',
