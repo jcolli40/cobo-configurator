@@ -549,7 +549,7 @@
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
   [data-v8] .camart { display: grid; place-items: center; padding: 10px 0; border-radius: 16px; background: #f4f4f6; }
-  [data-v8] .camart svg { width: min(100%, 260px); height: auto; }
+  [data-v8] .camart svg { width: min(100%, 150px); height: auto; }
   [data-v8] .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
   [data-v8] .camart .sh { fill: #cfe0f7; }
   [data-v8] .camart .cap { fill: #bdbdc2; }
@@ -1008,10 +1008,9 @@
   /* v6 pop-ups, styled like the steps panel: a bold navy title and subheadings, light grey rounded cards, more room */
   [data-v6] .side-h { padding: 18px 16px 10px 18px; border-bottom: 0; gap: 12px; }
   [data-v6] .side-h h2 { font-size: 19px; font-weight: 750; letter-spacing: -.01em; color: var(--accent); }
-  [data-v6] #styleIcon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: var(--tint); color: var(--accent); flex: none; }
-  [data-v6] #styleIcon .i { width: 22px; height: 22px; color: var(--accent); }
-  [data-v6] #optIcon { width: 38px; height: 38px; place-items: center; border-radius: 12px; background: var(--tint); color: var(--accent); flex: none; }
-  [data-v6] #optIcon .i { width: 22px; height: 22px; color: var(--accent); }
+  /* panel header icons: a thin blue line drawing, no bubble behind it */
+  [data-v6] :is(#styleIcon, #optIcon) { display: grid; width: 30px; height: 30px; place-items: center; background: none; border-radius: 0; color: var(--accent); flex: none; }
+  [data-v6] :is(#styleIcon, #optIcon) .i { width: 28px; height: 28px; color: var(--accent); stroke-width: 1.2; }
   [data-v6] .side .x { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: #f4f4f6; font-size: 22px; }
   [data-v6] .side-body { padding: 8px 16px 24px; gap: 18px; }
   [data-v6] #optBody, [data-v6] #optBody .sec-b { gap: 16px; }
@@ -1874,6 +1873,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012100" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012117" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

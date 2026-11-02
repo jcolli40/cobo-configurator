@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012100';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012100';
-import { wallTexture, wallSwatch } from './env.js?v=202611012100';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012100';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012117';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012117';
+import { wallTexture, wallSwatch } from './env.js?v=202611012117';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012117';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1670,10 +1670,10 @@ function wireSteps() {
     $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
     // the illustration above the blurb: a camera frame around a wall of documents, drawn like the size cards
     const art = document.createElement('div'); art.className = 'camart'; art.setAttribute('aria-hidden', 'true');
-    art.innerHTML = '<svg viewBox="0 0 240 130"><rect class="bd" x="60" y="22" width="120" height="86" rx="3"/>'
-      + [[72, 30], [105.5, 30], [139, 30], [88.75, 69], [122.25, 69]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="29" height="34" rx="1"/>').join('')
-      + [[66, 28], [174, 28], [66, 102], [174, 102]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
-      + '<path class="vf" d="M44 26V10h16M180 10h16v16M196 104v16h-16M60 120H44v-16"/></svg>';
+    art.innerHTML = '<svg viewBox="56 0 128 130"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
+      + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
+      + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg>';
     own.querySelector('.opt + .help').before(art);
   }
   // Style: Solid Colors (palette) and Textures & Patterns
@@ -2113,7 +2113,7 @@ function guessState(loc, from) {
 }
 function paintState() {
   const row = $('#stateRow'); if (!row) return;
-  row.hidden = !state.myCerts.length && !state.bizState;
+  row.hidden = !state.myCerts.length;                       // (asked once there are documents to check)
   $('#bizState').value = state.bizState || ''; $('#bizState').disabled = !!state.bizStateOk;
   row.classList.toggle('done', !!state.bizStateOk);
   $('#stateOk').textContent = state.bizStateOk ? 'Change' : 'Confirm';
@@ -3158,7 +3158,7 @@ function paintExtras() {
       t.classList.toggle('nofit', !!(n && s && fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a])) < n));
     });
   }
-  $('#certAdvice').hidden = !docs && !n;               // (nothing to advise yet: no line in the sticky bar)
+  $('#certAdvice').hidden = (!docs && !n) || (V8 && !own && !state.sheets);   // (nothing to advise yet, or nothing shown on the board: no line in the sticky bar)
   // v6: each size tile says how many 8.5×11 documents it holds (at the current orientation)
   if (V6) document.querySelectorAll('#sizes .tile[data-k]').forEach(t => {
     const s = SIZES.find(x => x.id === t.dataset.k); if (!s) return;
