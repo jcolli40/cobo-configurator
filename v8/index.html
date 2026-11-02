@@ -550,17 +550,15 @@
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
   [data-v8] .docstabs button .camico { width: 24px; height: 24px; margin-right: 8px; flex: none; fill: none; stroke: none; }
-  [data-v8] .docstabs { flex-direction: column; align-items: center; gap: 14px; margin: 6px 16px 10px; padding: 18px 16px 16px; border-radius: 18px; background: var(--tint); }
-  [data-v8] .docstabs.compact { gap: 0; margin: 0; padding: 6px 16px 10px; border-radius: 0; background: none; }
-  [data-v8] .docstabs.compact :is(.camart, .adddetails) { display: none; }
-  [data-v8] .docstabs .camart svg { display: block; width: min(100%, 190px); height: auto; margin: 0 auto; }
+  [data-v8] .docstabs { flex-direction: column; align-items: center; gap: 14px; margin: 6px 16px 10px; padding: 8px 16px 10px; }
+  [data-v8] .docstabs.compact { gap: 0; margin: 0; padding: 6px 16px 10px; }
+  [data-v8] .docstabs.compact .camart { display: none; }
+  [data-v8] .docstabs .camart svg { display: block; width: min(100%, 130px); height: auto; margin: 0 auto; }
   [data-v8] .docstabs .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
   [data-v8] .docstabs .camart .sh { fill: #cfe0f7; }
   [data-v8] .docstabs .camart .cap { fill: #bdbdc2; }
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
-  [data-v8] .docstabs .adddetails { display: grid; gap: 12px; justify-items: center; }
-  [data-v8] .docstabs .adddetails .help { margin: 0 !important; font-size: 14px; line-height: 1.45; color: var(--ink); }
   /* just blue text with the plus-in-brackets icon on the right */
   [data-v8] .docstabs > .addwrap > #docTabOwn { flex: 0 0 auto; padding: 6px 8px; background: none; color: var(--accent); font-size: 18px; font-weight: 750; }
   [data-v8] .docstabs > .addwrap > #docTabOwn .camico { margin: 0 0 0 10px; width: 28px; height: 28px; }
@@ -581,8 +579,7 @@
   [data-v8] .side .addmenu .menusnap .menurow:hover { background: #24497f; }
   [data-v8] .side .addmenu .menusnap .menurow > .i { color: #fff; width: 24px; height: 24px; }
   [data-v8] .side .addmenu .menusnap > .help { margin: 0 !important; font-size: 14px; line-height: 1.45; color: var(--ink); }
-  [data-v8] .addmenu .menusnap .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: min(258px, calc(100dvh - 520px)); min-height: 90px; margin: 0 auto; border-radius: 10px; }
-  [data-v8] .docstabs .adddetails .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: 300px; margin: 0 auto; border-radius: 10px; }   /* (shrinks, same proportions, so the whole menu fits on the screen) */
+  [data-v8] .addmenu .menusnap .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: min(258px, calc(100dvh - 620px)); min-height: 80px; margin: 0 auto; border-radius: 10px; }
   [data-v8] .addmenu .sampsw { margin: 0; }
   [data-v8] .addmenu .sampsw > span { flex: 1; }
   /* Use samples for now: greyed out while it's off, back to full color when it's on */
@@ -2016,6 +2013,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020536" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020545" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
