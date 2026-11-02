@@ -609,7 +609,8 @@
     [data-v8] .addmenu:not([hidden]) > :nth-child(2) .menurow > .i, [data-v8] .addmenu:not([hidden]) > .menurow:nth-child(2) > .i { animation-delay: .28s; }
     [data-v8] .addmenu:not([hidden]) > :nth-child(3) .menurow > .i, [data-v8] .addmenu:not([hidden]) > .menurow:nth-child(3) > .i { animation-delay: .36s; }
   }
-  [data-v8] .addmenu .sampsw > span { flex: 1; }
+  [data-v8] .side .addmenu .sampsw { justify-content: center; gap: 14px; }   /* (no icon: the words and the switch sit together, centered) */
+  [data-v8] .addmenu .sampsw > span { flex: none; font-weight: 500; }
   /* Use samples for now: greyed out while it's off, back to full color when it's on */
   [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) { color: #9a9aa0; }
   [data-v8] .side .addmenu .sampsw:has(input:not(:checked)) > .i { color: #b4b7bf; }
@@ -2054,6 +2055,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020805" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020809" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
