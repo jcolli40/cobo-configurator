@@ -53,6 +53,8 @@ export const WOODS = [
   { name: 'Cherry',   hex: '#964a2d', grain: '#63291a', light: '#b3643f', rings: 0.6,  contrast: 1.3 },
   { name: 'Ebony',    hex: '#1a1613', grain: '#0a0807', light: '#4a423a', rings: 0.5,  contrast: 1.4 },
   { name: 'Bamboo',   hex: '#d6b870', grain: '#a07c38', light: '#ecd99e', rings: 0.45, contrast: 1.3 },
+  { name: 'Walnut',   hex: '#5b3f2c', grain: '#2e1d12', light: '#7b5740', rings: 0.8,  contrast: 1.5 },
+  { name: 'Teak',     hex: '#a9783d', grain: '#6e4a1f', light: '#c99a5c', rings: 0.65, contrast: 1.4 },
 ];
 
 // ---- Fastener (1" dia aluminum cap) finishes ----
