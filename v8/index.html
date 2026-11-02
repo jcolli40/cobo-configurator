@@ -570,7 +570,7 @@
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
   /* the same grey card as the panel buttons (Documents, Size, Board...): grey fill, 12px corners, dark label, navy icon on the right */
-  [data-v8] .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
+  [data-v8] .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border: 0; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
   [data-v8] .addwrap > #docTabOwn:hover { background: #ececf0; }
   [data-v8] .addwrap > #docTabOwn .plusico { margin: 0 0 0 10px; width: 24px; height: 24px; flex: none; color: var(--accent); }
   [data-v8] .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
@@ -616,7 +616,7 @@
   /* the scan result: a square of the photo (half the width) with what we found beside it */
   [data-v8] .snapbox .scanres { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 12px 12px; border: 0; border-radius: 16px; background: var(--tint); }
   [data-v8] .scanres > .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
-  [data-v8] .scanres .addwrap > #docTabOwn { width: 100%; justify-content: center; background: #fff; }   /* (nearly the full width of the screen) */
+  [data-v8] .scanres .addwrap > #docTabOwn { width: 100%; justify-content: center; background: none; }   /* (nearly the full width of the screen) */
   /* the found details (Found N, photos, sizes, list) on a white card; the button and "Your business is in" stay on the blue */
   [data-v8] .scanres .scdetails { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: #fff; }
   [data-v8] .scanres .scdetails:not(:has(> :not([hidden]))) { display: none; }
@@ -628,7 +628,7 @@
   [data-v8] .snapbox .scanres > canvas { display: none; }   /* (the working canvas: the photos show as thumbnails) */
   [data-v8] .sc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   [data-v8] .sc-bar[hidden], [data-v8] .sc-thumbs[hidden], [data-v8] #scanText[hidden] { display: none; }
-  [data-v8] .sc-head { display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 750; letter-spacing: -.01em; color: var(--accent); }   /* (the same size as the panel title) */
+  [data-v8] .sc-head { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 650; color: var(--accent); }   /* (the same size as the Add Your Documents button text) */
   [data-v8] .sc-head .chk { width: 22px; height: 22px; color: #2e7d4f; flex: none; }
   [data-v8] .sc-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
   [data-v8] .scthumb { width: 68px; height: 84px; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #f4f4f6; cursor: zoom-in; }   /* (the same size as the pictures in the list) */
@@ -2048,6 +2048,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020719" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020723" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

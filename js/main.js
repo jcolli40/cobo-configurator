@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020719';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020719';
-import { wallTexture, wallSwatch } from './env.js?v=202611020719';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020719';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020723';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020723';
+import { wallTexture, wallSwatch } from './env.js?v=202611020723';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020723';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2152,7 +2152,7 @@ function paintScan() {
   const scanned = docs.length > 0;
   $('#scBar').hidden = !scanned; $('#scThumbs').hidden = !scanned; t.hidden = !scanned;
   if (!scanned) return;
-  const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Found ${docs.length}`);
+  const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Found ${docs.length} document${docs.length === 1 ? '' : 's'}`);
   $('#scThumbs').replaceChildren(...scans.map((s, i) => (s && docs.some(d => d.scanNo === i) ? Object.assign(document.createElement('button'),
     { type: 'button', className: 'scthumb', innerHTML: '<img alt="">' }) : null)).map((btn, i) => { if (btn) { btn.dataset.i = i; btn.setAttribute('aria-label', `See snapped photo ${i + 1} large`); btn.firstChild.src = scans[i].thumb; } return btn; }).filter(Boolean));
   const span = (cls, txt) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; return s; };
