@@ -1578,6 +1578,17 @@
     [data-v8] #cartEmpty:not([hidden]) { padding: 30px 0; }   /* (60px taller, so the empty cart stands out) */
   }
 
+  /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
+     Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
+  @media (min-width: 861px) {
+    [data-v8] .p-body .sec-t { font-weight: 500; }
+    [data-v8] .stepbar button.on { font-weight: 600; }
+    [data-v8] .stepbar button:not(.on) { font-weight: 450; }
+  }
+  /* phones: the Documents and Size buttons are 15px taller (76 to 91px); the options area grows to fit, so the board gives up that room */
+  @media (max-width: 860px) {
+    [data-v8] .p-body .sec:is([data-sec="certs"], [data-sec="size"]) .sec-h { min-height: 91px; }
+  }
   /* ===== v8: ONE style for the sub-headers (the tab strips under a panel header: Board Style, Edge Banding) =====
      Standard = Board Style's Solid Colors | Textures & Patterns tabs; the tab that is not selected is two weight steps lighter */
   [data-v8] { --sh-size: 14px; --sh-weight: 650; --sh-weight-off: 450; --sh-pad: 10px 10px; --sh-radius: 12px; }
@@ -2192,6 +2203,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021814" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021824" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
