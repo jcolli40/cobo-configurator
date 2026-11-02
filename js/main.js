@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012307';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012307';
-import { wallTexture, wallSwatch } from './env.js?v=202611012307';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012307';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012309';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012309';
+import { wallTexture, wallSwatch } from './env.js?v=202611012309';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012309';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1665,10 +1665,7 @@ function wireSteps() {
   $('#optSheet .side-h').after(bar);
   if (V8) {                                                  // Your Documents: a strip at the top, [small board icon + Add Your Documents] [Use Samples switch]
     or.hidden = true; $('.certcount').id = 'docSamples';
-    const board = '<svg class="i camico" viewBox="56 0 128 130" aria-hidden="true"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
-      + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
-      + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg>';
+    const board = '<svg class="i camico" viewBox="56 0 128 130" aria-hidden="true"><path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/><path class="vf pl" d="M120 40v50M95 65h50"/></svg>';
     const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
     dt.innerHTML = '<button type="button" id="docTabOwn" aria-controls="ownDocs">' + board + 'Add Your Documents</button>'
       + '<label class="docsw" id="docSwLbl"><span>Use Samples</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples"></label>';
