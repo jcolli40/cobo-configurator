@@ -1564,30 +1564,6 @@
     /* Collapse: just above the column, a see-through white bubble, no outline */
     [data-v8] #dockMini { position: fixed; z-index: 17; right: 16px; top: 20px; order: 0; align-self: auto; margin: 0; height: 30px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--muted); pointer-events: auto; }
     [data-v8].dmini #dockMini { padding: 0 8px; }
-    /* the column folded to icons: each step's icons sit under its own number, with a line between the groups */
-    [data-v8].dmini .stepbar { display: contents; }
-    [data-v8].dmini .stepbar button[data-st="build"] { order: 10; }
-    [data-v8].dmini .stepbar button[data-st="style"] { order: 20; }
-    [data-v8].dmini .stepbar button[data-st="preview"] { order: 30; }
-    [data-v8].dmini .p-body .sec[data-sec="certs"] { order: 11; }
-    [data-v8].dmini .p-body .sec[data-sec="size"] { order: 12; }
-    [data-v8].dmini .p-body .sec[data-sec="boardgrp"] { order: 21; }
-    [data-v8].dmini .p-body .sec[data-sec="edge"] { order: 22; }
-    [data-v8].dmini .p-body .sec[data-sec="caps"] { order: 23; }
-    [data-v8].dmini .p-body .sec[data-sec="arview"] { order: 31; }
-    [data-v8].dmini .p-body .sec[data-sec="sharelink"] { order: 32; }
-    [data-v8].dmini .p-body .sec[data-sec="saveit"] { order: 33; }
-    [data-v8].dmini .p-body .sec[data-sec="summary"] { order: 34; }
-    /* only the current step's icons show, right under its number, with a line above and below them */
-    [data-v8].dmini .p-body .sec:is([data-sec="certs"], [data-sec="boardgrp"], [data-sec="arview"]) { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); border-radius: 0; }
-    [data-v8].dmini .p-body .sec:is([data-sec="size"], [data-sec="caps"], [data-sec="summary"]) { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); border-radius: 0; }
-    [data-v8].dmini .stepbar button { font-size: 0; }
-    [data-v8].dmini .p-body .sec-h { padding: 6px 0; }
-    [data-v8].dmini .stepbar button { padding-top: 6px; padding-bottom: 6px; }
-    /* the cart button keeps a small "Add" under its icon */
-    [data-v8].dmini #colCta { flex-direction: column; gap: 3px; height: auto; padding: 9px 0 8px; }
-    [data-v8].dmini .p-body #colCtaLbl { display: block !important; font-size: 0; }
-    [data-v8].dmini .p-body #colCtaLbl::after { content: "Add"; font-size: 11px; font-weight: 650; }
     /* the cart: it opens upward from the chip, and the chip turns into Collapse with a down arrow */
     [data-v8] .buysheet .grab { order: 9; }
     [data-v8] .buysheet .grab .gclose { display: none; }
@@ -2193,6 +2169,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021450" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021739" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
