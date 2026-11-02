@@ -676,7 +676,7 @@
   [data-v8] .dlhead .link[hidden] { display: none; }
   /* each document: picture (tap = large) with Retake under it | Document n, type, size, Rotate + Delete; tick box top right */
   [data-v8] .doc8 { position: relative; grid-template-columns: 68px minmax(0, 1fr); align-items: start; gap: 6px 12px; padding: 12px; }
-  [data-v8] .doc8 .dpic { display: grid; justify-items: center; gap: 4px; margin-top: 30px; }   /* (the picture starts level with the first menu; the top row is just the tick box) */
+  [data-v8] .doc8 .dpic { display: grid; justify-items: center; gap: 4px; }   /* (the picture and its buttons start at the top of the card) */
   [data-v8] .doc8 .thumb { position: relative; width: 68px; height: 84px; padding: 0; border: 0; background: #f4f4f6; border-radius: 8px; cursor: zoom-in; display: grid; place-items: center; }
   [data-v8] .doc8 .thumb img { grid-row: auto; width: 100%; height: 100%; object-fit: contain; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
   [data-v8] .doc8 .retakebtn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 4px; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 650; color: var(--accent); cursor: pointer; border-radius: 6px; }
@@ -717,7 +717,11 @@
   [data-v8] .doc8 .dfields select { width: 100%; padding: 8px 8px; font-size: 14px; }
   [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
   [data-v8] .doc8 .dname { font-size: 14px; }
-  [data-v8] .doc8 .dacts { display: flex; gap: 8px; }
+  [data-v8] .doc8 .dacts { display: flex; justify-content: flex-end; gap: 8px; }   /* (the trash can sits at the bottom right) */
+  [data-v8] .doc8 .dori { display: flex; gap: 4px; }
+  [data-v8] .doc8 .dori .ib { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 8px; color: var(--muted); }
+  [data-v8] .doc8 .dori .ib .i { width: 18px; height: 18px; }
+  [data-v8] .doc8 .dori .ib.on { background: var(--tint); border-color: var(--accent); color: var(--accent); }
   [data-v8] .doc8 .thumb .tnum { position: absolute; top: 4px; left: 4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 22px; text-align: center; }   /* (navy circle, white number) */
   [data-v8] .doc8 .dacts .ib { width: 40px; height: 36px; padding: 0; justify-content: center; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
   [data-v8] .doc8 .dacts .ib .i { width: 16px; height: 16px; }
@@ -2056,6 +2060,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020812" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020815" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
