@@ -1512,7 +1512,7 @@
   [data-v8] #scanResult .sc-head { font-size: 14px; font-weight: 700; }   /* (the same size as "Your business is in") */
   [data-v8] #scanResult .sc-head .chk { width: 20px; height: 20px; }
   /* the strip grows upward: the details slide up inside it, then the Added / Details line, then the Add button at the bottom */
-  [data-v8] #scanResult .scdetails { order: 1; display: grid; gap: 10px; max-height: min(52vh, 420px); overflow-y: auto; padding: 4px 0 14px; border: 0; border-bottom: 1px solid var(--line-2); background: none; opacity: 1; visibility: visible; transition: border-color .2s, max-height .32s ease, padding .32s ease, opacity .25s ease, visibility 0s; }
+  [data-v8] #scanResult .scdetails { order: 1; display: grid; gap: 10px; max-height: min(52vh, 420px); overflow-y: auto; padding: 4px 0 14px; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background: none; opacity: 1; visibility: visible; transition: border-color .2s, max-height .32s ease, padding .32s ease, opacity .25s ease, visibility 0s; }
   [data-v8] .sc-title { margin: 0; text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -2170,6 +2170,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021354" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021356" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
