@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021403';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021403';
-import { wallTexture, wallSwatch } from './env.js?v=202611021403';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021403';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021407';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021407';
+import { wallTexture, wallSwatch } from './env.js?v=202611021407';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021407';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -914,6 +914,7 @@ function paintActive() {
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   $('#edgeCustom').closest('.opt').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
+  if (V8) paintSelBar();
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
   document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === envNow().id));
   $('#wallColorWrap').hidden = envNow().wall !== 'color' || !!state.wallPhoto.img;
@@ -998,6 +999,22 @@ function openSection(name) {
 }
 // Phones: one option at a time in a pop-up sheet. The section's own controls are moved into the sheet while it's open.
 let optOpen = null;   // { sec, body }
+// v8: Edge banding and Caps & studs show what is chosen in a sticky strip at the bottom of their panel
+function paintSelBar() {
+  const bar = $('#selBar'); if (!bar) return;
+  const kind = optOpen?.sec.dataset.sec;
+  if (kind !== 'edge') { bar.hidden = true; return; }
+  let name, color, img = null;
+  if (kind === 'caps') { const f = FASTENERS.find(x => x.id === state.fastener) || FASTENERS[0]; name = f.name; color = f.color; }
+  else {
+    const L = state.lamSel, face = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(c => c.name === state.face) || COLORS[0];
+    if (state.edge === 'match') { name = L ? 'Matches the board (Wilsonart ' + L.n + ')' : face.name + ' (matches the board)'; color = face.hex; img = L?.thumb || null; }
+    else { const c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || COLORS[0]; name = c.name; color = c.hex; }
+  }
+  bar.hidden = false;
+  bar.querySelector('.sb-sw').style.background = img ? 'center / cover url("' + img + '")' : color;
+  bar.querySelector('b').textContent = name;
+}
 function openOptSheet(sec) {
   if (V6 && ['color', 'laminate', 'boardgrp'].includes(sec.dataset.sec)) return openStyle(sec.dataset.sec === 'laminate' ? 'tex' : sec.dataset.sec === 'color' ? 'colors' : undefined);
   closeOptSheet(true);
@@ -1021,6 +1038,7 @@ function openOptSheet(sec) {
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   $('#optSheet').classList.toggle('full', V8 && sec.dataset.sec === 'certs');   // (phones: Your Documents covers the whole screen)
   $('#optSheet').classList.toggle('docsopen', V8 && sec.dataset.sec === 'certs');   // (shows the sticky strip at the bottom)
+  $('#optSheet').classList.toggle('selopen', V8 && sec.dataset.sec === 'edge');
   if (V8 && sec.dataset.sec === 'certs') {                      // the documents flash once per visit (browser session)
     let seen = null; try { seen = sessionStorage.getItem('cobo.flashSeen'); } catch { /* storage blocked */ }
     if (!seen && !document.documentElement.classList.contains('docflash')) {
@@ -1030,6 +1048,7 @@ function openOptSheet(sec) {
     }
   }
   optOpen = { sec, body };
+  if (V8) paintSelBar();
   markActive(sec.dataset.sec);
   updateStage(true);
   if (!phone.matches) setInset($('#optSheet').getBoundingClientRect().width);   // computers: slide the board clear of the sheet
@@ -1044,7 +1063,7 @@ function closeOptSheet(switching) {
   placeOrient(false);
   if ($('#docTabs')) $('#docTabs').hidden = true;
   if ($('#addMenu')) $('#addMenu').hidden = true;
-  $('#optSheet').classList.remove('full', 'docsopen');
+  $('#optSheet').classList.remove('full', 'docsopen', 'selopen'); if (V8 && $('#selBar')) $('#selBar').hidden = true;
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
@@ -1759,7 +1778,11 @@ function wireSteps() {
     menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { setMenu(false); btn.focus(); } });
     for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', () => setMenu(false));
     $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); setMenu(false); });
-    $('#optSheet').append($('#scanResult'));                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
+    $('#optSheet').append($('#scanResult'));
+    $('#edgeMatch').closest('.opt').after($('#edgeCustom').closest('.opt'));   // Edge banding: the custom color row sits right under Match board color
+    $('#faceSw').before($('#faceCustom').closest('.opt'));                      // Solid Colors: "Any other color" sits at the top of its panel
+    { const sb = document.createElement('div'); sb.id = 'selBar'; sb.hidden = true; sb.setAttribute('role', 'status');   // Edge and Caps: the chosen swatch in a sticky strip at the bottom, like the Solid Colors and Textures panels
+      sb.innerHTML = '<span class="sb-sw" aria-hidden="true"></span><span class="sb-nm"><small>Selected</small><b></b></span>'; $('#optSheet').append(sb); }                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
   }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');

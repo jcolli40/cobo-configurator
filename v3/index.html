@@ -552,7 +552,7 @@
   [data-v8] .docstabs button .camico { width: 24px; height: 24px; margin-right: 8px; flex: none; fill: none; stroke: none; }
   [data-v8] .docstabs { flex-direction: column; align-items: center; gap: 14px; margin: 6px 16px 10px; padding: 8px 16px 10px; }
   [data-v8] .docstabs.center { flex: 1 1 auto; justify-content: center; }
-  [data-v8] #optSheet:has(.docstabs.center) #optBody { flex: 0 0 auto; }
+  [data-v8] #optSheet:has(.docstabs.center:not([hidden])) #optBody { flex: 0 0 auto; }
   [data-v8] .docstabs .addwrap { margin-top: 15px; }
   [data-v8] .docstabs.gone { display: none; }
   [data-v8] .docstabs.compact { gap: 0; margin: 0; padding: 6px 16px 10px; }
@@ -1517,6 +1517,13 @@
   [data-v8] .sc-fold { border: 0; background: none; padding: 0 2px 0 8px; color: var(--muted); font-size: 12.5px; font-weight: 500; }   /* (the same size, weight and color as "Add to Board") */   /* (Details / Collapse: just the words and the arrow, no bubble) */
   [data-v8] #scanResult:has(#scanBusy.on) .scdetails { border-bottom: 0; padding-bottom: 4px; }   /* (no divider under "Reading your wall...") */
   [data-v8] .stepbar button:not(.on) { font-weight: 550; }   /* (inactive step titles one step lighter than the current one) */
+  /* Edge banding / Caps & studs: the chosen swatch in a sticky strip at the bottom (like the Solid Colors and Textures panels) */
+  [data-v8] #selBar { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--tint-2); background: var(--tint); box-shadow: 0 -6px 14px rgba(0, 0, 0, .06); }
+  [data-v8] #selBar[hidden], [data-v8] #optSheet:not(.selopen) > #selBar { display: none; }
+  [data-v8] #selBar .sb-sw { flex: none; width: 40px; height: 40px; border-radius: var(--sw, 8px); border: 1px solid rgba(0, 0, 0, .12); }
+  [data-v8] #selBar .sb-nm { display: grid; line-height: 1.2; min-width: 0; }
+  [data-v8] #selBar small { font-size: 11px; color: var(--muted); }
+  [data-v8] #selBar b { font-size: 14px; color: var(--accent); }
   [data-v8] .sc-title { margin: 0; text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -1782,7 +1789,7 @@
           <button class="sec-h" aria-expanded="true"><svg class="i"><use href="#i-color"/></svg><span class="sec-t">Board color</span><span class="sec-v" data-v="color"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b">
             <div class="swgrid" id="faceSw"></div>
-            <div class="opt"><span>Any other color <span class="lbl">(matched on request)</span></span><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom board color"></div>
+            <div class="opt"><span>Custom color</span><input type="color" id="faceCustom" value="#7a5230" aria-label="Custom board color"></div>
           </div>
         </section>
 
@@ -2174,6 +2181,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021403" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021407" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
