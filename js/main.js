@@ -3554,7 +3554,7 @@ function paintExtras() {
     let em = t.querySelector('.fits');
     if (!em) { em = document.createElement('em'); em.className = 'fits'; t.append(em); }
     const k = fitsOn(...(state.orient === 'portrait' ? [s.a, s.b] : [s.b, s.a]));
-    em.textContent = docs ? '' : k ? `fits ${k}` : 'notices only';
+    em.textContent = docs ? '' : k ? `${V8 ? 'Fits' : 'fits'} ${k}` : (V8 ? 'Notices Only' : 'notices only');
   });
   // own documents
   if ($('#certClear')) $('#certClear').hidden = !own;
