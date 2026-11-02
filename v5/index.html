@@ -1524,7 +1524,7 @@
   [data-v8] :is(#selBar, .selbar) .sb-nm { display: grid; line-height: 1.2; min-width: 0; }
   [data-v8] :is(#selBar, .selbar) small { font-size: 11px; color: var(--muted); }
   [data-v8] :is(#selBar, .selbar) b { font-size: 14px; color: var(--accent); }
-  [data-v8] #tabColors .opt:has(#faceCustom) { padding-left: 6.5px; padding-right: 6.5px; }   /* (Custom color lines up with the edges of the swatches below it) */
+  [data-v8] .opt:is(:has(#faceCustom), :has(#edgeCustom)) { margin-left: -16px; margin-right: -16px; padding: 12px 22.5px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }   /* (Custom color: a thin divider above and below, full width; the words and the chip still line up with the swatches) */
   [data-v8] .opt:has(#edgeMatch), [data-v8] #edgeMatchNote { display: none !important; }   /* (Match board color is off the menu for now) */
   [data-v8] .opt.off { opacity: .55; }
   [data-v8] #edgeMatchNote { margin: -4px 0 6px; }
@@ -2191,6 +2191,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021433" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021434" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
