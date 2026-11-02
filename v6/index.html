@@ -611,6 +611,11 @@
   [data-v8] .doc8 .retakebtn .i { width: 14px; height: 14px; }
   [data-v8] .doc8 .retakebtn:hover { background: var(--tint); }
   [data-v8] .doc8 :is(.thumb, .retakebtn):focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  [data-v8] .adddoc { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; margin-top: 4px; border: 1.5px dashed var(--accent); border-radius: 14px; background: none; font: inherit; font-size: 15px; font-weight: 650; color: var(--accent); cursor: pointer; }
+  [data-v8] .adddoc[hidden] { display: none; }
+  [data-v8] .adddoc .i { width: 20px; height: 20px; }
+  [data-v8] .adddoc:hover { background: var(--tint); }
+  [data-v8] .adddoc:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   /* the tick box: green slides in from the left, the box pops, then the check wipes in */
   [data-v8] .doc8 .okbox { -webkit-appearance: none; appearance: none; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; margin: 0; border: 1.5px solid #a3a6af; border-radius: 8px; cursor: pointer;
     background: #fff linear-gradient(#2e7d4f, #2e7d4f) no-repeat left center / 0% 100%; transition: border-color .2s, background-size .25s ease; }
@@ -1950,6 +1955,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012328" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012339" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

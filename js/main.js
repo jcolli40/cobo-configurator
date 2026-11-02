@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012328';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012328';
-import { wallTexture, wallSwatch } from './env.js?v=202611012328';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012328';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012339';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012339';
+import { wallTexture, wallSwatch } from './env.js?v=202611012339';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012339';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1623,6 +1623,14 @@ function wireSteps() {
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">Add all to board</button></div>');
+    $('#docList').insertAdjacentHTML('afterend', '<button type="button" class="adddoc" id="addDoc" hidden><svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add a document</button>');
+    $('#addDoc').addEventListener('click', () => {                       // pick a document from the list: it joins the board as a stand-in until they add a photo
+      if (!CAT) return toast('One moment, the document list is still loading.');
+      const s = document.createElement('select');
+      s.innerHTML = typeOptionsHtml();
+      s.addEventListener('change', () => { if (s.value) addTypeDoc(s.value); });
+      openTypePicker(s, 'Add a document');
+    });
     $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; if (!sizePicked) useBestFit(); else refresh(); });
     for (const id of ['#bizBtn', '#bizEdit']) $(id).addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
@@ -2986,7 +2994,7 @@ function wireExtras() {
     guessDoc(fresh);
     const t = document.createElement('canvas'), k = 88 / Math.max(fresh.img.width, fresh.img.height);
     t.width = Math.round(fresh.img.width * k); t.height = Math.round(fresh.img.height * k); t.getContext('2d').drawImage(fresh.img, 0, 0, t.width, t.height);
-    Object.assign(d, { img: fresh.img, aspect: fresh.aspect, name: d.name, imgId: Math.random(), thumb: t.toDataURL('image/jpeg', 0.7), tex: null, pages: fresh.pages, ok: false, px: null, py: null, turn: fresh.turn });
+    Object.assign(d, { img: fresh.img, aspect: fresh.aspect, name: d.name, imgId: Math.random(), thumb: t.toDataURL('image/jpeg', 0.7), tex: null, pages: fresh.pages, ok: !!d.added, sample: false, px: null, py: null, turn: fresh.turn });
     keepSize(d, keep);
     docsKey = ''; refresh();
     toast('Photo replaced. Reading it…');
@@ -3062,6 +3070,21 @@ function paintDocs() {
   $('#docList').querySelectorAll('.doc').forEach((li, i) => { li.querySelector('img').src = docs[i].thumb; li.querySelector('select').value = docs[i].size; });
 }
 // v8: the documents are a checklist: tick each one that's right; its name (type) and size can be changed
+// the "Which document?" options: the groups, then Other / not sure
+const typeOptionsHtml = () => (CAT ? '<option value="">Which document?</option>' + Object.entries(CAT.groups).map(([g, gn]) => `<optgroup label="${gn}">`
+  + CAT.types.filter(t => t.group === g).map(t => `<option value="${t.id}">${t.name}</option>`).join('') + '</optgroup>').join('')
+  + `<option value="other">${CAT.other.name}</option>` : '');
+// a document added from the list, with no photo yet: drawn like a sample certificate with its title, already on the board
+function addTypeDoc(id) {
+  const t = CAT.byId[id] || CAT.other, s = DOC_SIZES.find(x => x.id === 'letter'), tex = certificateTexture(s.w, s.h, t.name);
+  const d = { sample: true, added: true, title: t.name, name: t.name, typeId: id, types: [id], size: 'letter', turn: false, cw: s.w, ch: s.h, px: null, py: null,
+    imgId: `n${Math.random()}`, aspect: s.w / s.h, ok: true, img: tex.image, thumb: tex.image.toDataURL('image/jpeg', 0.5) };
+  state.myCerts.push(d);
+  tickPop = [state.myCerts.length - 1]; docsKey = '';
+  toast(`Added ${t.name}. Tap Retake on it to use a photo of yours.`);
+  if (!sizePicked) useBestFit(); else refresh();
+  rememberDesign();
+}
 let tickPop = [];   // v8: the documents whose tick box slides in (the one just ticked; all the new ones for All correct)
 function paintDocs8(docs, miss, opts) {
   const types = CAT ? '<option value="">Which document?</option>' + Object.entries(CAT.groups).map(([g, gn]) => `<optgroup label="${gn}">`
@@ -3085,6 +3108,7 @@ function paintDocs8(docs, miss, opts) {
   });
   tickPop.forEach((n, k) => { const b = $('#docList').children[n]?.querySelector('.okbox'); if (b) { b.style.setProperty('--d', `${k * 0.09}s`); b.classList.add('pop'); } });
   tickPop = [];
+  if ($('#addDoc')) $('#addDoc').hidden = !docs.length || !CAT;
   const okN = docs.filter(d => d.ok).length;
   $('#dlHead').hidden = !docs.length; $('#okAll').hidden = okN === docs.length;
   $('#dlCount').textContent = okN === docs.length ? `All ${docs.length} added to the board` : `Select to add to your board (${okN} of ${docs.length})`;
