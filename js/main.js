@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012251';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012251';
-import { wallTexture, wallSwatch } from './env.js?v=202611012251';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012251';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012256';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012256';
+import { wallTexture, wallSwatch } from './env.js?v=202611012256';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012256';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2029,6 +2029,7 @@ function packFresh(W, H, docs) {
   return P;
 }
 // "Snap your wall": count the documents in a photo, guess their sizes, fill the board with samples that size
+const chk = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i chk'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<use href="#i-check-circle"/>'; return s; };   // (the green check before "Found 4")
 let scanFull = null;                // v8: the last scan's whole photo with its boxes (the thumbnail is a square of it)
 async function scanWall(file, pre, add) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list
   const keepOld = add ? state.myCerts.slice() : [];
@@ -2083,7 +2084,7 @@ async function scanWall(file, pre, add) {   // pre: a Gemini answer already in h
   if (V8 && ai?.location) guessState(ai.location, 'photo');
   const left = skipped.length ? ` Left off the board: ${skipped.join(', ')}.` : '';
   $('#scanText').textContent = `Found ${found.length}: ${Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')}${names}.${left} ${V8 && ai ? 'Tick each one below that\'s right, or fix its name or size.' : `Wrong? Change sizes or remove extras ${LAYOUT === 'v5' ? 'below' : 'under Sample certificates'}.`}`;
-  if (V8) { const t = $('#scanText'), m = /^Found \d+/.exec(t.textContent); if (m) { const b = document.createElement('b'); b.textContent = m[0]; t.firstChild.splitText(m[0].length); t.firstChild.replaceWith(b); } }   // (the count of documents found, in bold)
+  if (V8) { const t = $('#scanText'), m = /^Found \d+/.exec(t.textContent); if (m) { const b = document.createElement('b'); b.textContent = m[0]; t.firstChild.splitText(m[0].length); t.firstChild.replaceWith(b); t.prepend(chk()); } }   // (the count of documents found, in bold)
   state.myCerts = found.map((f, i) => {                    // (Gemini not sure of a type: a neutral title, not a made-up one)
     const s = DOC_SIZES.find(x => x.id === f.size);
     const d = { sample: true, title: f.name || (ai ? 'Compliance Document' : SHEETS.titles[i % SHEETS.titles.length]), size: f.size, turn: f.turn, cw: s.w, ch: s.h, px: null, py: null, imgId: `s${i}${Math.random()}`, aspect: f.turn ? s.h / s.w : s.w / s.h };
