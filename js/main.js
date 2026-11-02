@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020803';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020803';
-import { wallTexture, wallSwatch } from './env.js?v=202611020803';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020803';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020805';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020805';
+import { wallTexture, wallSwatch } from './env.js?v=202611020805';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020805';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2193,7 +2193,7 @@ function paintScan() {
   for (const d of docs) { const s = DOC_SIZES.find(x => x.id === d.size), n = s ? `${s.name.toLowerCase()} ${fmt(s.w)}×${fmt(s.h)}` : `custom ${fmt(d.cw)}×${fmt(d.ch)}`; counts[n] = (counts[n] || 0) + 1; }
   t.textContent = '';
   t.append(span('sc-sizes', Object.entries(counts).map(([n, c]) => `${c} ${n}`).join(', ')));
-  if (docs.some(d => d.typeId)) docs.forEach((d) => t.append(span('sc-item', `${state.myCerts.indexOf(d) + 1}. ${d.typeId && d.typeId !== 'other' && CAT?.byId[d.typeId] ? CAT.byId[d.typeId].name : '(not sure / manual entry)'}`)));
+  if (docs.some(d => d.typeId)) docs.forEach((d) => { const it = span('sc-item', ''); it.append(span('sc-n', `${state.myCerts.indexOf(d) + 1}.`), span('sc-t', d.typeId && d.typeId !== 'other' && CAT?.byId[d.typeId] ? CAT.byId[d.typeId].name : '(not sure / manual entry)')); t.append(it); });   // (number and name in two columns: a second line lines up under the first)
 }
 // v8: trim (and straighten) a photo added as one document down to the certificate in it
 function trimDoc(own, item) {
