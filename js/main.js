@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020604';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020604';
-import { wallTexture, wallSwatch } from './env.js?v=202611020604';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020604';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020605';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020605';
+import { wallTexture, wallSwatch } from './env.js?v=202611020605';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020605';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1689,6 +1689,7 @@ function wireSteps() {
     const menu = document.createElement('div'); menu.id = 'addMenu'; menu.className = 'addmenu'; menu.hidden = true; menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', 'Add your documents');
     const sr2 = own.querySelector('.scanrow'), snapL = sr2.querySelector('label.upload'), upL = sr2.querySelector('label.scanup');
     snapL.classList.add('menurow'); upL.classList.add('menurow');
+    snapL.querySelector('use')?.setAttribute('href', '#i-snap-spark');   // (viewfinder with a sparkle: it finds the documents for you)
     const sampRow = document.createElement('label'); sampRow.className = 'menurow sampsw'; sampRow.id = 'docSwLbl';
     sampRow.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-cert"/></svg><span>Use samples for now</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples">';
     const ex = document.createElement('img'); ex.className = 'snapex'; ex.alt = 'Example: five certificates, each one marked and named'; ex.src = new URL('img/snap-example.png', SITE_ROOT).href;
