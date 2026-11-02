@@ -613,7 +613,7 @@ function clearRoot() {
 }
 
 function buildBoard() {
-  if (V8 && state.lamSel && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (matching only works with solid colors, not textures or patterns)
+  if (V8 && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (v8, for now: no "match board color" option; the edge is always a color of its own)
   clearRoot();
   const { w, h } = dims();
   const T = HW.boardT, lam = HW.lamT, b = HW.bandT;
