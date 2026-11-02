@@ -1516,6 +1516,7 @@
   [data-v8] #scanResult .scdetails { order: 1; display: grid; gap: 10px; max-height: min(52vh, 420px); overflow-y: auto; padding: 4px 0 14px; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; background: none; opacity: 1; visibility: visible; transition: border-color .2s, max-height .32s ease, padding .32s ease, opacity .25s ease, visibility 0s; }
   [data-v8] .sc-fold { border: 0; background: none; padding: 0 2px 0 8px; color: var(--muted); font-size: 12.5px; font-weight: 500; }   /* (the same size, weight and color as "Add to Board") */   /* (Details / Collapse: just the words and the arrow, no bubble) */
   [data-v8] #scanResult:has(#scanBusy.on) .scdetails { border-bottom: 0; padding-bottom: 4px; }   /* (no divider under "Reading your wall...") */
+  [data-v8] .stepbar button:not(.on) { font-weight: 550; }   /* (inactive step titles one step lighter than the current one) */
   [data-v8] .sc-title { margin: 0; text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -2173,6 +2174,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021402" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021403" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
