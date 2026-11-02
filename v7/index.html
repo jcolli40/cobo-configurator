@@ -646,7 +646,7 @@
   [data-v8] #scanText .sc-item { color: var(--ink); display: grid; grid-template-columns: 1.7em minmax(0, 1fr); }
   [data-v8] #scanText .sc-item > span { display: block; }
   [data-v8] #scanText .sc-left { margin-top: 4px; color: var(--muted); }
-  [data-v8] .sc-fold { display: inline-flex; align-items: center; gap: 4px; flex: none; height: 32px; padding: 0 8px 0 12px; border: 0; border-radius: 16px; background: var(--tint); color: var(--accent); font: inherit; font-size: 13px; font-weight: 650; white-space: nowrap; cursor: pointer; }   /* (a pill: Details with the arrow, Collapse when open) */
+  [data-v8] .sc-fold { display: inline-flex; align-items: center; gap: 4px; flex: none; height: 32px; padding: 0 8px 0 12px; border: 1px solid #d3d5db; border-radius: 16px; background: none; color: #9a9aa0; font: inherit; font-size: 13px; font-weight: 650; white-space: nowrap; cursor: pointer; }   /* (a pill: Details with the arrow, Collapse when open) */
   [data-v8] .sc-fold .i { width: 18px; height: 18px; stroke-width: 2; transition: transform .25s ease; }
   [data-v8] #scanResult:not(.folded) .sc-fold .i { transform: rotate(180deg); }   /* (open: arrow up = fold it; folded: arrow down = open it) */
   [data-v8] #scanResult.folded :is(.sc-thumbs, #scanText, #stateRow) { display: none; }   /* (folded: just "Found N") */
@@ -2062,6 +2062,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020827" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020828" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
