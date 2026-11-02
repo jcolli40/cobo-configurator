@@ -564,7 +564,7 @@
   [data-v8] .docstabs .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
   [data-v8] .docstabs .camart .sh { fill: #cfe0f7; stroke: var(--accent); stroke-width: .9; }
   [data-v8] .docstabs .camart .spk { fill: var(--accent); }
-  [data-v8] .docstabs .camart .num { fill: var(--accent); font: 400 11px Inter, system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
+  [data-v8] .docstabs .camart .num { fill: var(--accent); font: 400 11px "Albert Sans", Inter, system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
   [data-v8] .docstabs .camart .cap { fill: #bdbdc2; }
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
@@ -1578,6 +1578,11 @@
     [data-v8] #cartEmpty:not([hidden]) { padding: 30px 0; }   /* (60px taller, so the empty cart stands out) */
   }
 
+  /* ===== v8: the typeface, Albert Sans (Google Fonts, kept in the fonts folder; one file covers every weight) ===== */
+  @font-face { font-family: "Albert Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("fonts/albert-sans.woff2") format("woff2"); }
+  @font-face { font-family: "Albert Sans"; font-style: italic; font-weight: 100 900; font-display: swap; src: url("fonts/albert-sans-italic.woff2") format("woff2"); }
+  [data-v8] { font-family: "Albert Sans", Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  [data-v8] button, [data-v8] input, [data-v8] select, [data-v8] textarea { font-family: inherit; }
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
@@ -2203,6 +2208,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021824" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021826" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
