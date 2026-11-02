@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012020';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012020';
-import { wallTexture, wallSwatch } from './env.js?v=202611012020';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012020';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012100';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012100';
+import { wallTexture, wallSwatch } from './env.js?v=202611012100';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012100';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -998,6 +998,7 @@ function openOptSheet(sec) {
   placeOrient(V6 && sec.dataset.sec === 'size');
   $('#docBar')?.classList.toggle('on', sec.dataset.sec === 'certs');   // (the best-fit bar belongs to Your Documents)
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
+  $('#optSheet').classList.toggle('full', V8 && sec.dataset.sec === 'certs');   // (phones: Your Documents covers the whole screen)
   optOpen = { sec, body };
   markActive(sec.dataset.sec);
   updateStage(true);
@@ -1012,6 +1013,7 @@ function closeOptSheet(switching) {
   $('#docBar')?.classList.remove('on');
   placeOrient(false);
   if ($('#docTabs')) $('#docTabs').hidden = true;
+  $('#optSheet').classList.remove('full');
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
 }
@@ -1658,22 +1660,21 @@ function wireSteps() {
   const bar = document.createElement('div'); bar.id = 'docBar'; bar.className = 'docbar';
   bar.append($('#certAdvice'), qn);
   $('#optSheet .side-h').after(bar);
-  if (V8) {                                                  // Your Documents: tabs, Use Your Own | Use Samples (the tab is the samples switch)
-    const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs'; dt.hidden = true; dt.setAttribute('role', 'tablist'); dt.setAttribute('aria-label', 'Your documents or samples');
-    dt.innerHTML = '<button type="button" role="tab" id="docTabOwn" data-dt="own" aria-controls="ownDocs"><svg class="i" aria-hidden="true"><use href="#i-star"/></svg>Use Your Own</button><button type="button" role="tab" id="docTabSamples" data-dt="samples" aria-controls="docSamples">Use Samples</button>';
+  if (V8) {                                                  // Your Documents: [+ Add Your Documents] [Use Samples (switch)]; the switch is the samples switch
+    const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
+    dt.innerHTML = '<button type="button" id="docTabOwn" aria-controls="ownDocs"><svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add Your Documents</button>'
+      + '<label class="docsw" id="docSwLbl"><span>Use Samples</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples"></label>';
     $('#optSheet .side-h').after(dt);
     or.hidden = true; $('.certcount').id = 'docSamples';
-    dt.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-dt]'); if (!b) return;
-      if (state.sheets !== (b.dataset.dt === 'samples')) $('#sheets').click();     // (the same switch as ever: samples show instead of their own documents)
-      else paintDocTabs();
-    });
-    dt.addEventListener('keydown', (e) => {
-      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-      e.preventDefault(); const want = e.key === 'ArrowLeft' || e.key === 'Home' ? 'own' : 'samples';
-      if (state.sheets !== (want === 'samples')) $('#sheets').click();
-      $(want === 'own' ? '#docTabOwn' : '#docTabSamples').focus();
-    });
+    $('#docTabOwn').addEventListener('click', () => { if (state.sheets) $('#sheets').click(); });          // (back to their own documents)
+    $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
+    // the illustration above the blurb: a camera frame around a wall of documents, drawn like the size cards
+    const art = document.createElement('div'); art.className = 'camart'; art.setAttribute('aria-hidden', 'true');
+    art.innerHTML = '<svg viewBox="0 0 240 130"><rect class="bd" x="60" y="22" width="120" height="86" rx="3"/>'
+      + [[72, 30], [105.5, 30], [139, 30], [88.75, 69], [122.25, 69]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="29" height="34" rx="1"/>').join('')
+      + [[66, 28], [174, 28], [66, 102], [174, 102]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
+      + '<path class="vf" d="M44 26V10h16M180 10h16v16M196 104v16h-16M60 120H44v-16"/></svg>';
+    own.querySelector('.opt + .help').before(art);
   }
   // Style: Solid Colors (palette) and Textures & Patterns
   const col = $('.sec[data-sec="color"]'), lam = $('.sec[data-sec="laminate"]');
@@ -3102,7 +3103,7 @@ function openLightbox(d, i) {
 function paintDocTabs() {
   const s = !!state.sheets;
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
-  for (const b of document.querySelectorAll('#docTabs [data-dt]')) { const on = (b.dataset.dt === 'samples') === s; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
+  $('#docTabOwn').setAttribute('aria-pressed', !s); $('#docSw').checked = s; $('#docSwLbl').classList.toggle('on', s);
 }
 function paintExtras() {
   paintDocs();

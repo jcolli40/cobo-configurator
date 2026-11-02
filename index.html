@@ -545,7 +545,15 @@
   /* v8: Snap your wall (the photo row + the result moved out of the sample box by main.js) */
   [data-v8] .snapbox { display: grid; gap: 8px; }
   [data-v8] .side .snapbox { padding: 0; background: none; }
-  [data-v8] .side .side-body .owndocs { background: var(--tint); }   /* Add your own: the pale blue card */
+  [data-v8] .side .side-body .owndocs { background: none; padding: 0; }   /* (no blue card) */
+  [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
+  [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
+  [data-v8] .camart { display: grid; place-items: center; padding: 10px 0; border-radius: 16px; background: #f4f4f6; }
+  [data-v8] .camart svg { width: min(100%, 260px); height: auto; }
+  [data-v8] .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
+  [data-v8] .camart .sh { fill: #cfe0f7; }
+  [data-v8] .camart .cap { fill: #bdbdc2; }
+  [data-v8] .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .side .snapbox .help { margin-top: -6px; }
   [data-v8] .side .snapbox .upload { flex: 1 1 100%; justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
   [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
@@ -857,8 +865,8 @@
   [data-v6] .styletabs[hidden] { display: none; }
   [data-v8] .side :is(.owndocs, .certcount)[hidden] { display: none !important; }
   [data-v8] .certcount .labrow { display: none; }   /* (the Use Samples tab is the switch) */
-  [data-v6] .styletabs { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--line); }
-  [data-v6] .styletabs button { flex: 1 1 auto; white-space: nowrap; padding: 12px 8px 10px; border: 0; border-bottom: 3px solid transparent; background: none; font: inherit; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; }
+  [data-v6] .styletabs { display: flex; gap: 8px; padding: 6px 16px 10px; }
+  [data-v6] .styletabs button { flex: 1 1 auto; white-space: nowrap; padding: 10px 10px; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; }
   [data-v6] .styletabs button[data-tab="colors"] { flex: 0 1 auto; padding-left: 14px; padding-right: 14px; }
   [data-v6] .styletabs .i { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
   [data-v6] .styletabs .tabup { display: inline-block; margin-left: 6px; padding: 1px 7px 3px; border-radius: 999px; background: #cfe0f7; color: var(--accent); font-size: 11px; font-weight: 800; line-height: 1.2; vertical-align: 1px; }
@@ -905,11 +913,19 @@
   [data-v6] .side-search .ffilters { flex: 1; min-width: 0; position: static; }
   [data-v6] .side-search details.fgroup { flex: 1 1 110px; }
   [data-v6] .styletabs button:hover { color: var(--ink); }
-  [data-v6] .styletabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
-  [data-v6] .styletabs button:focus-visible { outline: 3px solid #8fb0e0; outline-offset: -3px; border-radius: 8px; }
+  [data-v6] .styletabs button:is([aria-selected="true"], [aria-pressed="true"]) { color: var(--accent); background: var(--tint); }
+  [data-v6] .styletabs button:focus-visible { outline: 3px solid #8fb0e0; outline-offset: -3px; }
+  [data-v6] .docstabs .docsw { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 12px; border-radius: 12px; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; white-space: nowrap; }
+  [data-v6] .docstabs .docsw.on { background: var(--tint); color: var(--accent); }
+  [data-v6] .docstabs button { display: flex; align-items: center; justify-content: center; }
   [data-v6] #tabTex { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   [data-v6] #tabTex[hidden], [data-v6] #tabColors[hidden] { display: none; }
   [data-v6] #tabColors > .sec-b { display: grid !important; padding: 0; gap: 14px; }
+  /* a soft ease when the step changes: the new options fade and settle in */
+  @media (prefers-reduced-motion: no-preference) {
+    [data-v6] .p-body .sec, [data-v6] .stephint { animation: stepIn .3s ease both; }
+    @keyframes stepIn { from { opacity: 0; transform: translateY(6px); } }
+  }
   /* the size follows the documents: a hint under the steps, a tag on the Size button, a note in its pop-up */
   .stephint, .autonote { display: none; }
   [data-v6] .stephint:not([hidden]) { order: -1; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: -3px 0 7px; padding: 8px 12px; border-radius: 10px; background: var(--tint); color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1.3; }
@@ -1197,6 +1213,7 @@
     [data-v6] .panel { z-index: 16; }        /* the column and the open cart sit over the slide-out options */
   }
   @media (max-width: 860px) {
+    [data-v8] #optSheet.full { top: 0; bottom: 0; max-height: none; height: 100%; border-radius: 0; z-index: 70; }   /* Your Documents: the whole screen, over everything */
     [data-v6]:not([data-step="intro"]), [data-v6]:not([data-step="intro"]) body { overflow: hidden; }
     [data-v6] .app { padding: 0; }
     [data-v6] #shareBtn { top: 10px; right: 10px; }
@@ -1303,6 +1320,7 @@
   <symbol id="i-fb" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M14.5 8.5h-1.5a1.8 1.8 0 0 0-1.8 1.8V20.5M9.5 13h5"/></symbol>
   <symbol id="i-ig" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.8" cy="7.2" r=".7"/></symbol>
   <symbol id="i-tt" viewBox="0 0 24 24"><path d="M13.5 4v10.8a3.3 3.3 0 1 1-3.3-3.3"/><path d="M13.5 4c.4 2.6 2.1 4.2 4.7 4.4"/></symbol>
+  <symbol id="i-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8" stroke-linecap="round"/></symbol>
   <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9-4.3-4.1 5.9-.8L12 3.5z" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
@@ -1856,6 +1874,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012020" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012100" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
