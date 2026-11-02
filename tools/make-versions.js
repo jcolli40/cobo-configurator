@@ -18,6 +18,7 @@ for (const v of ['v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8']) {
     .replace(/"\.\/vendor\//g, '"../vendor/')
     .replace(/src="\.\/js\//g, 'src="../js/')
     .replace(/src="img\//g, 'src="../img/')
+    .replace(/url\("fonts\//g, 'url("../fonts/')
     .replace(/<title>(.*?)<\/title>/, `<title>$1 (${v}: ${names[v]})</title>`);
   html = `<!-- GENERATED from ../index.html by tools/make-versions.js. Edit index.html, not this file. -->\n${html}`;
   if (!html.includes(`data-layout="${lay}"`)) throw new Error(`index.html is missing <html lang="en" data-layout="v1">`);
