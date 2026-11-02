@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012227';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012227';
-import { wallTexture, wallSwatch } from './env.js?v=202611012227';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012227';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012234';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012234';
+import { wallTexture, wallSwatch } from './env.js?v=202611012234';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012234';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1610,13 +1610,14 @@ function wireSteps() {
     box.insertAdjacentHTML('beforeend', '<div class="staterow" id="stateRow" hidden><label for="bizState">Your business is in</label>'
       + '<div class="stctl"><select id="bizState"><option value="">Choose your state</option>'
       + Object.entries(US_STATES).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}">${n}</option>`).join('')
-      + '</select><button type="button" class="stok" id="stateOk">Confirm</button></div><p class="help" id="stateWhy"></p></div>');
+      + '</select><button type="button" class="typebtn" id="bizBtn" aria-haspopup="dialog" aria-label="Your business state"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><button type="button" class="stok" id="stateOk">Confirm</button></div><p class="help" id="stateWhy"></p></div>');
     own.querySelector('.opt + .help').after(box);                     // (inside "Add your own", right under its title)
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">All correct</button></div>');
     $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; refresh(); });
+    $('#bizBtn').addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = false; paintState(); });
     $('#stateOk').addEventListener('click', () => {
       if (state.bizStateOk) state.bizStateOk = false; else if (state.bizState) state.bizStateOk = true; else $('#bizState').focus();
@@ -2120,6 +2121,7 @@ function paintState() {
   const row = $('#stateRow'); if (!row) return;
   row.hidden = !state.myCerts.length;                       // (asked once there are documents to check)
   $('#bizState').value = state.bizState || ''; $('#bizState').disabled = !!state.bizStateOk;
+  $('#bizBtn').querySelector('span').textContent = $('#bizState').selectedOptions[0]?.text || 'Choose your state'; $('#bizBtn').disabled = !!state.bizStateOk;
   row.classList.toggle('done', !!state.bizStateOk);
   $('#stateOk').textContent = state.bizStateOk ? 'Change' : 'Confirm';
   $('#stateWhy').textContent = state.bizStateOk ? 'Thanks. We use it to check which documents your business needs.'
@@ -3091,11 +3093,11 @@ function askAddOrNew(question) {
 }
 // v8 (phones): "Which document?" as our own bottom sheet: grouped, readable, the current one marked. It fills in the real
 // <select> (which the page still uses) and tells it it changed.
-function openTypePicker(sel) {
+function openTypePicker(sel, title = 'Which document?') {
   if (!sel) return;
   const dlg = document.createElement('dialog'), row = (o) => `<button type="button" role="radio" aria-checked="${o.value === sel.value}" class="tp-o${o.value === sel.value ? ' on' : ''}" data-v="${escHtml(o.value)}"><span>${escHtml(o.text)}</span><i aria-hidden="true"></i></button>`;
-  dlg.className = 'typepick'; dlg.setAttribute('aria-label', 'Which document?');
-  let h = '<header><b>Which document?</b><button type="button" class="tp-x" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></header><div class="tp-list" role="radiogroup" aria-label="Which document?">';
+  dlg.className = 'typepick'; dlg.setAttribute('aria-label', title);
+  let h = '<header><b>' + escHtml(title) + '</b><button type="button" class="tp-x" aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></header><div class="tp-list" role="radiogroup" aria-label="' + escHtml(title) + '">';
   for (const n of sel.children) {
     if (n.tagName === 'OPTGROUP') h += `<p class="tp-g">${escHtml(n.label)}</p>` + [...n.children].map(row).join('');
     else if (n.value) h += row(n);
