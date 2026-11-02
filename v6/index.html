@@ -608,7 +608,8 @@
   /* Which document?: on phones a button and our own sheet (the phone's own list is dark and cramped) */
   [data-v8] .typebtn { display: none; }
   @media (max-width: 860px) {
-    [data-v8] .doc8 select[data-type] { display: none; }
+    [data-v8] .doc8 :is(select[data-type], select[data-size]) { display: none; }
+    [data-v8] .doc8 .typebtn.sizebtn { font-weight: 400; }
     [data-v8] .doc8 .typebtn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 10px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; font: inherit; font-size: 14px; font-weight: 650; color: var(--ink); text-align: left; cursor: pointer; }
     [data-v8] .doc8 .typebtn span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     [data-v8] .doc8 .typebtn .i { width: 15px; height: 15px; color: var(--faint); flex: none; }
@@ -1913,6 +1914,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012236" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012237" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

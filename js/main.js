@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012236';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012236';
-import { wallTexture, wallSwatch } from './env.js?v=202611012236';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012236';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012237';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012237';
+import { wallTexture, wallSwatch } from './env.js?v=202611012237';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012237';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3010,6 +3010,7 @@ function wireExtras() {
     const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;
     const i = +li.dataset.i;
     if (b.dataset.act === 'type') return openTypePicker(li.querySelector('[data-type]'));
+    if (b.dataset.act === 'size') return openTypePicker(li.querySelector('[data-size]'), 'Document size');
     if (b.dataset.act === 'zoom') return openLightbox(state.myCerts[i], i);              // (v8: the picture opens large)
     if (b.dataset.act === 'retake') { retakeIdx = i; return retakeInput.click(); }
     if (b.dataset.act === 'turn') { state.myCerts[i].turn = !state.myCerts[i].turn; state.myCerts[i].px = state.myCerts[i].py = null; }
@@ -3051,13 +3052,14 @@ function paintDocs8(docs, miss, opts) {
       <input type="checkbox" class="okbox" data-ok aria-label="Document ${i + 1} is right"${d.ok ? ' checked' : ''}>
       <span class="dpic"><button type="button" class="thumb" data-act="zoom" title="See it large" aria-label="See document ${i + 1} large"><img alt=""></button>
         <button type="button" class="retakebtn" data-act="retake" aria-label="Retake the photo of document ${i + 1}"><svg class="i"><use href="#i-camera"/></svg>Retake</button></span>
-      <span class="dfields"><span class="dnum">Document ${i + 1}</span>${types ? `<select data-type aria-label="Which document">${types}</select><button type="button" class="typebtn" data-act="type" aria-haspopup="dialog" aria-label="Which document, document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select>
+      <span class="dfields"><span class="dnum">Document ${i + 1}</span>${types ? `<select data-type aria-label="Which document">${types}</select><button type="button" class="typebtn" data-act="type" aria-haspopup="dialog" aria-label="Which document, document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select><button type="button" class="typebtn sizebtn" data-act="size" aria-haspopup="dialog" aria-label="Size of document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
         <span class="dacts"><button class="ib" type="button" data-act="turn" aria-label="Rotate document ${i + 1} sideways"><svg class="i"><use href="#i-rotate"/></svg>Rotate</button>
         <button class="ib del" type="button" data-act="remove" aria-label="Delete document ${i + 1}"><svg class="i"><use href="#i-trash"/></svg>Delete</button></span></span>
       ${d.size === 'custom' ? `<span class="cust">W <input type="number" data-cw min="2" max="96" step="0.5" value="${d.cw}"> × H <input type="number" data-ch min="2" max="96" step="0.5" value="${d.ch}"> in</span>` : ''}
       ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
   $('#docList').querySelectorAll('.doc').forEach((li, i) => {
     li.querySelector('img').src = docs[i].thumb; li.querySelector('[data-size]').value = docs[i].size;
+    li.querySelector('.sizebtn span').textContent = li.querySelector('[data-size]').selectedOptions[0]?.text || '';
     const t = li.querySelector('[data-type]'); if (t) { t.value = docs[i].typeId === 'other' || CAT?.byId[docs[i].typeId] ? docs[i].typeId : ''; li.querySelector('.typebtn span').textContent = t.selectedOptions[0]?.text || 'Which document?'; }
   });
   const okN = docs.filter(d => d.ok).length;
