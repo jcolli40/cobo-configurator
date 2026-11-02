@@ -1496,6 +1496,8 @@
   [data-v8] #okAll { display: none !important; }
   [data-v8] .doc8 .okpill { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; cursor: pointer; transition: color .25s; }
   [data-v8] .doc8 .okpill .okbox { position: relative; top: auto; right: auto; flex: none; }
+  [data-v8] .doc8 .okpill .okbox { border: 1px solid var(--line-2); border-radius: 6px; }   /* (the same 24px size, stroke and corners as the way-round and trash icons) */
+  [data-v8] .doc8 .okpill .okbox:checked { border-color: #2e7d4f; }
   [data-v8] .doc8 .okpill:has(.okbox:checked) { color: #1f5f3a; }   /* (no bubble around it: the box turns green and the words go green once it is on the board) */
   [data-v8] .doc8 .okpill:has(.okbox:focus-visible) { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   dialog.sure .sure-b.stack { grid-template-columns: 1fr; }
@@ -2168,6 +2170,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021344" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021345" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
