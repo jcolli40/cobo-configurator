@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021750';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021750';
-import { wallTexture, wallSwatch } from './env.js?v=202611021750';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021750';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021752';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021752';
+import { wallTexture, wallSwatch } from './env.js?v=202611021752';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021752';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1950,7 +1950,7 @@ function wireSteps() {
     // the cart: Your cart + total at the top of the pop-up; the chip at the bottom turns into Collapse with a down arrow while it's open
     $('#sheetGrab').insertAdjacentHTML('beforeend', '<span class="gclose" aria-hidden="true"><span>Collapse</span><svg class="i"><use href="#i-chev"/></svg></span>');
     { const card = document.createElement('div'); card.className = 'cartcard'; $('#sheetBody').before(card); card.append($('#sheetBody'), $('#editBar'), $('.buysheet .buybar')); }   // (the cart's contents are one white card; the chip stays its own bubble underneath)
-    $('#sheetBody').insertAdjacentHTML('afterbegin', '<div class="cart-h"><b><svg class="i" aria-hidden="true"><use href="#i-bag"/></svg>Your cart <span id="cartHCount"></span></b><b id="cartHAmt">$0.00</b></div>');
+    $('#sheetBody').insertAdjacentHTML('afterbegin', '<div class="cart-h"><b><svg class="i" aria-hidden="true"><use href="#i-bag"/></svg>Your Cart <span id="cartHCount"></span></b><b id="cartHAmt">$0.00</b></div>');
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !phone.matches && $('#buysheet').classList.contains('open')) { setSheet(false); $('#sheetGrab').focus(); } });
   }
   const mini = (on) => {
