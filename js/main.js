@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021407';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021407';
-import { wallTexture, wallSwatch } from './env.js?v=202611021407';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021407';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021409';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021409';
+import { wallTexture, wallSwatch } from './env.js?v=202611021409';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021409';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -914,7 +914,7 @@ function paintActive() {
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   $('#edgeCustom').closest('.opt').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
-  if (V8) paintSelBar();
+  if (V8) { paintSelBar(); paintColSelBar(); }
   document.querySelectorAll('#wallSw .sw').forEach(b => b.classList.toggle('on', state.wall >= 0 && b.dataset.k === WALLS[state.wall].name));
   document.querySelectorAll('#envGrid .envt').forEach(b => b.classList.toggle('on', b.dataset.env === envNow().id));
   $('#wallColorWrap').hidden = envNow().wall !== 'color' || !!state.wallPhoto.img;
@@ -3577,10 +3577,18 @@ function openStyle(tab) {
   setStyleTab(tab || (state.lamSel ? 'tex' : 'colors'));
   openPicker();
 }
+// v8: the Solid Colors tab's sticky strip: the chosen board color (hidden on the Textures tab, or while a texture is chosen)
+function paintColSelBar() {
+  const bar = $('#colSelBar'); if (!bar) return;
+  if (styleTab !== 'colors' || state.lamSel) { bar.hidden = true; return; }
+  const c = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(x => x.name === state.face) || COLORS[0];
+  bar.hidden = false; bar.querySelector('.sb-sw').style.background = c.hex; bar.querySelector('b').textContent = c.name;
+}
 function setStyleTab(t) {
   styleTab = t;
   const tex = t === 'tex';
   $('#tabColors').hidden = tex; $('#tabTex').hidden = !tex;
+  if (V8) paintColSelBar();
   for (const b of document.querySelectorAll('.styletabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
   if (!$('#lamPanel').hidden) { if (tex && !phone.matches) $('#lamSearch').focus(); updateStage(false); }
 }
@@ -3618,6 +3626,8 @@ function wireStyle() {
   tabs.innerHTML = '<button type="button" role="tab" id="tabBtnColors" data-tab="colors" aria-controls="tabColors">Solid Colors</button>'
     + '<button type="button" role="tab" id="tabBtnTex" data-tab="tex" aria-controls="tabTex">Textures &amp; Patterns<span class="tabup" aria-hidden="true" title="Costs extra">+$</span><span class="vh"> (costs extra)</span></button>';
   head.after(tabs); tabs.after(cols, tex);
+  if (V8) { const sb = document.createElement('div'); sb.id = 'colSelBar'; sb.className = 'selbar'; sb.hidden = true; sb.setAttribute('role', 'status');   // Solid Colors: the chosen color in a sticky strip at the bottom, like Textures & Patterns
+    sb.innerHTML = '<span class="sb-sw" aria-hidden="true"></span><span class="sb-nm"><small>Selected</small><b></b></span>'; pnl.append(sb); }
   head.prepend(Object.assign(document.createElement('span'), { id: 'styleIcon', innerHTML: $('.sec[data-sec="boardgrp"] .sec-h .i').outerHTML }));   // (the board icon, left of the title)
   $('#lamTitle').textContent = 'Board Style'; head.querySelector('.x').setAttribute('aria-label', 'Close');
   tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setStyleTab(b.dataset.tab); });
