@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012234';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012234';
-import { wallTexture, wallSwatch } from './env.js?v=202611012234';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012234';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012236';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012236';
+import { wallTexture, wallSwatch } from './env.js?v=202611012236';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012236';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -703,7 +703,8 @@ function buildBoard() {
   wall.receiveShadow = true; wallG.add(wall);
   // a photo shows as-is (unlit), with the board's shadow laid over it
   const addPhoto = (tex, pw, ph, x, y, spread = 1) => {     // spread: the shadow-catcher covers the blurred fill too
-    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: spread > 1 }));
+    const ready = !!tex.image;                               // (a photo still downloading would draw black: show its average color until it lands)
+    const photo = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial(ready ? { map: tex, toneMapped: false, transparent: spread > 1 } : { color: new THREE.Color(E.wall.bg || wallHex()), toneMapped: false }));
     photo.position.set(x, y, 0.03); wallG.add(photo);
     const shade = new THREE.Mesh(new THREE.PlaneGeometry(pw * spread, ph * spread), new THREE.ShadowMaterial({ opacity: 0.32 }));
     shade.position.set(x, y, 0.05); shade.receiveShadow = true; wallG.add(shade);
@@ -1705,6 +1706,8 @@ function wireSteps() {
     const now = envNow().id, i = ROOMS.findIndex(e => e.id === now);
     state.env = ROOMS[(Math.max(0, i) + d + ROOMS.length) % ROOMS.length].id;
     refresh();
+    const j = ROOMS.findIndex(e => e.id === state.env);                    // (get the rooms on either side ready)
+    for (const k of [j + 1, j - 1, j + d * 2]) { const p = ROOMS[(k + ROOMS.length * 4) % ROOMS.length]?.wall?.photo; if (p) new Image().src = new URL(p, SITE_ROOT).href; }
   };
   $('#roomBtn').addEventListener('click', () => stepRoom(1));      // the name cycles too: no room panel in v6
   $('#roomPrev').addEventListener('click', () => stepRoom(-1));
