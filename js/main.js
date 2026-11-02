@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020545';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020545';
-import { wallTexture, wallSwatch } from './env.js?v=202611020545';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020545';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020551';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020551';
+import { wallTexture, wallSwatch } from './env.js?v=202611020551';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020551';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1604,7 +1604,7 @@ function wireSteps() {
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
-    own.querySelector('.opt + .help').textContent = 'On your wall, or laid out on a table: snap one photo of all your documents and we\'ll find each one, name it, straighten it and size a board to fit. Or add them one at a time.';
+    own.querySelector('.opt + .help').textContent = 'On your wall, or laid out on a table: snap one photo of all your documents and we\'ll find each one, name it and straighten it. Or add them one at a time.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="true" aria-label="Hide the photos and the list"><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
@@ -1684,7 +1684,7 @@ function wireSteps() {
       + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
       + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
       + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div>';
-    dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + board + '</button></div>';
+    dt.innerHTML = art + '<p class="addline">Add your docs and we\'ll auto-select the board size to fit</p><div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + board + '</button></div>';
     $('#optSheet .side-h').after(dt);
     const menu = document.createElement('div'); menu.id = 'addMenu'; menu.className = 'addmenu'; menu.hidden = true; menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', 'Add your documents');
     const sr2 = own.querySelector('.scanrow'), snapL = sr2.querySelector('label.upload'), upL = sr2.querySelector('label.scanup');
