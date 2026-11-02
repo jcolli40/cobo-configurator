@@ -717,10 +717,10 @@
   [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
   [data-v8] .doc8 .dname { font-size: 14px; }
   [data-v8] .doc8 .dacts { display: flex; justify-content: flex-end; gap: 8px; }   /* (the trash can sits at the bottom right) */
-  [data-v8] .doc8 .dori.seg { width: 68px; height: 36px; }   /* (the same segmented pair as in the Size panel's header) */
-  [data-v8] .doc8 .dori.seg button { flex: 1; min-width: 0; padding: 0; }
+  [data-v8] .doc8 .dori.seg { width: auto; height: 36px; }   /* (the same segmented pair as in the Size panel's header; each half is 36 x 36, like the trash can) */
+  [data-v8] .doc8 .dori.seg button { flex: none; width: 36px; min-width: 0; padding: 0; }
   [data-v8] .doc8 .thumb .tnum { position: absolute; top: 4px; left: 4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; line-height: 22px; text-align: center; }   /* (navy circle, white number) */
-  [data-v8] .doc8 .dacts .ib { width: 40px; height: 36px; padding: 0; justify-content: center; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
+  [data-v8] .doc8 .dacts .ib { width: 36px; height: 36px; padding: 0; justify-content: center; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); }
   [data-v8] .doc8 .dacts .ib .i { width: 16px; height: 16px; }
   [data-v8] .doc8 .dacts .ib.del { color: #b3261e; }
   [data-v8] .doc8 :is(.cust, .warn) { grid-column: 1 / -1; }
@@ -2061,6 +2061,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020828" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020832" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

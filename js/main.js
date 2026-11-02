@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020828';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020828';
-import { wallTexture, wallSwatch } from './env.js?v=202611020828';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020828';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020832';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020832';
+import { wallTexture, wallSwatch } from './env.js?v=202611020832';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020832';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -3187,9 +3187,9 @@ function paintDocs8(docs, miss, opts) {
       <input type="checkbox" class="okbox" data-ok aria-label="Add document ${i + 1} to the board"${d.ok ? ' checked' : ''}>
       <span class="dpic"><button type="button" class="thumb" data-act="zoom" title="See it large" aria-label="See document ${i + 1} large"><img alt=""><span class="tnum" aria-hidden="true">${i + 1}</span></button>
         <button type="button" class="retakebtn" data-act="retake" aria-label="Retake the photo of document ${i + 1}"><svg class="i"><use href="#i-camera"/></svg>Retake</button>
-        <span class="dori seg cols" role="group" aria-label="Document ${i + 1} way round"><button type="button" class="${docWide(d) ? '' : 'on'}" data-act="turn" data-o="tall" aria-pressed="${!docWide(d)}" title="Upright" aria-label="Document ${i + 1} upright"><svg class="i"><use href="#i-tall"/></svg></button><button type="button" class="${docWide(d) ? 'on' : ''}" data-act="turn" data-o="wide" aria-pressed="${docWide(d)}" title="Sideways" aria-label="Document ${i + 1} sideways"><svg class="i"><use href="#i-wide"/></svg></button></span></span>
+</span>
       <span class="dfields"><span class="dnum">Document ${i + 1}</span>${types ? `<select data-type aria-label="Which document">${types}</select><button type="button" class="typebtn" data-act="type" aria-haspopup="dialog" aria-label="Which document, document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>` : `<b class="dname">${escHtml(d.name || 'Document')}</b>`}<select data-size aria-label="Document size">${opts}</select><button type="button" class="typebtn sizebtn" data-act="size" aria-haspopup="dialog" aria-label="Size of document ${i + 1}"><span></span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
-        <span class="dacts"><button class="ib del" type="button" data-act="remove" title="Delete" aria-label="Delete document ${i + 1}"><svg class="i"><use href="#i-trash"/></svg></button></span></span>
+        <span class="dacts"><span class="dori seg cols" role="group" aria-label="Document ${i + 1} way round"><button type="button" class="${docWide(d) ? '' : 'on'}" data-act="turn" data-o="tall" aria-pressed="${!docWide(d)}" title="Upright" aria-label="Document ${i + 1} upright"><svg class="i"><use href="#i-tall"/></svg></button><button type="button" class="${docWide(d) ? 'on' : ''}" data-act="turn" data-o="wide" aria-pressed="${docWide(d)}" title="Sideways" aria-label="Document ${i + 1} sideways"><svg class="i"><use href="#i-wide"/></svg></button></span><button class="ib del" type="button" data-act="remove" title="Delete" aria-label="Delete document ${i + 1}"><svg class="i"><use href="#i-trash"/></svg></button></span></span>
       ${d.size === 'custom' ? `<span class="cust">W <input type="number" data-cw min="2" max="96" step="0.5" value="${d.cw}"> × H <input type="number" data-ch min="2" max="96" step="0.5" value="${d.ch}"> in</span>` : ''}
       ${miss.has(i) ? `<span class="warn">Doesn't fit on this board (${docLabel(d)}). Try the size suggested above.</span>` : ''}</li>`).join('');
   $('#docList').querySelectorAll('.doc').forEach((li, i) => {
