@@ -549,18 +549,18 @@
   [data-v8] .side .side-body .owndocs { background: none; padding: 0; }   /* (no blue card) */
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
-  [data-v8] .camart { display: grid; place-items: center; padding: 10px 0; border-radius: 16px; background: #f4f4f6; }
-  [data-v8] .camart svg { width: min(100%, 150px); height: auto; }
+  [data-v8] .camart { display: grid; place-items: center; padding: 8px 0; border-radius: 16px; background: #f4f4f6; }
+  [data-v8] .camart svg { width: min(100%, 75px); height: auto; }
   [data-v8] .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
   [data-v8] .camart .sh { fill: #cfe0f7; }
   [data-v8] .camart .cap { fill: #bdbdc2; }
   [data-v8] .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .side .snapbox .help { margin-top: -6px; }
-  [data-v8] .side .snapbox .upload { flex: 1 1 100%; justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
+  [data-v8] .side .snapbox .upload { flex: 1 1 calc(50% - 4px); justify-content: center; min-height: 50px; border-radius: 12px; background: var(--accent); border-color: var(--accent); color: #fff; font-size: 15px; font-weight: 650; }
   [data-v8] .side .snapbox .upload .i { width: 20px; height: 20px; }
   [data-v8] .side .owndocs label.upload:has(#certCam) { background: #fff; border-color: var(--line-2); color: var(--ink); }   /* (only Snap your wall is solid) */
   /* v8: Add your own = the Snap box (pale blue), the checklist, then one at a time */
-  [data-v8] .side .owndocs .snapbox .scanrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  [data-v8] .side .owndocs .snapbox .scanrow { display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch; }
   [data-v8] .side .owndocs .snapbox .scanrow > * { grid-column: auto; }
   [data-v8] .owndocs.dim > :not(.opt):not(.help) { opacity: .45; }
   [data-v8] .staterow { display: grid; gap: 6px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--tint-2); }
@@ -634,14 +634,15 @@
   dialog.lightbox .lb-x .i { width: 20px; height: 20px; }
   /* Your Documents: the best-fit line and the custom-board note, in a bar that stays under the header */
   .docbar { display: none; }
-  .docbar.on:has(> :not([hidden])) { display: grid; gap: 8px; padding: 10px 16px; background: var(--tint); border-bottom: 1px solid var(--tint-2); }
+  .docbar.on[data-for="size"]:has(> :not([hidden])), .docbar.on[data-for="certs"]:has(> .quotenote:not([hidden])) { display: grid; gap: 8px; padding: 10px 16px; background: var(--tint); border-bottom: 1px solid var(--tint-2); }
   .docbar .help { margin: 0 !important; font-size: 13.5px; color: var(--ink); }
   .docbar .help b { color: var(--accent); }
   .docbar .quotenote { margin: 0; }
+  .docbar[data-for="certs"] > #certAdvice { display: none; }
   /* Sample certificates, switched off: only the title and the switch */
   .certcount.off > :not(.labrow) { display: none !important; }
   /* "or choose from your photos": a button beside Snap your docs */
-  [data-v8] .side .snapbox label.scanup { flex: 1 1 100%; display: flex; align-items: center; justify-content: center; position: relative; gap: 7px; min-height: 44px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 400; text-decoration: none; cursor: pointer; }   /* (like Share and Save for later) */
+  [data-v8] .side .snapbox label.scanup { flex: 1 1 calc(50% - 4px); display: flex; align-items: center; justify-content: center; position: relative; gap: 7px; min-height: 44px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; color: var(--ink); font-size: 15px; font-weight: 400; text-decoration: none; cursor: pointer; }   /* (like Share and Save for later) */
   [data-v8] .side .snapbox label.scanup:hover { border-color: var(--accent); }
   [data-v8] .side .snapbox label.scanup .i { width: 18px; height: 18px; }
   [data-v8] .side .owndocs .row .upload { font-size: 14px; line-height: 1.2; text-align: center; }
@@ -1895,6 +1896,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012121" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012133" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

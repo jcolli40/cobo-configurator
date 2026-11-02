@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012121';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012121';
-import { wallTexture, wallSwatch } from './env.js?v=202611012121';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012121';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012133';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012133';
+import { wallTexture, wallSwatch } from './env.js?v=202611012133';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012133';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -996,7 +996,7 @@ function openOptSheet(sec) {
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
   placeOrient(V6 && sec.dataset.sec === 'size');
-  $('#docBar')?.classList.toggle('on', sec.dataset.sec === 'certs');   // (the best-fit bar belongs to Your Documents)
+  if ($('#docBar')) { $('#docBar').classList.toggle('on', ['certs', 'size'].includes(sec.dataset.sec)); $('#docBar').dataset.for = sec.dataset.sec; }   // (the best-fit line is on Size; Your Documents shows only the custom-board note)
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   $('#optSheet').classList.toggle('full', V8 && sec.dataset.sec === 'certs');   // (phones: Your Documents covers the whole screen)
   optOpen = { sec, body };
