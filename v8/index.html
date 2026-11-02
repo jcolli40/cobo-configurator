@@ -549,8 +549,12 @@
   [data-v8] .side .side-body .owndocs { background: none; padding: 0; }   /* (no blue card) */
   [data-v8] #ownDocs > .opt:first-of-type { display: none; }               /* ("Add Your Documents" is the tab already) */
   [data-v8] .side #ownDocs > .help { font-size: 15.5px; line-height: 1.45; margin-top: 0 !important; }
-  [data-v8] .camart { display: grid; place-items: center; padding: 8px 0; border-radius: 16px; background: #f4f4f6; }
-  [data-v8] .camart svg { width: min(100%, 75px); height: auto; }
+  [data-v8] .addhead { display: flex; align-items: center; gap: 12px; }
+  [data-v8] .addhead b { font-size: 18px; font-weight: 750; color: var(--accent); }
+  [data-v8] .camart { flex: none; display: block; padding: 6px 8px; border-radius: 12px; background: #f4f4f6; }
+  [data-v8] .camart svg { display: block; width: 46px; height: auto; }
+  [data-v8] .sampsw { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 8px 14px; border-radius: 14px; background: #f4f4f6; font-size: 15px; font-weight: 650; color: var(--ink); cursor: pointer; }
+  [data-v8] #docSamples > .sampsw { margin-bottom: 4px; }
   [data-v8] .camart .bd { fill: #fff; stroke: var(--line-2); stroke-width: 1; }
   [data-v8] .camart .sh { fill: #cfe0f7; }
   [data-v8] .camart .cap { fill: #bdbdc2; }
@@ -1896,6 +1900,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611012133" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611012142" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

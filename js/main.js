@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012133';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012133';
-import { wallTexture, wallSwatch } from './env.js?v=202611012133';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012133';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012142';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012142';
+import { wallTexture, wallSwatch } from './env.js?v=202611012142';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012142';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1660,20 +1660,18 @@ function wireSteps() {
   const bar = document.createElement('div'); bar.id = 'docBar'; bar.className = 'docbar';
   bar.append($('#certAdvice'), qn);
   $('#optSheet .side-h').after(bar);
-  if (V8) {                                                  // Your Documents: [+ Add Your Documents] [Use Samples (switch)]; the switch is the samples switch
-    const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
-    dt.innerHTML = '<button type="button" id="docTabOwn" aria-controls="ownDocs"><svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add Your Documents</button>'
-      + '<label class="docsw" id="docSwLbl"><span>Use Samples</span><input type="checkbox" class="switch" id="docSw" aria-controls="docSamples"></label>';
-    $('#optSheet .side-h').after(dt);
+  if (V8) {                                                  // Your Documents: a small camera-frame board beside "Add Your Documents", the buttons, then the Use Samples switch
     or.hidden = true; $('.certcount').id = 'docSamples';
-    $('#docTabOwn').addEventListener('click', () => { if (state.sheets) $('#sheets').click(); });          // (back to their own documents)
-    $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
-    // the illustration above the blurb: a camera frame around a wall of documents, drawn like the size cards
-    const art = document.createElement('div'); art.className = 'camart'; art.setAttribute('aria-hidden', 'true');
-    art.innerHTML = '<svg viewBox="56 0 128 130"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
+    const sw = (id) => '<label class="sampsw" data-sw><span>Use Samples</span><input type="checkbox" class="switch" id="' + id + '" aria-controls="docSamples"></label>';
+    own.querySelector('.scanrow').insertAdjacentHTML('afterend', sw('docSw'));                    // (under Snap your docs and Upload Files)
+    $('#docSamples').insertAdjacentHTML('afterbegin', sw('docSw2'));                              // (the same switch at the top of the samples screen, to go back)
+    for (const id of ['#docSw', '#docSw2']) $(id).addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); });
+    // the picture: a board with a camera frame around it, drawn like the size cards
+    const art = document.createElement('div'); art.className = 'addhead';
+    art.innerHTML = '<span class="camart" aria-hidden="true"><svg viewBox="56 0 128 130"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
       + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
       + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg>';
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></span><b>Add Your Documents</b>';
     own.querySelector('.opt + .help').before(art);
   }
   // Style: Solid Colors (palette) and Textures & Patterns
@@ -3125,7 +3123,7 @@ function openLightbox(d, i) {
 function paintDocTabs() {
   const s = !!state.sheets;
   $('#ownDocs').hidden = s; $('#docSamples').hidden = !s;
-  $('#docTabOwn').setAttribute('aria-pressed', !s); $('#docSw').checked = s; $('#docSwLbl').classList.toggle('on', s);
+  $('#docSw').checked = s; $('#docSw2').checked = s;
 }
 function paintExtras() {
   paintDocs();
