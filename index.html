@@ -594,7 +594,22 @@
   [data-v8] .doc8 .retakebtn .i { width: 14px; height: 14px; }
   [data-v8] .doc8 .retakebtn:hover { background: var(--tint); }
   [data-v8] .doc8 :is(.thumb, .retakebtn):focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
-  [data-v8] .doc8 .okbox { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
+  /* the tick box: green slides in from the left, the box pops, then the check wipes in */
+  [data-v8] .doc8 .okbox { -webkit-appearance: none; appearance: none; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; margin: 0; border: 1.5px solid #a3a6af; border-radius: 8px; cursor: pointer;
+    background: #fff linear-gradient(#2e7d4f, #2e7d4f) no-repeat left center / 0% 100%; transition: border-color .2s, background-size .25s ease; }
+  [data-v8] .doc8 .okbox::after { content: ""; position: absolute; left: 7.5px; top: 2px; width: 6px; height: 12px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); clip-path: inset(0 100% 0 0); }
+  [data-v8] .doc8 .okbox:checked { border-color: #2e7d4f; background-size: 100% 100%; }
+  [data-v8] .doc8 .okbox:checked::after { clip-path: inset(0 0 0 0); }
+  [data-v8] .doc8 .okbox:focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-v8] .doc8 .okbox.pop:checked { animation: okPop .38s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--d, 0s); }
+    [data-v8] .doc8 .okbox.pop:checked::after { animation: okWipe .28s ease-out both; animation-delay: calc(var(--d, 0s) + .14s); }
+    [data-v8] .doc8 { transition: background-color .4s ease, border-color .4s ease; }
+    [data-v8] #scanText .chk { animation: chkIn .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+  }
+  @keyframes okPop { from { transform: scale(.82); background-size: 0% 100%; } 55% { transform: scale(1.16); } to { transform: scale(1); background-size: 100% 100%; } }
+  @keyframes okWipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes chkIn { from { opacity: 0; transform: translateX(-14px) scale(.5); } }
   [data-v8] .doc8.ok { border-color: #b9dcc5; background: #f4fbf6; }
   [data-v8] .doc8 .dfields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }   /* (long names stay inside the card) */
   [data-v8] .doc8 .dfields > * { min-width: 0; max-width: 100%; }
@@ -1925,6 +1940,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012256" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012300" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
