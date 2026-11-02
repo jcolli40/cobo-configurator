@@ -591,7 +591,8 @@
   [data-v8] .addmenu .menusnap .snapex { display: block; width: auto; max-width: 100%; height: auto; max-height: min(258px, calc(100dvh - 700px)); min-height: 80px; margin: 0 auto; border-radius: 10px; }
   [data-v8] .addmenu .sampsw { margin: 0; }
   [data-v8] .side .addmenu .ftypes { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: .02em; white-space: nowrap; }
-  [data-v8] .side .addmenu .testrow { border: 1.5px dashed var(--line-2); background: none; font: inherit; font-size: 15px; text-align: left; }
+  [data-v8] .side .addmenu .testrow { border: 1.5px dashed var(--line-2); background: none; font: inherit; font-size: 15px; text-align: left; color: #9a9aa0; }   /* (soft grey, like Use samples) */
+  [data-v8] .side .addmenu .testrow > .i { color: #b4b7bf; }
   [data-v8] .side .addmenu .testrow > span { flex: 1; }
   [data-v8] .side .addmenu .testrow small { color: var(--muted); font-size: 12px; font-weight: 500; }
   /* the Add menu pops open like the tick boxes: springs out from the button, the rows bounce in one after another, their icons pop last */
@@ -2055,6 +2056,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020809" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020810" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
