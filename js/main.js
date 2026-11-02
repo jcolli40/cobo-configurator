@@ -1618,7 +1618,7 @@ function wireSteps() {
     sr.querySelector('.upload').lastChild.textContent = 'Snap your docs';
     // (two buttons both called "Take a photo" sent a whole-wall photo into "Add your own" as one document)
     $('#certCam').closest('.row').remove();                            // (Snap your docs and Upload Files do it all, one at a time or the whole wall)
-    $('#scanFile').closest('label').lastChild.textContent = 'Upload Files';
+    $('#scanFile').closest('label').lastChild.textContent = 'Upload';
     $('#scanFile').accept = 'image/*,application/pdf,.pdf'; $('#scanFile').multiple = true;          // (no camera forced: phones offer Photo Library, Take Photo and Files)
     $('#scanFile').closest('label').insertAdjacentHTML('afterbegin', '<svg class="i" aria-hidden="true"><use href="#i-share"/></svg>');   // (the same upload arrow as Share)
     $('#scanFile').closest('label').classList.remove('link');            // (a button, like Snap your docs)
