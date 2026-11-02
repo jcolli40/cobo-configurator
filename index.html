@@ -592,7 +592,7 @@
   [data-v8] #scanText .sc-left { margin-top: 4px; color: var(--muted); }
   [data-v8] .sc-fold { display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: var(--tint); color: var(--accent); cursor: pointer; }
   [data-v8] .sc-fold .i { width: 20px; height: 20px; stroke-width: 2; transition: transform .25s ease; }
-  [data-v8] #scanResult.folded .sc-fold .i { transform: rotate(180deg); }
+  [data-v8] #scanResult:not(.folded) .sc-fold .i { transform: rotate(180deg); }   /* (open: arrow up = fold it; folded: arrow down = open it) */
   [data-v8] #scanResult.folded :is(.sc-thumbs, #scanText, #stateRow) { display: none; }   /* (folded: just "Found N") */
   [data-v8] .camico .bd { fill: #fff; stroke: #b4b7bf; stroke-width: 3; }
   [data-v8] .camico .sh { fill: #cfe0f7; stroke: none; }
@@ -1997,6 +1997,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020026" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020032" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
