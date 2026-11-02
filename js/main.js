@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020739';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020739';
-import { wallTexture, wallSwatch } from './env.js?v=202611020739';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020739';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020741';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020741';
+import { wallTexture, wallSwatch } from './env.js?v=202611020741';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020741';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2516,6 +2516,7 @@ function swayFrame() {
 }
 // the camera for a sway framing: a little to the side, at the same slight downward look as the options view
 function swayPose(f) {
+  if (V8 && !EMBED && step() === 'intro') return { tgt: f.tgt.clone(), pos: new THREE.Vector3(f.tgt.x, f.tgt.y, f.tgt.z + f.d) };   // v8 welcome: the board straight on, not angled
   const a = 0.2, c = Math.cos(PITCH);
   return { tgt: f.tgt.clone(), pos: new THREE.Vector3(f.tgt.x + f.d * Math.sin(a) * c, f.tgt.y + f.d * Math.sin(PITCH), f.tgt.z + f.d * Math.cos(a) * c) };
 }
