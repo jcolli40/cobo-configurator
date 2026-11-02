@@ -40,7 +40,7 @@ export const COLORS = [
   { name: 'Magenta',            hex: '#d1008f' },
   { name: 'Hot Pink',           hex: '#ff2e93' },
   { name: 'Light Pink',         hex: '#f4c2cf' },
-  { name: 'Dark Brown (Chocolate)', hex: '#4a2c1a' },
+  { name: 'Dark Brown',            hex: '#4a2c1a' },
   { name: 'Raw (unfinished)',   hex: '#b8956a' },
 ];
 
