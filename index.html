@@ -1113,6 +1113,10 @@
   .stephint, .autonote { display: none; }
   [data-v6] .stephint:not([hidden]) { order: -1; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: -3px 0 7px; padding: 8px 12px; border-radius: 10px; background: var(--tint); color: var(--accent); font-size: 13px; font-weight: 600; line-height: 1.3; }
   [data-v6] .stephint .i { flex: none; width: 16px; height: 16px; }
+  /* v8: one line, on a light green bubble */
+  [data-v8] .stephint:not([hidden]) { background: #e3f3e8; font-size: min(13px, 3.2vw); white-space: nowrap; gap: 8px; }
+  [data-v8] .stephint .i { color: #2e7d4f; }
+  [data-v8] .stephint span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   [data-v6].dmini .stephint { display: none !important; }
   [data-v6] .autotag { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 650; letter-spacing: .02em; color: var(--muted); }
   [data-v6] .autotag.auto { color: #2e7d4f; }
@@ -2059,6 +2063,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611020815" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611020818" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
