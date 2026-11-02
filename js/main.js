@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020847';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020847';
-import { wallTexture, wallSwatch } from './env.js?v=202611020847';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020847';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020922';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020922';
+import { wallTexture, wallSwatch } from './env.js?v=202611020922';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020922';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1466,10 +1466,11 @@ function paintSummary(sp) {
   const { w, h } = dims(), L = state.lamSel;
   const own = shownOwn().length, mix = !own && !showOwn() && curDocs().length;
   const samples = !state.sheets ? 0 : mix ? lastDocs?.places.length || 0 : lastSheets?.primary ? lastSheets.n : 0;
+  const surface = L ? `Wilsonart ${L.n}${L.name ? ` ${L.name}` : ''}` : sp.boardColor;
   const rows = [
     ['Size', `${fmt(w)}" × ${fmt(h)}" ${state.orient}`],
-    ['Surface', L ? `Wilsonart ${L.n}${L.name ? ` ${L.name}` : ''}` : sp.boardColor],
-    ['Edge banding', state.edge === 'match' ? 'Matches the board' : sp.edgeBanding],
+    ['Surface', surface],
+    [V8 ? 'Edge' : 'Edge banding', state.edge === 'match' ? (V8 ? surface : 'Matches the board') : sp.edgeBanding],   // (v8: the edge is named by its color, and is just called Edge)
     ['Caps & studs', sp.fastenerFinish],
     ['Documents', own ? `${own} of your own` : mix && samples
       ? `Samples: ${[['Letter', state.certNeed], ...MIX_SIZES.map(id => [DOC_SIZES.find(x => x.id === id).name, state.sampleMix[id] || 0])].filter(([, n]) => n).map(([nm, n]) => `${n} ${nm}`).join(', ')} (preview only)`
@@ -1477,6 +1478,7 @@ function paintSummary(sp) {
     ['Price', sp.price ? `$${(sp.price * sp.quantity).toFixed(2)}` : 'Custom quote'],
   ];
   const ul = $('#sumList');
+  if (V8) { const i = rows.findIndex(r => r[0] === 'Documents'); if (i >= 0) rows.splice(i, 1); }   // (v8: no Documents line in the summary)
   ul.replaceChildren(...rows.map(([k, v], n) => {
     const li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('b');
     a.textContent = k; b.textContent = v;
@@ -1778,7 +1780,8 @@ function wireSteps() {
   $('#roomPrev').addEventListener('click', () => stepRoom(-1));
   $('#roomNext').addEventListener('click', () => stepRoom(1));
   // Preview: view on your wall, share (email, Facebook, Instagram, TikTok, link), save for later
-  $('#sumAR').addEventListener('click', openAR);
+  $('#sumAR').addEventListener('click', () => { if (V8) closeOptSheet(); openAR(); });   // (v8: the Summary sheet closes so the wall view isn't covered)
+  if (V8) { const hp = [...document.querySelectorAll('p.help')].find(p => /come back and change/.test(p.textContent)); if (hp) hp.textContent = 'You can always edit later inside the cart'; }
   $('#sumSave').addEventListener('click', saveForLater);
   $('#sumShare').addEventListener('click', () => openOptSheet($('.sec[data-sec="sharelink"]')));
   $('.sharegrid').addEventListener('click', (e) => { const b = e.target.closest('[data-share]'); if (b) shareTo(b.dataset.share); });
