@@ -1846,7 +1846,7 @@ function wireSteps() {
   logo.className = 't-logo'; img.src = new URL('../img/cobo-icon.svg', import.meta.url).href; img.alt = 'COBO';
   logo.append(img); $('.t-intro .t-card').prepend(logo);
   $('.t-intro h1').textContent = 'Compliance Board Designer';
-  $('.t-intro .t-sub').textContent = 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
+  $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling, then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
   $('#tourStart').innerHTML = '<span>Start</span><svg class="i"><use href="#i-right"/></svg>';   // one way in: Build
   $('#tourSkipCard').hidden = true;
   // top of Style: v6 offers the popular designs as a starting point (v7 has none)
