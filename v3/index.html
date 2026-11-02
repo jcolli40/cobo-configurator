@@ -570,7 +570,7 @@
   [data-v8] .docstabs .camart .vf { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   [data-v8] .docstabs .addwrap { position: relative; display: flex; justify-content: center; width: 100%; }
   /* the same grey card as the panel buttons (Documents, Size, Board...): grey fill, 12px corners, dark label, navy icon on the right */
-  [data-v8] .addwrap > #docTabOwn { flex: 0 0 auto; padding: 14px 20px; border: 0; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
+  [data-v8] .addwrap > #docTabOwn { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; padding: 14px 20px; border: 0; border-radius: 12px; background: var(--card-2, #f4f4f6); color: var(--ink); font-size: 16px; font-weight: 650; }
   [data-v8] .addwrap > #docTabOwn:hover { background: #ececf0; }
   [data-v8] .addwrap > #docTabOwn .plusico { margin: 0 0 0 10px; width: 24px; height: 24px; flex: none; color: var(--accent); }
   [data-v8] .addwrap > #docTabOwn .chev { width: 16px; height: 16px; margin: 0 0 0 8px; transition: transform .2s; }
@@ -623,7 +623,7 @@
   /* the found details (Found N, photos, sizes, list) on a white card; the button and "Your business is in" stay on the blue */
   [data-v8] .scanres .scdetails { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: #fff; }
   [data-v8] .scanres .scdetails:not(:has(> :not([hidden]))) { display: none; }
-  [data-v8] .scanres .staterow { border-top: 0; margin-top: 0; padding-top: 4px; }
+  [data-v8] .scanres .staterow { border-top: 0; margin-top: 0; padding-top: 4px; justify-content: center; }   /* (centered at the bottom of the blue box) */
   [data-v8] .scanres .addmenu { bottom: auto; top: calc(100% + 6px); }   /* (up in the panel: the menu opens downward) */
   @keyframes menuPopDown { 0% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(.82); } 55% { opacity: 1; transform: translateX(-50%) translateY(1.4px) scale(1.028); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
   @media (prefers-reduced-motion: no-preference) { [data-v8] .scanres .addmenu:not([hidden]) { transform-origin: 50% 0; animation-name: menuPopDown; } }
@@ -2051,6 +2051,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611020731" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611020734" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
