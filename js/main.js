@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021241';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021241';
-import { wallTexture, wallSwatch } from './env.js?v=202611021241';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021241';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021246';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021246';
+import { wallTexture, wallSwatch } from './env.js?v=202611021246';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021246';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1823,7 +1823,6 @@ function wireSteps() {
     document.documentElement.classList.toggle('dmini', on);
     $('#dockMini').setAttribute('aria-pressed', on);
     $('#dockMini').setAttribute('aria-label', on ? 'Show the option names' : 'Collapse the options to icons');
-    if (V8) refresh();                                             // (the icons regroup under the step numbers)
     setTimeout(() => setInset(inset.target), 220);                 // re-frame the board once the column has its new width
   };
   try { if (localStorage.getItem('cobo.mini') === '1') mini(true); } catch { /* storage blocked */ }
@@ -1870,8 +1869,7 @@ function paintLayout(sp) {
   if (LAYOUT === 'v1') return;
   if (V6) paintSteps();
   const main = V6 ? STEPS6[step6] : LAYOUT === 'v2' ? MAIN.v2[state.path || 'none'] : MAIN[LAYOUT] || MAIN.v3;
-  const allSteps = V8 && !phone.matches && document.documentElement.classList.contains('dmini');   // (v8, computers, column folded to icons: every step's icons show, each under its step number)
-  document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !(allSteps ? STEP_ORDER.some(k => STEPS6[k].includes(s.dataset.sec)) : main.includes(s.dataset.sec)); });
+  document.querySelectorAll('.p-body .sec').forEach(s => { s.hidden = !main.includes(s.dataset.sec); });
   if (LAYOUT === 'v2') {
     document.querySelectorAll('#fork .forkc').forEach(b => b.classList.toggle('on', b.dataset.path === state.path));
     $('#forkStd').textContent = `$${(SIZES.find(s => s.id === state.sizeId)?.price ?? SIZES[0].price).toFixed(2)}`;
@@ -2554,7 +2552,7 @@ function swayFrame() {
   }
   const room = 0.62;                                         // right 62% of the screen is free
   const d = Math.max(h / 2, w / 2 / (aspect * room)) / Math.tan(fov) * 1.3 * k + 2;
-  return { tgt: new THREE.Vector3(-d * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };
+  return { tgt: new THREE.Vector3((V8 ? d : -d) * Math.tan(fov) * aspect * (1 - room), 0, 0.5), d };   // (v8: the welcome card is on the right, so the board sits on the left)
 }
 // the camera for a sway framing: a little to the side, at the same slight downward look as the options view
 function swayPose(f) {

@@ -1516,6 +1516,11 @@
     [data-v8] .stephint:not([hidden]) { white-space: normal; align-items: flex-start; font-size: 13px; }
     [data-v8] .stephint span { overflow: visible; text-overflow: clip; }
     [data-v8] .stephint .i { margin-top: 1px; }
+    /* the welcome card: on the right, everything centered */
+    [data-v8] .t-intro .t-card { left: auto; right: clamp(16px, 5vw, 64px); justify-items: center; text-align: center; }
+    [data-v8] .t-intro .t-card :is(h1, .t-sub) { text-align: center; }
+    [data-v8] .t-intro .t-logo { justify-self: center; }
+    [data-v8] .t-intro .t-cont { left: 0; right: 0; margin-inline: auto; width: max-content; }
     /* Collapse: just above the column, a see-through white bubble, no outline */
     [data-v8] #dockMini { position: fixed; z-index: 17; right: 16px; top: 20px; order: 0; align-self: auto; margin: 0; height: 30px; padding: 0 8px 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .7); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--muted); pointer-events: auto; }
     [data-v8].dmini #dockMini { padding: 0 8px; }
@@ -1533,12 +1538,12 @@
     [data-v8].dmini .p-body .sec[data-sec="sharelink"] { order: 32; }
     [data-v8].dmini .p-body .sec[data-sec="saveit"] { order: 33; }
     [data-v8].dmini .p-body .sec[data-sec="summary"] { order: 34; }
-    [data-v8].dmini .stepbar button[data-st="style"], [data-v8].dmini .stepbar button[data-st="preview"] { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); border-radius: 0; }
+    /* only the current step's icons show, right under its number, with a line above and below them */
     [data-v8].dmini .p-body .sec:is([data-sec="certs"], [data-sec="boardgrp"], [data-sec="arview"]) { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); border-radius: 0; }
+    [data-v8].dmini .p-body .sec:is([data-sec="size"], [data-sec="caps"], [data-sec="summary"]) { margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); border-radius: 0; }
     [data-v8].dmini .stepbar button { font-size: 0; }
     [data-v8].dmini .p-body .sec-h { padding: 6px 0; }
     [data-v8].dmini .stepbar button { padding-top: 6px; padding-bottom: 6px; }
-    [data-v8].dmini .stepbar button:is([data-st="style"], [data-st="preview"]) { padding-top: 10px; }
     /* the cart button keeps a small "Add" under its icon */
     [data-v8].dmini #colCta { flex-direction: column; gap: 3px; height: auto; padding: 9px 0 8px; }
     [data-v8].dmini .p-body #colCtaLbl { display: block !important; font-size: 0; }
@@ -2148,6 +2153,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021241" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021246" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
