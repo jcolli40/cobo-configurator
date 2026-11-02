@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020615';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020615';
-import { wallTexture, wallSwatch } from './env.js?v=202611020615';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020615';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020618';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020618';
+import { wallTexture, wallSwatch } from './env.js?v=202611020618';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020618';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1680,11 +1680,12 @@ function wireSteps() {
     const dt = document.createElement('div'); dt.id = 'docTabs'; dt.className = 'styletabs docstabs'; dt.hidden = true; dt.setAttribute('role', 'group'); dt.setAttribute('aria-label', 'Your documents or samples');
     // one centered button; it opens a small menu: Snap your docs, Upload Files, Use samples for now (a switch)
     // on the white panel: the board-and-camera illustration (large) with the button under it; the details are in the menu. Once documents are found the illustration folds away
-    const art = '<div class="camart"><svg viewBox="56 0 128 130" aria-hidden="true"><rect class="bd" x="84" y="12" width="72" height="106" rx="3"/>'
-      + [[95, 19], [123, 19], [95, 51], [123, 51], [109, 83]].map(([x, y]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="22" height="28" rx="1"/>').join('')
-      + [[89, 17], [151, 17], [89, 113], [151, 113]].map(([x, y]) => '<circle class="cap" cx="' + x + '" cy="' + y + '" r="2"/>').join('')
-      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg><p class="addline">Add your docs and we\'ll auto-select the board size to fit</p></div>';
-    dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + board + '</button></div>';
+    const art = '<div class="camart"><svg viewBox="56 0 128 130" aria-hidden="true">'   // just documents on a wall, slightly tilted like the photo of detected documents, inside the camera corners
+      + [[92, 16, 20, 40, -1.5], [118, 22, 32, 26, 2.5], [88, 64, 30, 24, -2], [122, 60, 30, 26, 1.5], [103, 92, 32, 24, -1]]
+        .map(([x, y, w, h, r]) => '<rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1" transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"/>').join('')
+      + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Add your docs and we\'ll auto-select the board size to fit</p>';
+    const plus = '<svg class="i plusico" aria-hidden="true"><use href="#i-plus-circle"/></svg>';
+    dt.innerHTML = art + '<div class="addwrap"><button type="button" id="docTabOwn" aria-haspopup="true" aria-expanded="false" aria-controls="addMenu">Add Your Documents' + plus + '</button></div>';
     $('#optSheet .side-h').after(dt);
     const menu = document.createElement('div'); menu.id = 'addMenu'; menu.className = 'addmenu'; menu.hidden = true; menu.setAttribute('role', 'group'); menu.setAttribute('aria-label', 'Add your documents');
     const sr2 = own.querySelector('.scanrow'), snapL = sr2.querySelector('label.upload'), upL = sr2.querySelector('label.scanup');
