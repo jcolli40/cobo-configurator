@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611011954';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611011954';
-import { wallTexture, wallSwatch } from './env.js?v=202611011954';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611011954';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611012020';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611012020';
+import { wallTexture, wallSwatch } from './env.js?v=202611012020';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611012020';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -898,7 +898,7 @@ function paintActive() {
   $('#wallColorWrap').hidden = envNow().wall !== 'color' || !!state.wallPhoto.img;
   renderSizes();
   document.querySelectorAll('#sizes .tile').forEach(b => b.classList.toggle('on', b.dataset.k === state.sizeId));
-  document.querySelectorAll('[data-orient]').forEach(b => b.classList.toggle('on', b.dataset.orient === state.orient));
+  document.querySelectorAll('[data-orient]').forEach(b => { b.classList.toggle('on', b.dataset.orient === state.orient); b.setAttribute('aria-pressed', b.dataset.orient === state.orient); });
   $('#customBox').hidden = state.sizeId !== 'custom';
   document.querySelectorAll('#lamGrid .card').forEach(c => c.classList.toggle('on', c.dataset.n === L?.n));
 }
@@ -995,6 +995,7 @@ function openOptSheet(sec) {
   $('#optIcon').innerHTML = sec.querySelector('.sec-h .i').outerHTML;
   $('#optSheet').hidden = false;
   $('#optBody').scrollTop = 0;
+  placeOrient(V6 && sec.dataset.sec === 'size');
   $('#docBar')?.classList.toggle('on', sec.dataset.sec === 'certs');   // (the best-fit bar belongs to Your Documents)
   if ($('#docTabs')) $('#docTabs').hidden = sec.dataset.sec !== 'certs';
   optOpen = { sec, body };
@@ -1009,6 +1010,7 @@ function closeOptSheet(switching) {
   setSec(optOpen.sec, false);
   $('#optSheet').hidden = true;
   $('#docBar')?.classList.remove('on');
+  placeOrient(false);
   if ($('#docTabs')) $('#docTabs').hidden = true;
   optOpen = null;
   if (!switching) { markActive(null); updateStage(true); unfocus(); if (!phone.matches && inset.target) setInset(0); }
@@ -1554,6 +1556,7 @@ function blankBoard() {
 function wireSteps() {
   $('#stepBar').hidden = false;
   wireStyle();
+  wireOrient();
   // the size is worked out from the documents: a one-line hint under the steps (Build, before any documents), a note at the
   // top of the Size pop-up, and a small tag on the Size button (Auto-fit / Your pick); see paintSizeAuto
   const hint = document.createElement('p'); hint.id = 'stepHint'; hint.className = 'stephint'; hint.hidden = true;
@@ -3318,6 +3321,24 @@ function setStyleTab(t) {
   $('#tabColors').hidden = tex; $('#tabTex').hidden = !tex;
   for (const b of document.querySelectorAll('.styletabs [data-tab]')) { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
   if (!$('#lamPanel').hidden) { if (tex && !phone.matches) $('#lamSearch').focus(); updateStage(false); }
+}
+// v6: the Size pop-up's Portrait | Landscape choice lives in its header, as two line icons like the swatches-per-row buttons
+function wireOrient() {
+  const seg = $('[data-orient]').closest('.seg'), row = seg.closest('.opt');
+  seg.id = 'orientSeg'; seg.classList.add('cols'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Board orientation');
+  seg.dataset.home = '1'; row.id = 'orientRow';
+  for (const b of seg.querySelectorAll('[data-orient]')) {
+    const tall = b.dataset.orient === 'portrait';
+    b.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-' + (tall ? 'tall' : 'wide') + '"/></svg>';
+    b.setAttribute('aria-label', tall ? 'Portrait' : 'Landscape'); b.title = tall ? 'Portrait' : 'Landscape';
+  }
+  row.hidden = true;                                                   // (just the icon and the word are left in it)
+}
+// the orientation icons ride in the Size pop-up's header while it's open, and go back to their row afterwards
+function placeOrient(inSize) {
+  const seg = $('#orientSeg'); if (!seg) return;
+  if (inSize) $('#optSheet .side-h').insertBefore(seg, $('#optSheet .side-h .x'));
+  else if (seg.parentElement.classList.contains('side-h')) $('#orientRow').append(seg);
 }
 function wireStyle() {
   const pnl = $('#lamPanel'), head = pnl.querySelector('.side-h'), colorsBody = $('.sec[data-sec="color"] .sec-b');
