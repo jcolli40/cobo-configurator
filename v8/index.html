@@ -1576,11 +1576,22 @@
     [data-v8] .buysheet.open .grab .gclose { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 12px; font-weight: 450; }
     [data-v8] .buysheet.open .grab .gclose .i { width: 18px; height: 18px; }
     [data-v8] .cart-h { display: flex; align-items: center; justify-content: space-between; color: var(--accent); font-size: 16px; }
-    [data-v8] .cart-h { padding: 10px 0; border-bottom: 1px solid var(--line-2); }
-    [data-v8] .cart-h > b:first-child { display: flex; align-items: center; gap: 11px; }
-    [data-v8] .cart-h .i { width: 24px; height: 24px; color: var(--accent); }
     [data-v8] #cartEmpty:not([hidden]) { padding: 30px 0; }   /* (60px taller, so the empty cart stands out) */
   }
+
+  /* ===== v8: ONE style for every panel header (Your Cart, Your Documents, Size, Board Style, Edge Banding, Caps & Studs, See it on your wall, Share, Summary) =====
+     Change a number here and every header follows. */
+  [data-v8] { --ph-pad: 18px 16px 10px 18px; --ph-gap: 12px; --ph-size: 19px; --ph-weight: 750; --ph-color: var(--accent); --ph-track: -.01em; --ph-icon: 28px; --ph-stroke: 1.2; }
+  [data-v8] :is(.side-h, .mhead, .cart-h) { align-items: center; justify-content: flex-start; gap: var(--ph-gap); padding: var(--ph-pad); margin: 0; border: 0; border-bottom: 0; background: none; }
+  [data-v8] :is(.side-h, .mhead) { display: flex; }
+  [data-v8] :is(.side-h h2, .mhead h2, .cart-h b) { margin: 0; font-family: inherit; font-size: var(--ph-size); font-weight: var(--ph-weight); font-style: normal; line-height: 1.2; letter-spacing: var(--ph-track); color: var(--ph-color); }
+  [data-v8] :is(.side-h h2, .mhead h2) { flex: 1; }
+  [data-v8] .cart-h { justify-content: space-between; margin: 0 -14px; }   /* (the cart body already pads 14px, so the header reaches the card edge and gets the same 18px as the other panels) */
+  [data-v8] .cart-h > b:first-child { display: flex; align-items: center; gap: var(--ph-gap); }
+  [data-v8] :is(#optIcon, #styleIcon, .mhead, .cart-h) > .i, [data-v8] .cart-h b > .i { display: block; flex: none; width: var(--ph-icon); height: var(--ph-icon); margin: 0 1px; color: var(--ph-color); stroke-width: var(--ph-stroke); }
+  [data-v8] .mhead .x .i { margin: 0; width: 20px; height: 20px; }
+  .mh-ic { display: none; }
+  [data-v8] .mh-ic { display: block; }
 </style>
 </head>
 <body>
@@ -2111,7 +2122,7 @@
      iPhone/iPad and WebXR in Chrome on Android, with the board placed on a wall at real size. -->
 <div id="arModal" class="modal" hidden>
   <div class="mpanel" role="dialog" aria-modal="true" aria-labelledby="arTitle">
-    <header class="mhead"><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
+    <header class="mhead"><svg class="i mh-ic" aria-hidden="true"><use href="#i-ar"/></svg><h2 id="arTitle">See it on your wall</h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
     <div class="ar-body">
       <!-- ar-scale="auto": starts at real size, pinch to resize while in AR -->
       <model-viewer id="arViewer" ar ar-modes="webxr quick-look" ar-placement="wall" ar-scale="auto" camera-controls
@@ -2174,6 +2185,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021752" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021757" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
