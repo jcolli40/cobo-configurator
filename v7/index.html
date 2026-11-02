@@ -1598,6 +1598,8 @@
   @media (max-width: 860px) {
     [data-v8] .p-body .sec:is([data-sec="certs"], [data-sec="size"]) .sec-h { min-height: 91px; }
   }
+  /* the +$ bubble on the tabs: same text size as the tab name beside it, one weight step thinner (800 to 700), padding 10% larger */
+  [data-v8] .styletabs .tabup { font-size: var(--sh-size); font-weight: 700; padding: 1.1px 7.7px 3.3px; }
   /* ===== v8: ONE style for the sub-headers (the tab strips under a panel header: Board Style, Edge Banding) =====
      Standard = Board Style's Solid Colors | Textures & Patterns tabs; the tab that is not selected is two weight steps lighter */
   [data-v8] { --sh-size: 15px; --sh-weight: 550; --sh-weight-off: 350; --sh-pad: 10px 10px; --sh-radius: 12px; }
@@ -2212,6 +2214,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021838" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021840" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
