@@ -1586,17 +1586,18 @@
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
-    [data-v8] .p-body .sec-t { font-weight: 500; }
+    [data-v8] .p-body .sec-t { font-weight: 400; font-size: 14.5px; }
     [data-v8] .stepbar button.on { font-weight: 600; }
     [data-v8] .stepbar button:not(.on) { font-weight: 450; }
   }
+  @media (max-width: 860px) { [data-v8] .p-body .sec-t { font-weight: 500; font-size: 12.5px; } }   /* (phones: option titles one step lighter, 1px bigger) */
   /* phones: the Documents and Size buttons are 15px taller (76 to 91px); the options area grows to fit, so the board gives up that room */
   @media (max-width: 860px) {
     [data-v8] .p-body .sec:is([data-sec="certs"], [data-sec="size"]) .sec-h { min-height: 91px; }
   }
   /* ===== v8: ONE style for the sub-headers (the tab strips under a panel header: Board Style, Edge Banding) =====
      Standard = Board Style's Solid Colors | Textures & Patterns tabs; the tab that is not selected is two weight steps lighter */
-  [data-v8] { --sh-size: 14px; --sh-weight: 650; --sh-weight-off: 450; --sh-pad: 10px 10px; --sh-radius: 12px; }
+  [data-v8] { --sh-size: 15px; --sh-weight: 550; --sh-weight-off: 350; --sh-pad: 10px 10px; --sh-radius: 12px; }
   [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) { gap: 8px; padding-top: 6px; padding-bottom: 10px; }
   [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) button { flex: 1 1 auto; white-space: nowrap; padding: var(--sh-pad); border: 0; border-radius: var(--sh-radius); font-size: var(--sh-size); font-weight: var(--sh-weight-off); }
   [data-v8] :is(#lamPanel > .styletabs, #edgeTabs) button:is([aria-selected="true"], [aria-pressed="true"]) { font-weight: var(--sh-weight); }
@@ -1604,7 +1605,7 @@
 
   /* ===== v8: ONE style for every panel header (Your Cart, Your Documents, Size, Board Style, Edge Banding, Caps & Studs, See it on your wall, Share, Summary) =====
      Change a number here and every header follows. */
-  [data-v8] { --ph-pad: 18px 16px 10px 18px; --ph-gap: 12px; --ph-size: 19px; --ph-weight: 750; --ph-color: var(--accent); --ph-track: -.01em; --ph-icon: 28px; --ph-stroke: 1.2; }
+  [data-v8] { --ph-pad: 18px 16px 10px 18px; --ph-gap: 12px; --ph-size: 20px; --ph-weight: 650; --ph-color: var(--accent); --ph-track: -.01em; --ph-icon: 28px; --ph-stroke: 1.2; }
   [data-v8] :is(.side-h, .mhead, .cart-h) { align-items: center; justify-content: flex-start; gap: var(--ph-gap); padding: var(--ph-pad); margin: 0; border: 0; border-bottom: 0; background: none; }
   [data-v8] :is(.side-h, .mhead) { display: flex; }
   [data-v8] :is(.side-h h2, .mhead h2, .cart-h b) { margin: 0; font-family: inherit; font-size: var(--ph-size); font-weight: var(--ph-weight); font-style: normal; line-height: 1.2; letter-spacing: var(--ph-track); color: var(--ph-color); }
@@ -2208,6 +2209,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021826" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021832" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
