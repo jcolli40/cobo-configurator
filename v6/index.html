@@ -1519,6 +1519,8 @@
   [data-v8] #scanResult.folded .scdetails { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; border-bottom-color: transparent; opacity: 0; visibility: hidden; transition: max-height .32s ease, padding .32s ease, opacity .2s ease, visibility 0s .32s; }
   [data-v8] #scanResult .addmenu { top: auto; bottom: calc(100% + 6px); }
   @media (prefers-reduced-motion: no-preference) { [data-v8] #scanResult .addmenu:not([hidden]) { transform-origin: 50% 100%; animation-name: menuPop; } }
+  [data-v8] .t-intro .t-m { display: none; }
+  @media (max-width: 860px) { [data-v8] .t-intro .t-m { display: inline; } }   /* (phones: the welcome text breaks after "styling," so "then" starts the next line) */
   [data-v8] .cart-h { display: none; }
   [data-v8] .buysheet .grab .gclose { display: none; }   /* (phones: no Collapse text; computers show it while the cart is open) */
   @media (min-width: 861px) {
@@ -2166,6 +2168,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611021341" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611021342" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
