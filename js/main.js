@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021412';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021412';
-import { wallTexture, wallSwatch } from './env.js?v=202611021412';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021412';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021413';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021413';
+import { wallTexture, wallSwatch } from './env.js?v=202611021413';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021413';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1671,7 +1671,11 @@ function wireSteps() {
     srHelp?.remove();
     res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="false" aria-label="Show the photos and the list"><span class="fl">Details</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
     { const card = document.createElement('div'); card.className = 'scdetails'; res.querySelector('#scBar').before(card);   // the details sit on a white card inside the blue box
-      card.append(res.querySelector('#scThumbs'), res.querySelector('#scanText')); card.before(res.querySelector('#scBar')); card.insertAdjacentHTML('afterbegin', '<p class="sc-title" id="scTitle" hidden>Upload details</p>'); }   // (the bar stays in the sticky strip; the card pops up above it)
+      card.append(res.querySelector('#scThumbs'), res.querySelector('#scanText')); card.before(res.querySelector('#scBar')); card.insertAdjacentHTML('afterbegin', '<span class="sc-grab" id="scGrab" aria-hidden="true" hidden></span><p class="sc-title" id="scTitle" hidden>Upload details</p>');
+      { const g = card.querySelector('#scGrab'); let y0 = null;
+        g.addEventListener('pointerdown', (e) => { y0 = e.clientY; g.setPointerCapture(e.pointerId); });
+        g.addEventListener('pointerup', (e) => { if (y0 == null) return; const dy = e.clientY - y0; y0 = null; if (dy > 24 || Math.abs(dy) < 6) setScanFold(true); });   // (swipe down, or tap, to close)
+        g.addEventListener('pointercancel', () => { y0 = null; }); } }   // (the bar stays in the sticky strip; the card pops up above it)
     res.querySelector('#scFold').addEventListener('click', () => {            // the arrow folds the box: only "Found 4" and the state stay
       setScanFold(!res.classList.contains('folded'));
     });
@@ -2248,7 +2252,7 @@ function paintScan() {
   if (t.dataset.msg) return;                                 // (a "couldn't spot them" message stays until the next scan finds something)
   res.hidden = !any;
   const scanned = docs.length > 0;
-  $('#scBar').hidden = !scanned; $('#scThumbs').hidden = !scanned; t.hidden = !scanned; $('#scTitle').hidden = !scanned;
+  $('#scBar').hidden = !scanned; $('#scThumbs').hidden = !scanned; t.hidden = !scanned; $('#scTitle').hidden = !scanned; $('#scGrab').hidden = !scanned;
   if (!scanned) return;
   const head = $('#scHead'); head.textContent = ''; head.append(chk(), `Added ${docs.length} document${docs.length === 1 ? '' : 's'}`);
   $('#scThumbs').replaceChildren(...scans.map((s, i) => (s && docs.some(d => d.scanNo === i) ? Object.assign(document.createElement('button'),
