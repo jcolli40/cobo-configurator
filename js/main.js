@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021413';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021413';
-import { wallTexture, wallSwatch } from './env.js?v=202611021413';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021413';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021420';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021420';
+import { wallTexture, wallSwatch } from './env.js?v=202611021420';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021420';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -91,7 +91,8 @@ const state = {
 
 /* ------------------------------------------------------------------ helpers */
 const $ = (s) => document.querySelector(s);
-const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? '#888888');
+const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? WOODS.find(c => c.name === v)?.hex ?? '#888888');
+const woodOf = (v) => WOODS.find(w => w.name === v) || null;
 // v5 shows photo rooms (plus Studio); a drawn room asked for by a link or popular board shows its photo twin
 const PHOTO_ROOMS = LAYOUT === 'v5';
 const ROOMS = ENVIRONMENTS.filter(e => e.wall === 'color' || !!e.wall.photo === PHOTO_ROOMS);
@@ -228,6 +229,38 @@ const acrylicMat = new THREE.MeshPhysicalMaterial({
 });
 const laminate = (hex, rough = 0.55) => new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 });
 const bandMat = (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.4, metalness: 0 });
+// wood grain: the long streaks run left to right across a 512 x 512 tile (drawn once per wood, then cached)
+const woodCache = new Map();
+function woodCanvas(wd) {
+  if (woodCache.has(wd.name)) return woodCache.get(wd.name);
+  const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N;
+  const g = cv.getContext('2d'); let seed = 7 + wd.name.length * 13 + wd.name.charCodeAt(0);
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  g.fillStyle = wd.hex; g.fillRect(0, 0, N, N);
+  const streak = (col, y0, th, alpha, amp, ph) => {            // one wavy streak, edge to edge, wrapping so the tile repeats cleanly
+    g.strokeStyle = col; g.globalAlpha = alpha; g.lineWidth = th; g.beginPath();
+    for (let x = 0; x <= N; x += 8) {
+      const y = y0 + Math.sin(x / N * Math.PI * 2 * (1 + (ph | 0)) + ph) * amp + Math.sin(x / N * Math.PI * 6 + ph * 2.3) * amp * 0.35;
+      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  };
+  const bands = Math.round(70 * wd.rings);
+  for (let i = 0; i < bands; i++) streak(wd.grain, rnd() * N, 1 + rnd() * 5, (0.06 + rnd() * 0.2) * wd.contrast, 2 + rnd() * 14, rnd() * 6);          // darker growth lines
+  for (let i = 0; i < bands; i++) streak(wd.light, rnd() * N, 1 + rnd() * 4, (0.05 + rnd() * 0.18) * wd.contrast, 2 + rnd() * 12, rnd() * 6);          // lighter ones
+  for (let i = 0; i < 380; i++) streak(rnd() < 0.5 ? wd.grain : wd.light, rnd() * N, 0.6 + rnd() * 0.8, (0.04 + rnd() * 0.1) * wd.contrast, 1 + rnd() * 3, rnd() * 6);   // fine fibers
+  g.globalAlpha = 1;
+  woodCache.set(wd.name, cv);
+  return cv;
+}
+const woodSwatch = (wd) => woodCanvas(wd).toDataURL('image/jpeg', 0.8);
+// a band's material: its streaks run along the edge (top and bottom edges along x; the left and right ones turned a quarter)
+function woodMat(wd, lengthIn, side) {
+  const t = new THREE.CanvasTexture(woodCanvas(wd)); t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; t.center.set(0.5, 0.5);
+  t.rotation = side ? Math.PI / 2 : 0; t.repeat.set(lengthIn / 8, HW.boardT / 8);
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, metalness: 0 });
+}
 const mdoMat = new THREE.MeshStandardMaterial({ color: '#a8845a', roughness: 0.85 });
 const backLamMat = new THREE.MeshStandardMaterial({ color: '#17171a', roughness: 0.38 });
 const alumMat = new THREE.MeshStandardMaterial({ color: '#c3c6cb', metalness: 1, roughness: 0.4, roughnessMap: brushedMap, envMap: envTex });
@@ -613,7 +646,7 @@ function clearRoot() {
 }
 
 function buildBoard() {
-  if (V8 && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (v8, for now: no "match board color" option; the edge is always a color of its own)
+  if (V8 && !EMBED && step() !== 'intro' && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (v8, for now: no "match board color" option; the edge is always a color of its own)
   clearRoot();
   const { w, h } = dims();
   const T = HW.boardT, lam = HW.lamT, b = HW.bandT;
@@ -642,12 +675,13 @@ function buildBoard() {
   }
   root.add(boxMesh(iw, ih, lam, frontMat, 0, 0, T - lam / 2));
   // 1 mm PVC edge banding
-  const bm = bandMat(edgeHex);
+  const wood = woodOf(state.edge);
+  const bm = wood ? woodMat(wood, w, false) : bandMat(edgeHex), bmSide = wood ? woodMat(wood, ih, true) : bm;
   root.userData.mats = [frontMat, bm];                     // (the welcome's morph blends their color)
   root.add(boxMesh(w, b, T, bm, 0, h / 2 - b / 2, T / 2));
   root.add(boxMesh(w, b, T, bm, 0, -h / 2 + b / 2, T / 2));
-  root.add(boxMesh(b, ih, T, bm, w / 2 - b / 2, 0, T / 2));
-  root.add(boxMesh(b, ih, T, bm, -w / 2 + b / 2, 0, T / 2));
+  root.add(boxMesh(b, ih, T, bmSide, w / 2 - b / 2, 0, T / 2));
+  root.add(boxMesh(b, ih, T, bmSide, -w / 2 + b / 2, 0, T / 2));
 
   // printed artwork on the board face: background image, then logo (both under the certificates)
   const bgArt = artMesh('background', iw, ih, 0.5);
@@ -1011,7 +1045,7 @@ function paintSelBar() {
   else {
     const L = state.lamSel, face = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(c => c.name === state.face) || COLORS[0];
     if (state.edge === 'match') { name = L ? 'Matches the board (Wilsonart ' + L.n + ')' : face.name + ' (matches the board)'; color = face.hex; img = L?.thumb || null; }
-    else { const c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || COLORS[0]; name = c.name; color = c.hex; }
+    else { const wd = woodOf(state.edge), c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || wd || COLORS[0]; name = c.name; color = c.hex; if (wd) img = woodSwatch(wd); }
   }
   bar.hidden = false;
   bar.querySelector('.sb-sw').style.background = img ? 'center / cover url("' + img + '")' : color;
@@ -1282,7 +1316,8 @@ function build() {
     state.edge = e.target.checked ? 'match' : (state.lastEdge || (state.face === 'Black' ? 'White' : 'Black'));
     refresh();
   });
-  swatchRow($('#edgeSw'), COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
+  swatchRow($('#edgeSw'), V8 ? COLORS.concat(WOODS) : COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
+  if (V8) for (const wd of WOODS) { const b = $('#edgeSw').querySelector('.sw[data-k="' + wd.name + '"]'); if (b) b.style.background = 'center / cover url("' + woodSwatch(wd) + '")'; }   // (real-wood swatches)
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
 

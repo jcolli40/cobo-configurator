@@ -29,6 +29,16 @@ export const COLORS = [
   { name: 'Raw (unfinished)',   hex: '#b8956a' },
 ];
 
+// ---- Wood edge banding (real-wood look; drawn in the browser, so no image files). hex = average color (swatches, summaries);
+//      grain = the darker streaks, light = the lighter streaks, rings = how busy the grain is, contrast = how strong it shows ----
+export const WOODS = [
+  { name: 'Birch',    hex: '#e4cda3', grain: '#c19a63', light: '#f2e3c4', rings: 0.55, contrast: 0.55 },
+  { name: 'Oak',      hex: '#b88d55', grain: '#7d5628', light: '#d1a96d', rings: 1.0,  contrast: 0.9 },
+  { name: 'Mahogany', hex: '#6b3320', grain: '#38170b', light: '#8a4a32', rings: 0.75, contrast: 0.85 },
+  { name: 'Cherry',   hex: '#964a2d', grain: '#63291a', light: '#b3643f', rings: 0.6,  contrast: 0.7 },
+  { name: 'Ebony',    hex: '#1a1613', grain: '#0a0807', light: '#4a423a', rings: 0.5,  contrast: 0.6 },
+];
+
 // ---- Fastener (1" dia aluminum cap) finishes ----
 export const FASTENERS = [
   { id: 'chrome', name: 'Silver',           color: '#eef0f2', metal: 1.0, rough: 0.24, brushed: true },
