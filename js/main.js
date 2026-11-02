@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021234';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021234';
-import { wallTexture, wallSwatch } from './env.js?v=202611021234';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021234';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021235';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021235';
+import { wallTexture, wallSwatch } from './env.js?v=202611021235';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021235';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1645,7 +1645,7 @@ function wireSteps() {
     $('#scanFile').closest('label').insertAdjacentHTML('beforeend', '<small class="ftypes">PDF · JPG · PNG · HEIC</small>');   // (the file types it takes, to the right)
     $('#scanDemo').remove();                                            // (no "see an example")
     // one blurb for the whole box (the old "all your certificates, in one photo" title is gone)
-    own.querySelector('.opt + .help').textContent = 'Review for accuracy, then confirm & add to board by checking the box beside each.';
+    own.querySelector('.opt + .help').textContent = 'Snap photos of your docs, review them for accuracy, then confirm & add to board by checking the box beside each.';
     res.insertAdjacentHTML('afterbegin', '<p class="scanbusy" id="scanBusy" role="status"><span class="spin" aria-hidden="true"></span></p>');
     srHelp?.remove();
     res.querySelector('#scanCanvas').insertAdjacentHTML('beforebegin', '<div class="sc-bar" id="scBar" hidden><span class="sc-head" id="scHead"></span><button type="button" class="sc-fold" id="scFold" aria-expanded="false" aria-label="Show the photos and the list"><span class="fl">Details</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button></div><div class="sc-thumbs" id="scThumbs" hidden></div>');
