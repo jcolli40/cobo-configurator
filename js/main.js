@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020734';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020734';
-import { wallTexture, wallSwatch } from './env.js?v=202611020734';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020734';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020738';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020738';
+import { wallTexture, wallSwatch } from './env.js?v=202611020738';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020738';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -556,6 +556,17 @@ async function loadArt(L, file) {
 }
 
 /* ------------------------------------------------------------------ geometry builders */
+let floorShadowTex = null;       // a soft dark ellipse that fades to nothing at its edge (the welcome board's shadow on its faux floor)
+function floorShadowTexture() {
+  if (floorShadowTex) return floorShadowTex;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const g = c.getContext('2d'); g.translate(256, 64); g.scale(1, 0.25);
+  const grad = g.createRadialGradient(0, 0, 0, 0, 0, 256);
+  grad.addColorStop(0, 'rgba(20,24,34,.55)'); grad.addColorStop(0.55, 'rgba(20,24,34,.22)'); grad.addColorStop(1, 'rgba(20,24,34,0)');
+  g.fillStyle = grad; g.fillRect(-256, -256, 512, 512);
+  floorShadowTex = new THREE.CanvasTexture(c); floorShadowTex.colorSpace = THREE.SRGBColorSpace;
+  return floorShadowTex;
+}
 function boxMesh(w, h, d, mat, x, y, z, shadow = true) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(x, y, z);
@@ -701,7 +712,8 @@ function buildBoard() {
     ? new THREE.MeshStandardMaterial({ color: wallHex(), roughness: 0.95 })
     : new THREE.MeshStandardMaterial({ map: wallTexture(E.wall.tex, E.wall.color, 400), roughness: E.wall.tex === 'steel' ? 0.45 : E.wall.tex === 'subway' ? 0.35 : 0.9, metalness: E.wall.tex === 'steel' ? 0.6 : 0 });
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), wallMat);
-  wall.receiveShadow = true; wallG.add(wall);
+  const welcome = V8 && !EMBED && step() === 'intro';        // v8 welcome: the board floats, with a soft shadow on a faux floor below it (none on the wall behind)
+  wall.receiveShadow = !welcome; wallG.add(wall);
   // a photo shows as-is (unlit), with the board's shadow laid over it
   const addPhoto = (tex, pw, ph, x, y, spread = 1) => {     // spread: the shadow-catcher covers the blurred fill too
     const ready = !!tex.image;                               // (a photo still downloading would draw black: show its average color until it lands)
@@ -732,6 +744,10 @@ function buildBoard() {
     addPhoto(tex, pw, ph, x, y); setRect(pw, ph, x, y);
   }
   root.add(wallG);
+  if (welcome) {
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.95, w * 0.2), new THREE.MeshBasicMaterial({ map: floorShadowTexture(), transparent: true, opacity: 0.5, depthWrite: false, toneMapped: false }));
+    sh.name = 'floorShadow'; sh.position.set(0, -h / 2 - w * 0.11, -(D + 2 * t) + 0.2); sh.renderOrder = -1; root.add(sh);
+  }
 
   // which panel section opens when this part of the board is clicked
   const tag = (sec, ...objs) => objs.forEach(o => { o.userData.sec = sec; });
@@ -2455,6 +2471,7 @@ function morphNext() {
       const sx = (w0 + (to.a - w0) * e) / w0, sy = (h0 + (to.b - h0) * e) / h0;
       root.scale.set(sx, sy, 1);
       caps.forEach(c => c.scale.set(1 / sx, 1 / sy, 1));   // (the caps stay round while the board stretches)
+      root.children.find(o => o.name === 'floorShadow')?.scale.set(1 / sx, 1 / sy, 1);   // (so does the floor shadow)
       const col = c0.clone().lerp(c1, e); mats.forEach(m => m.color.copy(col));
       dirty = true;
       morph.raf = requestAnimationFrame(frame);
