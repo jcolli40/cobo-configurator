@@ -25,18 +25,34 @@ export const COLORS = [
   { name: 'Forest Green',       hex: '#1d5a3a' },
   { name: 'Orange',             hex: '#e7700b' },
   { name: 'Yellow',             hex: '#f1c40f' },
-  { name: 'Light Blue',         hex: '#79b0d8' },
+  { name: 'Powder Blue',        hex: '#79b0d8' },
   { name: 'Raw (unfinished)',   hex: '#b8956a' },
+  { name: 'Purple',             hex: '#6f2da8' },
+  { name: 'Hot Pink',           hex: '#ff2e93' },
+  { name: 'Magenta',            hex: '#d1008f' },
+  { name: 'Olive',              hex: '#6b6b21' },
+  { name: 'Lime Green',         hex: '#8fd01f' },
+  { name: 'Maroon',             hex: '#6d1020' },
+  { name: 'Hot Red',            hex: '#e60f1e' },
+  { name: 'Navy Blue',          hex: '#12264d' },
+  { name: 'Royal Blue',         hex: '#2b50c8' },
+  { name: 'Light Gray',         hex: '#c9cbcf' },
+  { name: 'Medium Gray',        hex: '#8b8e94' },
+  { name: 'Burnt Orange',       hex: '#c9531a' },
+  { name: 'Dark Brown (Chocolate)', hex: '#4a2c1a' },
+  { name: 'Light Pink',         hex: '#f4c2cf' },
+  { name: 'Teal',               hex: '#0e8a8a' },
 ];
 
 // ---- Wood edge banding (real-wood look; drawn in the browser, so no image files). hex = average color (swatches, summaries);
 //      grain = the darker streaks, light = the lighter streaks, rings = how busy the grain is, contrast = how strong it shows ----
 export const WOODS = [
-  { name: 'Birch',    hex: '#e4cda3', grain: '#c19a63', light: '#f2e3c4', rings: 0.55, contrast: 0.55 },
-  { name: 'Oak',      hex: '#b88d55', grain: '#7d5628', light: '#d1a96d', rings: 1.0,  contrast: 0.9 },
-  { name: 'Mahogany', hex: '#6b3320', grain: '#38170b', light: '#8a4a32', rings: 0.75, contrast: 0.85 },
-  { name: 'Cherry',   hex: '#964a2d', grain: '#63291a', light: '#b3643f', rings: 0.6,  contrast: 0.7 },
-  { name: 'Ebony',    hex: '#1a1613', grain: '#0a0807', light: '#4a423a', rings: 0.5,  contrast: 0.6 },
+  { name: 'Birch',    hex: '#e4cda3', grain: '#c19a63', light: '#f2e3c4', rings: 0.55, contrast: 0.95 },
+  { name: 'Oak',      hex: '#b88d55', grain: '#7d5628', light: '#d1a96d', rings: 1.0,  contrast: 1.6 },
+  { name: 'Mahogany', hex: '#6b3320', grain: '#38170b', light: '#8a4a32', rings: 0.75, contrast: 1.5 },
+  { name: 'Cherry',   hex: '#964a2d', grain: '#63291a', light: '#b3643f', rings: 0.6,  contrast: 1.3 },
+  { name: 'Ebony',    hex: '#1a1613', grain: '#0a0807', light: '#4a423a', rings: 0.5,  contrast: 1.4 },
+  { name: 'Bamboo',   hex: '#d6b870', grain: '#a07c38', light: '#ecd99e', rings: 0.45, contrast: 1.3 },
 ];
 
 // ---- Fastener (1" dia aluminum cap) finishes ----

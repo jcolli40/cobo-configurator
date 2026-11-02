@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021422';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021422';
-import { wallTexture, wallSwatch } from './env.js?v=202611021422';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021422';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021427';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021427';
+import { wallTexture, wallSwatch } from './env.js?v=202611021427';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021427';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -246,9 +246,14 @@ function woodCanvas(wd) {
     g.stroke();
   };
   const bands = Math.round(70 * wd.rings);
-  for (let i = 0; i < bands; i++) streak(wd.grain, rnd() * N, 1 + rnd() * 5, (0.06 + rnd() * 0.2) * wd.contrast, 2 + rnd() * 14, rnd() * 6);          // darker growth lines
-  for (let i = 0; i < bands; i++) streak(wd.light, rnd() * N, 1 + rnd() * 4, (0.05 + rnd() * 0.18) * wd.contrast, 2 + rnd() * 12, rnd() * 6);          // lighter ones
-  for (let i = 0; i < 380; i++) streak(rnd() < 0.5 ? wd.grain : wd.light, rnd() * N, 0.6 + rnd() * 0.8, (0.04 + rnd() * 0.1) * wd.contrast, 1 + rnd() * 3, rnd() * 6);   // fine fibers
+  for (let i = 0; i < bands; i++) streak(wd.grain, rnd() * N, 1.5 + rnd() * 7, Math.min(0.85, (0.1 + rnd() * 0.3) * wd.contrast), 2 + rnd() * 16, rnd() * 6);          // darker growth lines
+  for (let i = 0; i < bands; i++) streak(wd.light, rnd() * N, 1.5 + rnd() * 6, Math.min(0.8, (0.08 + rnd() * 0.25) * wd.contrast), 2 + rnd() * 14, rnd() * 6);          // lighter ones
+  for (let i = 0; i < 380; i++) streak(rnd() < 0.55 ? wd.grain : wd.light, rnd() * N, 0.8 + rnd() * 1.2, Math.min(0.6, (0.07 + rnd() * 0.16) * wd.contrast), 1 + rnd() * 3, rnd() * 6);   // fine fibers
+  if (wd.name === 'Bamboo') {                                    // bamboo's growth nodes: thin dark bands across the grain
+    for (const x of [0, N / 3, 2 * N / 3]) { g.globalAlpha = 0.5; g.fillStyle = wd.grain; g.fillRect(x - 3, 0, 6, N); g.globalAlpha = 0.25; g.fillStyle = wd.light; g.fillRect(x + 4, 0, 3, N); }
+    g.globalAlpha = 0.18; g.strokeStyle = wd.grain; g.lineWidth = 1.5;                         // and the strip seams
+    for (let y = 0; y < N; y += N / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(N, y); g.stroke(); }
+  }
   g.globalAlpha = 1;
   woodCache.set(wd.name, cv);
   return cv;
@@ -259,7 +264,8 @@ function woodMat(wd, lengthIn, side) {
   const t = new THREE.CanvasTexture(woodCanvas(wd)); t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; t.center.set(0.5, 0.5);
   t.rotation = side ? Math.PI / 2 : 0; t.repeat.set(lengthIn / 8, HW.boardT / 8);
-  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, metalness: 0 });
+  const bump = t.clone(); bump.needsUpdate = true;   // (the grain also stands up a little, so the light catches it)
+  return new THREE.MeshStandardMaterial({ map: t, bumpMap: bump, bumpScale: 1.2, roughness: 0.5, metalness: 0 });
 }
 const mdoMat = new THREE.MeshStandardMaterial({ color: '#a8845a', roughness: 0.85 });
 const backLamMat = new THREE.MeshStandardMaterial({ color: '#17171a', roughness: 0.38 });
@@ -2542,7 +2548,7 @@ function tourStep(s) {
 // v6 welcome: every few seconds the board glides to another size and color (the certificates step aside while it
 // changes, then fill the new board). Their own design is kept aside by the welcome and comes back when they move on.
 const MORPH = [['24x36', 'Black', 'chrome'], ['24x24', 'Forest Green', 'brass'], ['12x36', 'Red', 'black', '', 'landscape'], ['24x24', '', 'black', 'Y0822'],
-  ['12x24', 'Light Blue', 'chrome'], ['24x36', 'White', 'black'], ['24x36', '', 'brass', '5084'], ['24x24', 'Orange', 'brass']];   // size, color, caps, Wilsonart texture, way round (v8: the tall red board lies on its side)
+  ['12x24', 'Powder Blue', 'chrome'], ['24x36', 'White', 'black'], ['24x36', '', 'brass', '5084'], ['24x24', 'Orange', 'brass']];   // size, color, caps, Wilsonart texture, way round (v8: the tall red board lies on its side)
 let morph = null;   // { i, timer, raf } while the welcome is showing
 const keepDesign = () => ({ sizeId: state.sizeId, customA: state.customA, customB: state.customB, orient: state.orient, face: state.face, fastener: state.fastener,
   edge: state.edge, lamSel: state.lamSel, sheets: state.sheets, sampleMix: { ...state.sampleMix }, sampleTurn: { ...state.sampleTurn }, sheetTurn: state.sheetTurn });
@@ -3045,7 +3051,9 @@ function readParams(q) {
   if (q.get('size') === 'custom') { d.sizeId = 'custom'; d.customA = clamp(+q.get('w')); d.customB = clamp(+q.get('h')); }
   else if (SIZES.some(s => s.id === q.get('size'))) d.sizeId = q.get('size');
   if (q.get('orient') === 'landscape' || q.get('orient') === 'portrait') d.orient = q.get('orient');
+  if (q.get('color') === 'Light Blue') q.set('color', 'Powder Blue');   // (older shared links)
   if (COLORS.some(c => c.name === q.get('color')) || hex(q.get('color'))) d.face = q.get('color');
+  if (q.get('edge') === 'Light Blue') q.set('edge', 'Powder Blue');
   if (q.get('edge') === 'match' || COLORS.some(c => c.name === q.get('edge')) || hex(q.get('edge'))) d.edge = q.get('edge');
   if (FASTENERS.some(f => f.id === q.get('finish'))) d.fastener = q.get('finish');
   if (q.get('finish') === 'alum') d.fastener = 'chrome';   // (old links: Brushed Aluminum was replaced by Brass)
