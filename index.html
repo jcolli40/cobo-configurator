@@ -1524,6 +1524,8 @@
   [data-v8] :is(#selBar, .selbar) small { font-size: 11px; color: var(--muted); }
   [data-v8] :is(#selBar, .selbar) b { font-size: 14px; color: var(--accent); }
   [data-v8] #tabColors .opt:has(#faceCustom) { padding-left: 6.5px; padding-right: 6.5px; }   /* (Custom color lines up with the edges of the swatches below it) */
+  [data-v8] .opt.off { opacity: .55; }
+  [data-v8] #edgeMatchNote { margin: -4px 0 6px; }
   [data-v8] .sc-title { margin: 0; text-align: center; font-size: 15px; font-weight: 700; color: var(--accent); }
   [data-v8] .sc-title[hidden] { display: none; }
   [data-v8] #scanResult > #scBar { order: 2; }
@@ -2181,6 +2183,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611021409" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611021412" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

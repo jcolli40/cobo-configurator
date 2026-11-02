@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021409';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021409';
-import { wallTexture, wallSwatch } from './env.js?v=202611021409';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021409';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021412';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021412';
+import { wallTexture, wallSwatch } from './env.js?v=202611021412';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021412';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -613,6 +613,7 @@ function clearRoot() {
 }
 
 function buildBoard() {
+  if (V8 && state.lamSel && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (matching only works with solid colors, not textures or patterns)
   clearRoot();
   const { w, h } = dims();
   const T = HW.boardT, lam = HW.lamT, b = HW.bandT;
@@ -911,6 +912,7 @@ function paintActive() {
   $('#grainBtn').setAttribute('aria-pressed', state.grain);
   document.querySelectorAll('#edgeSw .sw').forEach(b => b.classList.toggle('on', b.dataset.k === state.edge));
   $('#edgeMatch').checked = state.edge === 'match';
+  if (V8) { $('#edgeMatch').disabled = !!state.lamSel; $('#edgeMatch').closest('.opt').classList.toggle('off', !!state.lamSel); $('#edgeMatchNote').hidden = !state.lamSel; }
   $('#edgeSw').classList.toggle('dim', state.edge === 'match');
   $('#edgeCustom').closest('.opt').classList.toggle('dim', state.edge === 'match');
   document.querySelectorAll('#fastSw .fast').forEach(b => b.classList.toggle('on', b.dataset.k === state.fastener));
@@ -1779,7 +1781,9 @@ function wireSteps() {
     for (const id of ['#scanCam', '#scanFile']) $(id).addEventListener('change', () => setMenu(false));
     $('#docSw').addEventListener('change', (e) => { if (state.sheets !== e.target.checked) $('#sheets').click(); else paintDocTabs(); setMenu(false); });
     $('#optSheet').append($('#scanResult'));
-    $('#edgeMatch').closest('.opt').after($('#edgeCustom').closest('.opt'));   // Edge banding: the custom color row sits right under Match board color
+    { const note = document.createElement('p'); note.id = 'edgeMatchNote'; note.className = 'help'; note.hidden = true;
+      note.textContent = 'Matching the board is only available with solid colors. Pick an edge color for your texture or pattern.'; $('#edgeMatch').closest('.opt').after(note); }
+    $('#edgeMatchNote').after($('#edgeCustom').closest('.opt'));   // Edge banding: the custom color row sits right under Match board color
     $('#faceSw').before($('#faceCustom').closest('.opt'));                      // Solid Colors: "Any other color" sits at the top of its panel
     { const sb = document.createElement('div'); sb.id = 'selBar'; sb.hidden = true; sb.setAttribute('role', 'status');   // Edge and Caps: the chosen swatch in a sticky strip at the bottom, like the Solid Colors and Textures panels
       sb.innerHTML = '<span class="sb-sw" aria-hidden="true"></span><span class="sb-nm"><small>Selected</small><b></b></span>'; $('#optSheet').append(sb); }                   // once documents are added, the Add button and "Added N" sit in a sticky white strip at the bottom of the panel; Details pops up above it
