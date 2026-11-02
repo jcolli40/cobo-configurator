@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020032';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020032';
-import { wallTexture, wallSwatch } from './env.js?v=202611020032';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020032';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020518';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020518';
+import { wallTexture, wallSwatch } from './env.js?v=202611020518';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020518';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2544,7 +2544,7 @@ function wireTour() {
   $('#tourLive').addEventListener('click', startCam);
   // v6: no photo step; Get started opens the style presets as a starting point
   // v6: Start goes to Build, with Your Documents open
-  $('#tourStart').addEventListener('click', () => (V6 ? (setStep('custom'), blankBoard(), goStep('build', false), openOptSheet($('.sec[data-sec="certs"]'))) : setStep('snap')));
+  $('#tourStart').addEventListener('click', () => (V6 ? (goFull(), setStep('custom'),blankBoard(), goStep('build', false), openOptSheet($('.sec[data-sec="certs"]'))) : setStep('snap')));
   $('#tourSkipCard').addEventListener('click', () => setStep('custom'));   // computers: the welcome's Skip
   $('#tourResume').hidden = !restoredDesign;
   $('#tourResume').addEventListener('click', () => setStep('custom'));
@@ -2733,8 +2733,8 @@ function endCoach() {
   $('.sec[data-sec="certs"] .sec-h').focus();
 }
 function wireCoach() {
-  $('#coachNext').addEventListener('click', () => coach && coachTo(coach.i + 1));
-  $('#coachSkip').addEventListener('click', endCoach);
+  $('#coachNext').addEventListener('click', () => { if (!coach) return; if (coach.i === COACH.length - 1) goFull(); coachTo(coach.i + 1); });   // ("Start designing")
+  $('#coachSkip').addEventListener('click', () => { goFull(); endCoach(); });
   $('#coachBack').addEventListener('click', () => coach && coachBack());
   $('#coachPause').addEventListener('click', () => coach && coachPause(!coach.paused));
   document.addEventListener('keydown', (e) => { if (coach && e.key === 'Escape') endCoach(); });
@@ -2747,7 +2747,7 @@ function wireCoach() {
   const cont = document.createElement('button');
   cont.type = 'button'; cont.className = 'link t-resume';
   cont.textContent = 'Continue where you left off';
-  cont.addEventListener('click', () => setStep('custom'));
+  cont.addEventListener('click', () => { goFull(); setStep('custom'); });
   links.append(cont);
   $('#helpBtn').hidden = false;
   $('#helpBtn').addEventListener('click', runCoach);
@@ -3651,6 +3651,13 @@ function editCartItem(it) {
 // Inside Shopify, the store page sends the real cart in (see shopify/cobo-configurator-embed.liquid).
 // Opened on its own, the panel shows a pretend cart so the design can be tested.
 const embedded = window.parent !== window && !EMBED;   // (the morph embed talks to no one)
+// In the store: starting a design also takes the whole screen, hiding the browser's own bars where the browser
+// allows it (computers, Android; not iPhones, where the store page already fills the window). Esc or Back leaves it.
+function goFull() {
+  const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!embedded || !req || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { req.call(el, { navigationUI: 'hide' })?.catch?.(() => {}); } catch { /* not allowed here: stays as it is */ }
+}
 const localCart = [];
 let cartItems = [];
 function renderCart(cart) {
