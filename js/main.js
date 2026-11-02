@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020645';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020645';
-import { wallTexture, wallSwatch } from './env.js?v=202611020645';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020645';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611020651';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611020651';
+import { wallTexture, wallSwatch } from './env.js?v=202611020651';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611020651';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1682,7 +1682,8 @@ function wireSteps() {
     // on the white panel: the board-and-camera illustration (large) with the button under it; the details are in the menu. Once documents are found the illustration folds away
     const art = '<div class="camart"><svg viewBox="56 0 128 130" aria-hidden="true">'   // just documents on a wall, slightly tilted like the photo of detected documents, inside the camera corners
       + [[92, 16, 20, 40, -1.5], [118, 22, 32, 26, 2.5], [88, 64, 30, 24, -2], [122, 60, 30, 26, 1.5], [103, 92, 32, 24, -1]]
-        .map(([x, y, w, h, r]) => '<g transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"><rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1"/>'
+          .map(([x, y, w, h, r], i) => '<g transform="rotate(' + r + ' ' + (x + w / 2) + ' ' + (y + h / 2) + ')"><rect class="sh" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="1"/>'
+          + '<text class="num" x="' + (x + w / 2) + '" y="' + (y + h / 2) + '">' + (i + 1) + '</text>'
           + '<path class="spk" transform="translate(' + (x + w) + ' ' + y + ')" d="M0-4.5L1.2-1.2 4.5 0 1.2 1.2 0 4.5-1.2 1.2-4.5 0-1.2-1.2z"/></g>').join('')   // (each document: a thin blue outline and an AI sparkle on its corner, like a detected one)
       + '<path class="vf" d="M66 20V4h16M158 4h16v16M174 110v16h-16M82 126H66v-16"/></svg></div><p class="addline">Add your documents and review them below.</p>';
     const plus = '<svg class="i plusico" aria-hidden="true"><use href="#i-plus-circle"/></svg>';
