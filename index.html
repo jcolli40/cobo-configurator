@@ -595,7 +595,14 @@
   [data-v8] .doc8 :is(.thumb, .retakebtn):focus-visible { outline: 3px solid #8fb0e0; outline-offset: 2px; }
   [data-v8] .doc8 .okbox { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; margin: 0; accent-color: #2e7d4f; cursor: pointer; }
   [data-v8] .doc8.ok { border-color: #b9dcc5; background: #f4fbf6; }
-  [data-v8] .doc8 .dfields { display: grid; gap: 8px; min-width: 0; }
+  [data-v8] .doc8 .dfields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }   /* (long names stay inside the card) */
+  [data-v8] .doc8 .dfields > * { min-width: 0; max-width: 100%; }
+  .side .x .dn { display: none; }
+  @media (max-width: 860px) {
+    [data-v8] .side .x .xi { display: none; }
+    [data-v8] .side .x .dn { display: block; width: 22px; height: 22px; stroke-width: 2; }
+  }
+  [data-v8] .snapbox .scanres > .staterow { grid-column: 1 / -1; margin-top: 4px; }
   [data-v8] .doc8 .dnum { min-height: 22px; display: flex; align-items: center; padding-right: 32px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   [data-v8] .doc8 .dfields select { width: 100%; padding: 8px 8px; font-size: 14px; }
   [data-v8] .doc8 .dfields [data-type] { font-weight: 650; color: var(--ink); }
@@ -1810,7 +1817,7 @@
 <!-- Wilsonart laminate picker: full-height side panel to the left of the options panel -->
 <!-- Phones only: one option's controls in a pop-up sheet (the section's content is moved in here while it's open) -->
 <aside id="optSheet" class="side" role="dialog" aria-labelledby="optTitle" hidden>
-  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></header>
+  <header class="side-h"><span id="optIcon" style="display:grid"></span><h2 id="optTitle"></h2><button class="x" data-close aria-label="Close"><svg class="i xi"><use href="#i-x"/></svg><svg class="i dn"><use href="#i-chev"/></svg></button></header>
   <div class="side-body" id="optBody"></div>
 </aside>
 
@@ -1818,7 +1825,7 @@
   <header class="side-h">
     <img src="img/wilsonart-logo.svg" alt="Wilsonart">
     <h2 id="lamTitle">Custom laminate</h2>
-    <button class="x" data-close aria-label="Close laminate picker"><svg class="i"><use href="#i-x"/></svg></button>
+    <button class="x" data-close aria-label="Close laminate picker"><svg class="i xi"><use href="#i-x"/></svg><svg class="i dn"><use href="#i-chev"/></svg></button>
   </header>
   <!-- the chosen laminate, with Rotate 90° and Remove, at the top of the swatches panel -->
   <div class="lam-sel" id="lamSelRow" hidden>
@@ -1916,6 +1923,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611012239" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611012251" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
