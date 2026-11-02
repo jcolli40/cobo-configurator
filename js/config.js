@@ -222,7 +222,7 @@ export const HW = {
   clipT: 0.0625,
   clipFlange: 1.25,
   clipLip: 0.75,
-  clipDepth: 0.4,
+  clipDepth: 0.1375,   // low profile: with the two 1/16" halves the board stands off the wall about 0.26" (was 0.4 -> 0.525")
   clipTopInset: 3,
   clipEndInsetBig: 2,    // boards 12" wide and up
   clipEndInsetSmall: 1.5 // boards under 12" wide
