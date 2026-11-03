@@ -12,3 +12,6 @@ textures/**/DEMO-*.jpg
 
 # Dev copy: the Gemini API key (never commit or serve it)
 .gemini-key
+
+# Raw Wilsonart swatch downloads (the importer makes the small web versions in textures/thumb and textures/full)
+textures/full/swatches/

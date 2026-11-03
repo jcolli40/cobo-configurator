@@ -28,13 +28,14 @@ from datetime import date
 from pathlib import Path
 
 try:
-    from PIL import Image, ImageOps
+    from PIL import Image, ImageChops, ImageOps
 except ImportError:
     sys.exit("This tool needs Pillow. Install it with:  pip install pillow")
 
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".tif", ".tiff"}
 THUMB_PX = 256
-FULL_PX = 1024
+FULL_PX = 768
+MIN_FULL_PX = 512     # small source images are enlarged to this so the 3D texture is not blocky
 
 
 def parse_filename(stem: str):
@@ -67,9 +68,24 @@ def avg_hex(img: Image.Image) -> str:
     return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
 
+def tidy(img: Image.Image) -> Image.Image:
+    """Trim a white border (some downloads have one), then crop the middle square so the texture repeats evenly."""
+    bg = Image.new("RGB", img.size, (255, 255, 255))
+    box = ImageChops.difference(img, bg).convert("L").point(lambda v: 255 if v > 14 else 0).getbbox()
+    if box and (box[2] - box[0]) * (box[3] - box[1]) > 0.3 * img.width * img.height:
+        img = img.crop(box)
+    w, h = img.size
+    if abs(w - h) > 0.06 * max(w, h):
+        side = min(w, h)
+        img = img.crop(((w - side) // 2, (h - side) // 2, (w - side) // 2 + side, (h - side) // 2 + side))
+    if max(img.size) < MIN_FULL_PX:
+        img = img.resize((MIN_FULL_PX, MIN_FULL_PX), Image.LANCZOS)
+    return img
+
+
 def process_image(src: Path, thumb_dst: Path, full_dst: Path):
     img = Image.open(src)
-    img = ImageOps.exif_transpose(img).convert("RGB")
+    img = tidy(ImageOps.exif_transpose(img).convert("RGB"))
     # full texture: keep aspect, cap the longest side
     full = img.copy()
     full.thumbnail((FULL_PX, FULL_PX), Image.LANCZOS)
