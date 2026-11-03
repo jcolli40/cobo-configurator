@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611021847';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611021847';
-import { wallTexture, wallSwatch } from './env.js?v=202611021847';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611021847';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611031608';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611031608';
+import { wallTexture, wallSwatch } from './env.js?v=202611031608';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611031608';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1786,7 +1786,7 @@ function wireSteps() {
     or2.remove();
     // the checklist: tick each document that's right; then "one at a time" for anything the photo missed
     $('#docList').insertAdjacentHTML('beforebegin', '<div class="dlhead" id="dlHead" hidden><span id="dlCount"></span><button type="button" class="link" id="okAll">Add all to board</button></div>');
-    $('#docList').insertAdjacentHTML('afterend', '<button type="button" class="adddoc" id="addDoc" hidden><svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add a document</button>');
+    $('#docList').insertAdjacentHTML('afterend', '<button type="button" class="adddoc" id="addDoc" hidden><svg class="i" aria-hidden="true"><use href="#i-plus-circle"/></svg>Add from database</button>');
     $('#addDoc').addEventListener('click', () => {                       // pick a document from the list: it joins the board as a stand-in until they add a photo
       if (!CAT) return toast('One moment, the document list is still loading.');
       const s = document.createElement('select');
