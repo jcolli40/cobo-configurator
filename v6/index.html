@@ -1309,6 +1309,27 @@
   [data-v6] .hint { left: 64px; top: 18px; }
   .coach-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .coach-tip { transition: none; } .coach-tip.swap > * { animation: none; } }
+  /* v8 tips: a multicolor ring that races around the next thing to tap (navy, red, bright blue, green), a soft glow of the
+     same colors behind it, and a small white note beside it. The first tip also dims the rest of the screen until a tap */
+  @property --tipa { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .tipring { position: fixed; z-index: 120; pointer-events: none; transition: box-shadow .35s ease; }
+  .tipring[hidden], .tipbox[hidden] { display: none; }
+  .tipring.dim { box-shadow: 0 0 0 200vmax rgba(10, 22, 44, .38); }
+  .tipring::before, .tipring::after { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px;
+    background: conic-gradient(from var(--tipa), #1b3a6b, #e53935, #1e7bff, #2fb344, #1b3a6b);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: tipRace 2.6s linear infinite; }
+  .tipring::after { inset: -3px; padding: 6px; filter: blur(7px); opacity: .55; }
+  @keyframes tipRace { to { --tipa: 360deg; } }
+  .tipbox { position: fixed; z-index: 121; width: max-content; max-width: min(270px, calc(100vw - 20px)); padding: 12px 14px 10px; border-radius: 12px; background: #fff; color: var(--ink); box-shadow: 0 6px 24px rgba(10, 22, 44, .18), 0 1px 3px rgba(10, 22, 44, .1); animation: tipIn .25s ease; }
+  .tipbox .tb-k { display: block; color: var(--accent); font-size: 15px; font-weight: 650; }
+  .tipbox .tb-t { margin: 3px 0 8px; font-size: 13.5px; line-height: 1.4; color: var(--muted); }
+  .tipbox .tb-acts { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .tipbox .tb-ok { padding: 6px 14px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .tipbox .tb-off { font-size: 12.5px; color: var(--muted); }
+  .tipbox button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @keyframes tipIn { from { opacity: 0; transform: translateY(4px); } }
+  @media (prefers-reduced-motion: reduce) { .tipring::before, .tipring::after { animation: none; } .tipbox { animation: none; } .tipring { transition: none; } }
   /* the white studio: a soft vignette at the edges for depth */
   #stageWrap.vig::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, rgba(15, 25, 45, .07) 80%, rgba(15, 25, 45, .16) 100%); }
   /* ?embed=morph: only the 3D board, filling the frame on a see-through background; nothing can be clicked */
@@ -2218,6 +2239,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611031608" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611031848" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

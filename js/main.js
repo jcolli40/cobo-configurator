@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611031608';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611031608';
-import { wallTexture, wallSwatch } from './env.js?v=202611031608';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611031608';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611031848';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611031848';
+import { wallTexture, wallSwatch } from './env.js?v=202611031848';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611031848';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2779,8 +2779,8 @@ function wireTour() {
   $('#tourDemo').addEventListener('click', () => guideScan(null));
   $('#tourLive').addEventListener('click', startCam);
   // v6: no photo step; Get started opens the style presets as a starting point
-  // v6: Start goes to Build, with Your Documents open
-  $('#tourStart').addEventListener('click', () => (V6 ? (goFull(), setStep('custom'),blankBoard(), goStep('build', false), openOptSheet($('.sec[data-sec="certs"]'))) : setStep('snap')));
+  // v6: Start goes to Build, with Your Documents open (v8: left closed; a "Start here" tip rings the Documents button instead)
+  $('#tourStart').addEventListener('click', () => (V6 ? (goFull(), setStep('custom'),blankBoard(), goStep('build', false), V8 || openOptSheet($('.sec[data-sec="certs"]'))) : setStep('snap')));
   $('#tourSkipCard').addEventListener('click', () => setStep('custom'));   // computers: the welcome's Skip
   $('#tourResume').hidden = !restoredDesign;
   $('#tourResume').addEventListener('click', () => setStep('custom'));
@@ -2986,11 +2986,126 @@ function wireCoach() {
   cont.addEventListener('click', () => { goFull(); setStep('custom'); });
   links.append(cont);
   $('#helpBtn').hidden = false;
+  if (V8) return wireTips();                                 // (v8: no tutorial; step-by-step tips, and ? shows the tip for where they are)
   $('#helpBtn').addEventListener('click', runCoach);
   // first visit (or ?tour=1): play it before the start card
   let seen = null; try { seen = localStorage.getItem('cobo.tourSeen'); } catch { /* storage blocked */ }
   const q = new URLSearchParams(location.search);
   if (step() === 'intro' && (q.get('tour') === '1' || (!seen && q.get('tour') !== '0'))) setTimeout(runCoach, 1400);
+}
+
+// v8: step-by-step tips in place of the tutorial. One at a time, only once it applies: a moving multicolor ring around
+// the next thing to tap, with a short note beside it. Each shows once on this device; "Hide tips" stops them all, and ?
+// shows the tip for wherever they are. The very first one ("Start here") also dims the rest of the screen until a tap.
+// (?tips=reset shows them all again)
+function wireTips() {
+  const docsN = () => state.myCerts.length, allOk = () => docsN() > 0 && state.myCerts.every(d => d.ok);
+  const haveDocs = () => state.myCerts.some(d => d.ok) || !!state.sheets, sheetIs = (k) => optOpen?.sec.dataset.sec === k;
+  const sec = (k) => $(`.sec[data-sec="${k}"] .sec-h`);
+  const TIPS = [
+    { id: 'start', dim: true, el: () => sec('certs'), k: 'Start here', t: 'Add the documents you need to display, and we\'ll size the board around them.',
+      when: () => step6 === 'build' && !docsN() && !state.sheets, doneWhen: () => sheetIs('certs') || docsN() > 0 || !!state.sheets },
+    { id: 'add', el: () => $('#docTabOwn'), k: 'Add your documents', t: 'Snap a photo of them on your wall, or upload pictures. We\'ll find each one for you.',
+      when: () => sheetIs('certs') && !docsN() && !state.sheets, doneWhen: () => docsN() > 0 || !!state.sheets },
+    { id: 'tick', el: () => $('#docList .doc:not(.ok) .okpill'), k: 'Check each one', t: 'Make sure each document is right, then tick Add to Board.',
+      when: () => sheetIs('certs') && docsN() > 0 && !allOk() && !state.sheets, doneWhen: allOk },
+    { id: 'db', el: () => $('#addDoc'), k: 'Missing one?', t: 'Pick it from our list of documents with Add from database.',
+      when: () => sheetIs('certs') && docsN() > 0 && !state.sheets },
+    { id: 'size', el: () => sec('size'), k: 'Your size', t: 'We picked the best fit for your documents. Tap to choose another size.',
+      when: () => step6 === 'build' && haveDocs() && !sheetIs('certs'), doneWhen: () => step6 !== 'build' || sheetIs('size') },
+    { id: 'style', el: () => $('#stepBar [data-st="style"]'), k: 'Next: Style', t: 'When you\'re ready, pick the board color, edge and caps.',
+      when: () => step6 === 'build' && haveDocs() && !sheetIs('certs'), doneWhen: () => step6 !== 'build' },
+    { id: 'board', el: () => sec('boardgrp'), k: 'Board color', t: 'Pick a solid color, or a Wilsonart texture or pattern.',
+      when: () => step6 === 'style', doneWhen: () => step6 === 'preview' },
+    { id: 'edge', el: () => sec('edge'), k: 'Edge', t: 'Match the board, or pick a contrasting edge.',
+      when: () => step6 === 'style', doneWhen: () => step6 === 'preview' },
+    { id: 'caps', el: () => sec('caps'), k: 'Caps', t: 'Silver, black or brass caps hold the clear cover in place.',
+      when: () => step6 === 'style', doneWhen: () => step6 === 'preview' },
+    { id: 'preview', el: () => $('#stepBar [data-st="preview"]'), k: 'Next: Preview', t: 'See it on a wall, share it, and add it to your cart.',
+      when: () => step6 === 'style', doneWhen: () => step6 === 'preview' },
+    { id: 'ar', el: () => sec('arview'), k: 'On your wall', t: 'Use your phone\'s camera to see the board on your own wall.',
+      when: () => step6 === 'preview' },
+    { id: 'share', el: () => sec('sharelink'), k: 'Share it', t: 'Send this design to a colleague or your manager.',
+      when: () => step6 === 'preview' },
+  ];
+  let memo = { done: [], off: false };
+  try { if (new URLSearchParams(location.search).get('tips') === 'reset') localStorage.removeItem('cobo.tips'); memo = { ...memo, ...JSON.parse(localStorage.getItem('cobo.tips') || '{}') }; } catch { /* storage blocked */ }
+  const save = () => { try { localStorage.setItem('cobo.tips', JSON.stringify(memo)); } catch { /* storage blocked */ } };
+  const done = (id) => { if (!memo.done.includes(id)) { memo.done.push(id); save(); } };
+  const ring = document.createElement('div'); ring.className = 'tipring'; ring.hidden = true; ring.setAttribute('aria-hidden', 'true');
+  const box = document.createElement('div'); box.className = 'tipbox'; box.hidden = true; box.setAttribute('role', 'status');
+  box.innerHTML = '<b class="tb-k"></b><p class="tb-t"></p><div class="tb-acts"><button type="button" class="tb-ok">Got it</button><button type="button" class="link tb-off">Hide tips</button></div>';
+  document.body.append(ring, box);
+  let cur = null, forced = null, dimmed = false, loop = 0;
+  // shown only on the design screen, with nothing on top, and with its target on screen and not covered (a sheet over it hides it until it closes)
+  const visible = (el) => {
+    if (!el || el.closest('[hidden]') || !el.getClientRects().length) return false;
+    const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    if (r.width < 4 || x < 0 || y < 0 || x > innerWidth || y > innerHeight) return false;
+    const hit = document.elementFromPoint(x, y);
+    return !!hit && (el.contains(hit) || hit.contains(el));
+  };
+  const blocked = () => step() !== 'custom' || !!document.querySelector('dialog[open]') || (!$('#lamPanel').hidden && !$('#lamPanel').contains(cur?.el?.() || null));
+  const pick = () => {
+    if (blocked()) return null;
+    if (forced) { const f = TIPS.find(x => x.id === forced); if (f.when() && visible(f.el())) return f; forced = null; }
+    if (memo.off) return null;
+    return TIPS.find(x => !memo.done.includes(x.id) && x.when() && visible(x.el())) || null;
+  };
+  const place = () => {
+    if (!cur) return;
+    const el = cur.el();
+    if (!el || !el.getClientRects().length) return;
+    const r = el.getBoundingClientRect(), pad = 4, rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 10;
+    Object.assign(ring.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px', borderRadius: rad + pad + 'px' });
+    const bw = box.offsetWidth, bh = box.offsetHeight, gap = 14, m = 10;
+    const cards = [el.closest('.side, .p-body'), $('#optSheet')].filter(p => p && !p.hidden && p.getClientRects().length).map(p => p.getBoundingClientRect());
+    const left = Math.min(r.left, ...cards.filter(p => p.left < r.right).map(p => p.left));   // (clear of the panel it sits in, and of an open pop-up beside it)
+    const top = Math.min(r.top, ...cards.filter(p => p.top < r.bottom).map(p => p.top));
+    let x, y;
+    if (!phone.matches && left - gap - bw > m) { x = left - pad - gap - bw; y = r.top + r.height / 2 - bh / 2; }   // computers: to the left of it
+    else if (phone.matches && el.closest('#optSheet') && r.bottom + pad + gap + bh < innerHeight - m) { x = r.left + r.width / 2 - bw / 2; y = r.bottom + pad + gap; }   // phones, in a pop-up: under it (its own words are above)
+    else if (top - pad - gap - bh > m) { x = r.left + r.width / 2 - bw / 2; y = top - pad - gap - bh; }                // phones: above the panel, on the 3D view
+    else if (r.top - pad - gap - bh > m) { x = r.left + r.width / 2 - bw / 2; y = r.top - pad - gap - bh; }            // (or just above it)
+    else { x = r.left + r.width / 2 - bw / 2; y = r.bottom + pad + gap; }                                               // (or below, when there's no room above)
+    box.style.left = Math.max(m, Math.min(innerWidth - bw - m, x)) + 'px';
+    box.style.top = Math.max(m, Math.min(innerHeight - bh - m, y)) + 'px';
+  };
+  const frame = () => { place(); loop = requestAnimationFrame(frame); };   // (follows it while panels slide and lists scroll)
+  const show = (tip) => {
+    cur = tip; ring.hidden = box.hidden = !tip;
+    cancelAnimationFrame(loop);
+    if (!tip) { ring.classList.remove('dim'); dimmed = false; return; }
+    loop = requestAnimationFrame(frame);
+    box.querySelector('.tb-k').textContent = tip.k; box.querySelector('.tb-t').textContent = tip.t;
+    dimmed = !!tip.dim && !memo.done.includes(tip.id);
+    ring.classList.toggle('dim', dimmed);
+    place();
+  };
+  const tick = () => {
+    if (document.hidden) return;
+    if (step() !== 'custom') { if (cur) show(null); return; }   // (the welcome's moving board changes the design: nothing counts until they're in)
+    TIPS.forEach(x => { if (!memo.done.includes(x.id) && x.doneWhen?.()) done(x.id); });   // (they did it already: no need to say)
+    const next = pick();
+    if (next !== cur) show(next);
+  };
+  setInterval(tick, 300);
+  // tapping the ringed button counts as "got it"; the first tap anywhere lifts the dim
+  document.addEventListener('pointerdown', (e) => { if (dimmed && !box.contains(e.target)) { dimmed = false; ring.classList.remove('dim'); } }, true);
+  document.addEventListener('click', (e) => {
+    if (!cur || box.contains(e.target)) return;
+    const el = cur.el();
+    if (el && el.contains(e.target)) { done(cur.id); if (forced === cur.id) forced = null; show(null); }
+  }, true);
+  box.querySelector('.tb-ok').addEventListener('click', () => { if (cur) done(cur.id); forced = null; show(null); tick(); });
+  box.querySelector('.tb-off').addEventListener('click', () => { memo.off = true; save(); forced = null; show(null); toast('Tips are off. Tap ? any time for a tip.'); });
+  const help = $('#helpBtn'); help.setAttribute('aria-label', 'Show a tip for this step'); help.title = 'Tips';
+  help.addEventListener('click', () => {
+    memo.off = false; save();
+    const f = blocked() ? null : TIPS.find(x => x.when() && visible(x.el()));
+    if (!f) return toast('Tap any option to change it. The board updates as you go.');
+    forced = f.id; show(f);
+  });
 }
 
 // "Try it with examples" (also ?docs=demo): a labor-law poster plus two permits, drawn on the spot
