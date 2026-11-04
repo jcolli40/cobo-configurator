@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611031848';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611031848';
-import { wallTexture, wallSwatch } from './env.js?v=202611031848';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611031848';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611031939';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611031939';
+import { wallTexture, wallSwatch } from './env.js?v=202611031939';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611031939';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -79,7 +79,7 @@ const state = {
   path: null,               // v2 only: 'standard' or 'custom' (null = not chosen yet)
   myCerts: [],              // the customer's own certificate photos, shown in place of the samples (in order)
   wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offX: 0, offY: 0 },   // photo of the customer's own wall
-  view: 'angle',
+  view: V8 ? 'front' : 'angle',   // (v8: the board straight on)
   art: {                    // uploaded images: { img (canvas), name, aspect, imgId, ...layout settings }
     logo: { img: null, name: '', ...artDefaults('logo') },
     background: { img: null, name: '', ...artDefaults('background') },
@@ -146,7 +146,7 @@ controls.minDistance = 8;
 // v5: left / right only (35 degrees, so the room photo behind it stays believable), at a fixed slight downward look.
 const FLAT = LAYOUT === 'v5';
 const TURN = FLAT ? Math.PI * 35 / 180 : V8 ? Math.PI * 70 / 180 : Math.PI / 3;   // (v8: 70 degrees, 10 more than the others)
-const PITCH = 0.08;                          // v5: radians the camera looks down at the board
+const PITCH = V8 ? 0 : 0.08;                         // v5: radians the camera looks down at the board
 if (FLAT) controls.enablePan = false;        // v5: no sliding the view sideways (it would show the room photo's edge)
 function lockAngles(view) {
   const back = view === 'back';
@@ -159,7 +159,7 @@ function unlockAngles() {                      // while the camera glides betwee
   controls.minAzimuthAngle = -Infinity; controls.maxAzimuthAngle = Infinity;
   controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI;
 }
-lockAngles('angle');
+lockAngles(state.view);
 
 const key = new THREE.DirectionalLight(0xffffff, 2.3);
 key.castShadow = true;
@@ -1792,11 +1792,11 @@ function wireSteps() {
       const s = document.createElement('select');
       s.innerHTML = typeOptionsHtml();
       s.addEventListener('change', () => { if (s.value) addTypeDoc(s.value); });
-      openTypePicker(s, 'Add a document');
+      openTypePicker(s, 'Add a document', $('#addDoc'));
     });
     $('#certClear')?.remove(); $('#docTools').remove();                  // (no "Remove all" or "Auto-arrange": documents arrange themselves)
     $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; if (!sizePicked) useBestFit(); else refresh(); });
-    for (const id of ['#bizBtn', '#bizEdit']) $(id).addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in'));
+    for (const id of ['#bizBtn', '#bizEdit']) $(id).addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in', $(id)));
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = !!e.target.value; paintState(); });   // (picking one is confirming it)
     detectStatus().then(s => { if (s?.country === 'US' && s.region) guessState({ state: s.region }, 'ip'); });   // (the Worker knows the visitor's state)
   }
@@ -3422,8 +3422,8 @@ function wireExtras() {
   list.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-act]'), li = e.target.closest('.doc'); if (!b || !li) return;
     const i = +li.dataset.i;
-    if (b.dataset.act === 'type') return openTypePicker(li.querySelector('[data-type]'));
-    if (b.dataset.act === 'size') return openTypePicker(li.querySelector('[data-size]'), 'Document size');
+    if (b.dataset.act === 'type') return openTypePicker(li.querySelector('[data-type]'), undefined, b);
+    if (b.dataset.act === 'size') return openTypePicker(li.querySelector('[data-size]'), 'Document size', b);
     if (b.dataset.act === 'zoom') return openLightbox(state.myCerts[i], i);              // (v8: the picture opens large)
     if (b.dataset.act === 'retake') { retakeIdx = i; return retakeInput.click(); }
     if (b.dataset.act === 'turn') {                          // (v8: Upright / Sideways buttons set the way round; the old single button flips it)
@@ -3552,7 +3552,8 @@ function askAddOrNew(question) {
 }
 // v8 (phones): "Which document?" as our own bottom sheet: grouped, readable, the current one marked. It fills in the real
 // <select> (which the page still uses) and tells it it changed.
-function openTypePicker(sel, title = 'Which document?') {
+// Computers: it opens beside the button that opened it (to the left of its panel), sized to fit the screen; phones: a sheet from the bottom.
+function openTypePicker(sel, title = 'Which document?', from = null) {
   if (!sel) return;
   const dlg = document.createElement('dialog'), row = (o) => `<button type="button" role="radio" aria-checked="${o.value === sel.value}" class="tp-o${o.value === sel.value ? ' on' : ''}" data-v="${escHtml(o.value)}"><span>${escHtml(o.text)}</span><i aria-hidden="true"></i></button>`;
   dlg.className = 'typepick'; dlg.setAttribute('aria-label', title);
@@ -3568,7 +3569,16 @@ function openTypePicker(sel, title = 'Which document?') {
     sel.value = o.dataset.v; sel.dispatchEvent(new Event('change', { bubbles: true })); dlg.close();
   });
   dlg.addEventListener('close', () => dlg.remove());
-  document.body.append(dlg); dlg.showModal();
+  document.body.append(dlg);
+  if (from && !phone.matches) dlg.classList.add('pop');
+  dlg.showModal();
+  if (dlg.classList.contains('pop')) {
+    const a = from.getBoundingClientRect(), panel = (from.closest('.side, .p-body') || from).getBoundingClientRect(), m = 16, gap = 14;
+    const w = dlg.offsetWidth, h = dlg.offsetHeight;
+    const x = panel.left - gap - w >= m ? panel.left - gap - w : Math.min(innerWidth - w - m, Math.max(m, a.left + a.width / 2 - w / 2));
+    const y = Math.min(innerHeight - h - m, Math.max(m, a.top + a.height / 2 - h / 2));   // (level with the button, nudged up or down to stay on screen)
+    Object.assign(dlg.style, { left: x + 'px', top: y + 'px' });
+  }
   dlg.querySelector('.tp-o.on')?.scrollIntoView({ block: 'center' });
 }
 // v8: a document's picture, large (tap anywhere or press Esc to close)
@@ -4271,7 +4281,7 @@ wirePicker();
 new ResizeObserver(() => { resize(); }).observe(stage);
 resize();
 buildBoard();
-setView('angle', true);
+setView(state.view, true);
 window.__cobo = { state, refresh, setView, currentSpec, THREE, scene, camera, renderer, applyDesign };   // also tells index.html the builder started
 loop();
 renderCart({ items: [], total: 0, demo: !embedded });   // empty cart state + volume-discount hint
