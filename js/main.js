@@ -1977,7 +1977,7 @@ function wireSteps() {
   // the welcome card: start from a popular design, or from scratch (Build, with your documents first)
   // (the COBO icon sits on the card's top edge; the two ways to start are big tiles side by side)
   const logo = document.createElement('span'), img = document.createElement('img');
-  logo.className = 't-logo'; img.src = new URL('../img/brand/COBO-Icon-FullColor.svg', import.meta.url).href; img.alt = 'Compliance Boards';
+  logo.className = 't-logo'; img.src = new URL(document.documentElement.hasAttribute('data-rebrand') ? '../img/brand/COBO-Icon-FullColor.svg' : '../img/cobo-icon.svg', import.meta.url).href; img.alt = 'Compliance Boards';
   logo.append(img); $('.t-intro .t-card').prepend(logo);
   if (V8) $('.t-intro h1').innerHTML = 'Compliance Board<span class="t-des">Designer</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
   $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';

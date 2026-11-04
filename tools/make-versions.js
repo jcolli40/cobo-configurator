@@ -4,22 +4,25 @@
 // v6 is v5 plus data-v6 (the floating icon dock, no wall scan), so it keeps every v5 feature it doesn't change.
 // v7 is v6 plus data-v7: no popular designs anywhere.
 // v8 is v7 plus data-v8: "Snap your wall" in the Documents step (Gemini finds and names each certificate; see SNAPWALL-GEMINI.md).
+// v8-rebrand is v8 plus data-rebrand: the 2026 interlocked-logo colors, icon and favicons. To put the rebrand live, give v8 data-rebrand too.
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const names = { v2: 'Standard or custom', v3: 'All options, priced', v4: 'Guided, photo first', v5: 'Auto-suggest', v6: 'Floating dock', v7: 'No popular designs', v8: 'Snap your wall (Gemini)' };
+const names = { v2: 'Standard or custom', v3: 'All options, priced', v4: 'Guided, photo first', v5: 'Auto-suggest', v6: 'Floating dock', v7: 'No popular designs', v8: 'Snap your wall (Gemini)', 'v8-rebrand': 'Rebrand preview' };
 
-for (const v of ['v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8']) {
-  const lay = v === 'v6' ? 'v5" data-v6="' : v === 'v7' ? 'v5" data-v6="" data-v7="' : v === 'v8' ? 'v5" data-v6="" data-v7="" data-v8="' : v;
+for (const v of ['v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v8-rebrand']) {
+  const rebrand = v === 'v8-rebrand';
+  const lay = rebrand ? 'v5" data-v6="" data-v7="" data-v8="" data-rebrand="' : v === 'v6' ? 'v5" data-v6="' : v === 'v7' ? 'v5" data-v6="" data-v7="' : v === 'v8' ? 'v5" data-v6="" data-v7="" data-v8="' : v;
   let html = src
-    .replace('<html lang="en" data-layout="v1">', `<html lang="en" data-layout="${lay}"${['v4', 'v5', 'v6', 'v7', 'v8'].includes(v) ? ' data-step="intro"' : ''}>`)
+    .replace('<html lang="en" data-layout="v1">', `<html lang="en" data-layout="${lay}"${['v4', 'v5', 'v6', 'v7', 'v8', 'v8-rebrand'].includes(v) ? ' data-step="intro"' : ''}>`)
     .replace(/"\.\/vendor\//g, '"../vendor/')
     .replace(/src="\.\/js\//g, 'src="../js/')
     .replace(/src="img\//g, 'src="../img/')
     .replace(/href="img\//g, 'href="../img/')
     .replace(/url\("fonts\//g, 'url("../fonts/')
+    .replace(/^<link [^>]*img\/brand\/COBO-(Favicon|AppTile)[^>]*>\r?\n/gm, m => rebrand ? m : '')
     .replace(/<title>(.*?)<\/title>/, `<title>$1 (${v}: ${names[v]})</title>`);
   html = `<!-- GENERATED from ../index.html by tools/make-versions.js. Edit index.html, not this file. -->\n${html}`;
   if (!html.includes(`data-layout="${lay}"`)) throw new Error(`index.html is missing <html lang="en" data-layout="v1">`);

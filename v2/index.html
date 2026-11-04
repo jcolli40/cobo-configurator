@@ -5,9 +5,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compliance Boards Configurator (v2: Standard or custom)</title>
-<link rel="icon" type="image/png" sizes="32x32" href="../img/brand/COBO-Favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="../img/brand/COBO-Favicon-192.png">
-<link rel="apple-touch-icon" href="../img/brand/COBO-AppTile-180.png">
 <!-- ?embed=morph (the store's home page): only the morphing board, see-through, no controls -->
 <script>if (/[?&]embed=morph(&|$)/.test(location.search)) document.documentElement.dataset.embed = 'morph';</script>
 <script type="importmap">
@@ -959,7 +956,7 @@
   @media (min-width: 861px) { [data-v6] .t-card { width: min(387px, calc(100% - 32px)); } }   /* 10% narrower than the old 430 */
   /* "Continue where you left off": a red bubble just under the card (the card moves up to make room) */
   .t-cont { display: none; }
-  [data-v6] .t-cont { position: absolute; left: 0; top: calc(100% + 12px); display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: 0; border-radius: 999px; background: var(--cta); color: #fff; font: inherit; font-size: 15px; font-weight: 700; box-shadow: 0 10px 26px rgba(27, 136, 212, .35); cursor: pointer; animation: tIn .45s .25s ease both; }
+  [data-v6] .t-cont { position: absolute; left: 0; top: calc(100% + 12px); display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: 0; border-radius: 999px; background: #c1272d; color: #fff; font: inherit; font-size: 15px; font-weight: 700; box-shadow: 0 10px 26px rgba(193, 39, 45, .35); cursor: pointer; animation: tIn .45s .25s ease both; }
   [data-v6] .t-cont:hover { filter: brightness(1.08); }
   [data-v6] .t-cont .i { width: 18px; height: 18px; }
   [data-v6] .t-cont[hidden] { display: none; }
@@ -1326,7 +1323,7 @@
   .tipring[hidden], .tipbox[hidden] { display: none; }
   .tipring.dim { box-shadow: 0 0 0 200vmax rgba(10, 22, 44, .38); }
   .tipring::before, .tipring::after { content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px;
-    background: conic-gradient(from var(--tipa), #062b68, #e5484d, #1b88d4, #3cb371, #062b68);
+    background: conic-gradient(from var(--tipa), #1b3a6b, #e53935, #1e7bff, #2fb344, #1b3a6b);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
     animation: tipRace 2.6s linear infinite; }
   .tipring::after { inset: -3px; padding: 6px; filter: blur(7px); opacity: .55; }
@@ -1615,14 +1612,16 @@
   @font-face { font-family: "Albert Sans"; font-style: italic; font-weight: 100 900; font-display: swap; src: url("../fonts/albert-sans-italic.woff2") format("woff2"); }
   [data-v8] { font-family: "Albert Sans", Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   [data-v8] button, [data-v8] input, [data-v8] select, [data-v8] textarea { font-family: inherit; }
-  /* 2026 interlocked rebrand (v8): navy for text and headers, blue for primary actions, warm white panels.
+  /* 2026 interlocked rebrand (on where <html> has data-rebrand; v8-rebrand/ for now): navy for text and headers, blue for primary actions, warm white panels.
      Blue on white is only 3.8:1, so it's for buttons with bold white labels, links and large text; sky is for navy backgrounds only;
      green, amber and red are status colors */
-  :root[data-v8] { --cobo-navy: #062b68; --cobo-blue: #1b88d4; --cobo-sky: #6cc0f8; --cobo-green: #3cb371; --cobo-amber: #f5a623; --cobo-red: #e5484d; --cobo-paper: #f6f4ef; --cobo-ink: #14213d;
+  :root[data-rebrand] { --cobo-navy: #062b68; --cobo-blue: #1b88d4; --cobo-sky: #6cc0f8; --cobo-green: #3cb371; --cobo-amber: #f5a623; --cobo-red: #e5484d; --cobo-paper: #f6f4ef; --cobo-ink: #14213d;
     --accent: var(--cobo-navy); --ink: var(--cobo-ink); --panel: var(--cobo-paper); --cta: var(--cobo-blue); --cta-hover: #1673b5; --btn-blue: var(--cobo-blue); --btn-blue-hover: #1673b5;
     --tint: #e7f1fa; --tint-2: #c5ddf2; --bubble: #d4e8f8; --focus: #7db9ea; }
-  @media (min-width: 861px) { [data-v8] .p-body { background: color-mix(in srgb, var(--cobo-paper) 94%, transparent); } }
-  @media (max-width: 860px) { [data-v8] .p-body .sec:not(.active) { background: #fff; } }   /* (phones: white option tiles on the warm panel) */
+  [data-rebrand] .tipring::before, [data-rebrand] .tipring::after { background: conic-gradient(from var(--tipa), #062b68, #e5484d, #1b88d4, #3cb371, #062b68); }
+  [data-rebrand] .t-cont { background: var(--cta); box-shadow: 0 10px 26px rgba(27, 136, 212, .35); }
+  @media (min-width: 861px) { [data-rebrand] .p-body { background: color-mix(in srgb, var(--cobo-paper) 94%, transparent); } }
+  @media (max-width: 860px) { [data-rebrand] .p-body .sec:not(.active) { background: #fff; } }   /* (phones: white option tiles on the warm panel) */
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
