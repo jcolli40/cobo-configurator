@@ -1499,10 +1499,10 @@
     [data-v6] .t-logo img { height: 34px; }
     @keyframes slideUp { from { transform: translateY(100%); } }
   }
-  /* the theme's italic accent: Instrument Serif Italic (the .cobo-accent style in the Shopify theme), for "Designer" on the welcome card */
-  @font-face { font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url("fonts/instrument-serif-italic.woff2") format("woff2"); }
+  /* "BoardBuilder" on the welcome card = the theme's accent (.cobo-accent in the Shopify theme): Albert Sans Extra Bold, upright, tight tracking */
   [data-v8] .t-intro .t-card h1 { font-size: 18px; line-height: 1.25; }   /* (20% bigger than 15px) */
-  [data-v8] .t-intro .t-card h1 .t-des { display: block; font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; text-transform: none; letter-spacing: -0.01em; font-size: 1.6em; line-height: 1.1; }
+  [data-v8] .t-intro .t-card h1 .t-des { display: block; font-family: inherit; font-style: normal; font-weight: 800; text-transform: none; letter-spacing: -0.02em; font-size: 2.2em; color: var(--cobo-blue, #1b88d4); line-height: 1.1; }
+  [data-v8] .t-intro .t-card h1 .t-des b { font-weight: inherit; color: var(--cobo-navy, #062b68); }   /* "BoardBuilder": Board in navy, Builder in the brand blue */
   @media (max-width: 860px) { [data-v8] .t-intro .t-card h1 { font-size: 16.8px; } }   /* (20% bigger than 14px) */
   /* ---------- v8 round of edits (kept last so it wins over the older rules) ---------- */
   /* Your Documents: the Add button is pale blue with navy text; Use samples in the same grey as the file types, icon left, switch right */
@@ -1653,12 +1653,15 @@
   [data-v8] #sumAR:hover { background: var(--tint); }
   [data-v8] :is(#sumShare, #sumSave) { flex: none; min-height: 36px; padding: 4px 8px; border: 0; background: none; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   [data-v8] :is(#sumShare, #sumSave) .i { display: none; }
-  /* v8 welcome: a large animated COBO icon centered above the card, in place of the morphing board (the small icon on the card goes) */
+  /* v8 welcome: a large animated COBO icon at the top of the card, just above the title, in place of the morphing board (the small icon on the card goes) */
   .t-mark { display: none; }
-  [data-v8] .t-intro .t-mark { position: absolute; left: 0; right: 0; top: 10vh; display: flex; justify-content: center; pointer-events: none; }
-  [data-v8] .t-intro .t-mark img { height: min(34vh, 300px); width: auto; }
+  [data-v8] .t-intro .t-mark { display: flex; justify-content: center; justify-self: center; margin-bottom: 14px; pointer-events: none; }
+  [data-v8] .t-intro .t-mark img { height: min(24vh, 210px); width: auto; }   /* (30% smaller than before) */
   [data-v8] .t-intro .t-logo { display: none; }
-  @media (max-width: 860px) { [data-v8] .t-intro .t-mark { top: 19vh; } [data-v8] .t-intro .t-mark img { height: min(30vh, 240px); } }
+  @media (max-width: 860px) { [data-v8] .t-intro .t-mark img { height: min(21vh, 168px); } }
+  /* the whole group (logo, title, text, Start) is centered top to bottom; with "Continue where you left off" under it, the centre moves up by that button's height */
+  [data-v8] .t-intro .t-card { top: 0; bottom: 0; height: fit-content; margin-block: auto; }
+  [data-v8] .t-intro .t-card.cont { bottom: 62px; }
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
@@ -2294,6 +2297,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611032158" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611041046" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

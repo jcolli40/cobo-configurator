@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611032158';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611032158';
-import { wallTexture, wallSwatch } from './env.js?v=202611032158';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611032158';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611041046';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611041046';
+import { wallTexture, wallSwatch } from './env.js?v=202611041046';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611041046';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -2004,9 +2004,9 @@ function wireSteps() {
     mark.className = 't-mark';
     still.media = '(prefers-reduced-motion: reduce)'; still.srcset = new URL('../img/brand/COBO-Icon-FullColor.svg', import.meta.url).href;
     anim.src = new URL('../img/brand/COBO-Icon-FullColor-Status-PlayOnce.svg', import.meta.url).href; anim.alt = '';
-    mark.append(still, anim); $('.t-intro').prepend(mark);
+    mark.append(still, anim); $('.t-intro .t-card').prepend(mark);   // inside the card, so it sits just above the title
   }
-  if (V8) $('.t-intro h1').innerHTML = 'Compliance Board<span class="t-des">Designer</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
+  if (V8) $('.t-intro h1').innerHTML = '<span class="t-des"><b>Board</b>Builder</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
   $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
   $('#tourStart').innerHTML = '<span>Start</span><svg class="i"><use href="#i-right"/></svg>';   // one way in: Build
   $('#tourSkipCard').hidden = true;
