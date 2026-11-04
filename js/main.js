@@ -306,7 +306,7 @@ const CERT_LOOKS = [
   { paper: '#fbf8f1', ink: '#1b3a6b', accent: '#b8954a', border: 'double', seal: '#c9a24e' },
   { paper: '#fdf9f0', ink: '#7a1f2b', accent: '#7a1f2b', border: 'corners', seal: '#a8323e', ribbon: true, italic: true },
   { paper: '#ffffff', ink: '#1f5a3a', accent: '#1f5a3a', border: 'thin', band: true, seal: '#2e7d4f', sans: true },
-  { paper: '#ffffff', ink: '#1d1d1f', accent: '#1d1d1f', border: 'thin', bar: '#c1272d', seal: '#1d1d1f', sans: true, left: true },
+  { paper: '#ffffff', ink: '#1d1d1f', accent: '#1d1d1f', border: 'thin', bar: '#b3261e', seal: '#1d1d1f', sans: true, left: true },
   { paper: '#eef4fb', ink: '#1a4f8b', accent: '#1a4f8b', border: 'thick', band: true, seal: '#1a4f8b', sans: true, number: true },
   { paper: '#fbf6e8', ink: '#1b3a6b', accent: '#b8954a', border: 'dashed', seal: '#c9a24e', ribbon: true },
   { paper: '#ffffff', ink: '#b3261e', accent: '#b3261e', border: 'thin', band: true, seal: '#b3261e', sans: true, table: true },
@@ -1977,7 +1977,7 @@ function wireSteps() {
   // the welcome card: start from a popular design, or from scratch (Build, with your documents first)
   // (the COBO icon sits on the card's top edge; the two ways to start are big tiles side by side)
   const logo = document.createElement('span'), img = document.createElement('img');
-  logo.className = 't-logo'; img.src = new URL('../img/cobo-icon.svg', import.meta.url).href; img.alt = 'COBO';
+  logo.className = 't-logo'; img.src = new URL('../img/brand/COBO-Icon-FullColor.svg', import.meta.url).href; img.alt = 'Compliance Boards';
   logo.append(img); $('.t-intro .t-card').prepend(logo);
   if (V8) $('.t-intro h1').innerHTML = 'Compliance Board<span class="t-des">Designer</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
   $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
