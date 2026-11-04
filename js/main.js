@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611032121';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611032121';
-import { wallTexture, wallSwatch } from './env.js?v=202611032121';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611032121';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611032139';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611032139';
+import { wallTexture, wallSwatch } from './env.js?v=202611032139';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611032139';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1620,6 +1620,24 @@ function paintSummary(sp) {
     li.append(a, b);
     return li;
   }));
+  if (V8) paintReceipt(rows.slice(0, -1).concat(sp.quantity > 1 ? [['Quantity', String(sp.quantity)]] : []), rows[rows.length - 1][1]);
+}
+// v8: the same lines as a printed receipt (see .rcpt in index.html)
+function paintReceipt(rows, total) {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const now = new Date();
+  const head = el('div', 'rc-c'), logo = el('img');
+  logo.src = new URL('../img/brand/COBO-Icon-Black.svg', import.meta.url).href; logo.alt = '';
+  head.append(logo, el('b', 'rc-brand', 'COMPLIANCE BOARDS'), el('span', 'rc-sm', 'complianceboards.com'));
+  const meta = el('div', 'rc-row rc-sm');
+  meta.append(el('span', '', 'BOARD DESIGN'), el('span', '', `${now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`));
+  const lines = rows.map(([k, v]) => { const r = el('div', 'rc-row'); r.append(el('span', 'rc-k', k), el('i'), el('span', 'rc-v', v)); return r; });
+  const tot = el('div', 'rc-tot');
+  tot.append(el('span', '', 'TOTAL'), el('span', '', total));
+  const bar = el('div', 'rc-bar'); bar.setAttribute('aria-hidden', 'true');
+  const paper = el('div', 'rc-paper');
+  paper.append(head, el('hr'), meta, el('hr'), ...lines, el('hr'), tot, bar, el('div', 'rc-c rc-ty', 'Thank you for designing with us! :)'));
+  $('#sumRcpt').replaceChildren(paper);
 }
 function wireLayout() {
   document.querySelectorAll(`.lay-${LAYOUT}`).forEach(el => { el.hidden = false; });

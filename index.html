@@ -23,7 +23,7 @@
     --ink: #1c1c1e; --muted: #6e6e73; --faint: #9a9aa0; --line: #e6e6e9; --line-2: #d6d6db;
     --panel: #ffffff; --card: #ffffff; --bg: #ffffff; --hover: #f5f5f7;
     --accent: #1b3a6b; --accent-ink: #ffffff; --tint: #e8edf5; --tint-2: #c9d4e6;
-    --cta: var(--accent); --cta-hover: var(--cta-hover); --btn-blue: #1f7bb6; --btn-blue-hover: var(--btn-blue-hover); --bubble: #cfe0f7; --focus: var(--focus);   /* (v8 swaps these for the 2026 brand, below) */
+    --cta: var(--accent); --cta-hover: #24497f; --btn-blue: #1f7bb6; --btn-blue-hover: #1a6ca1; --bubble: #cfe0f7; --focus: #8fb0e0;   /* (v8 swaps these for the 2026 brand, below) */
     --radius: 14px; --r-sm: 10px; --sw: 5px;              /* --sw = swatch corner radius */
     --shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 4px 14px rgba(0, 0, 0, .05);
     --pw: 400px;                                            /* width of the options panel */
@@ -1624,6 +1624,35 @@
   [data-rebrand] .t-cont { background: var(--cta); box-shadow: 0 10px 26px rgba(27, 136, 212, .35); }
   @media (min-width: 861px) { [data-rebrand] .p-body { background: color-mix(in srgb, var(--cobo-paper) 94%, transparent); } }
   @media (max-width: 860px) { [data-rebrand] .p-body .sec:not(.active) { background: #fff; } }   /* (phones: white option tiles on the warm panel) */
+  /* v8 Summary: the board as a printed receipt (torn top and bottom, mono type, dot leaders, barcode),
+     then Add to cart, View it on your wall in a navy outline, and Share / Save for later as links */
+  .rcpt { display: none; }
+  [data-v8] #sumList { display: none; }
+  [data-v8] .rcpt { display: block; order: 1; filter: drop-shadow(0 6px 10px rgba(20, 33, 61, .14)) drop-shadow(0 1px 1px rgba(20, 33, 61, .12)); }
+  [data-v8] .rc-paper { --z: 8px; padding: 30px 22px; background: #fff; color: #222; font: 13px/1.5 ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+    -webkit-mask: linear-gradient(#000 0 0) center / 100% calc(100% - var(--z) * 2) no-repeat, conic-gradient(from -45deg at bottom, #000 90deg, #0000 0) bottom / calc(var(--z) * 2) var(--z) repeat-x, conic-gradient(from 135deg at top, #000 90deg, #0000 0) top / calc(var(--z) * 2) var(--z) repeat-x;
+            mask: linear-gradient(#000 0 0) center / 100% calc(100% - var(--z) * 2) no-repeat, conic-gradient(from -45deg at bottom, #000 90deg, #0000 0) bottom / calc(var(--z) * 2) var(--z) repeat-x, conic-gradient(from 135deg at top, #000 90deg, #0000 0) top / calc(var(--z) * 2) var(--z) repeat-x; }
+  [data-v8] .rc-c { display: grid; justify-items: center; text-align: center; }
+  [data-v8] .rc-c img { width: 44px; height: auto; margin-bottom: 6px; }
+  [data-v8] .rc-brand { font-weight: 800; letter-spacing: .2em; }
+  [data-v8] .rc-sm { font-size: 11px; color: #666; }
+  [data-v8] .rc-paper hr { border: 0; border-top: 1.5px dashed #9a9a9a; margin: 12px 0; }
+  [data-v8] .rc-row { display: flex; align-items: flex-end; gap: 6px; padding: 3px 0; }
+  [data-v8] .rc-row.rc-sm { justify-content: space-between; padding: 0; }
+  [data-v8] .rc-k { white-space: nowrap; }
+  [data-v8] .rc-row i { flex: 1; min-width: 12px; border-bottom: 1.5px dotted #b5b5b5; margin-bottom: 6px; }
+  [data-v8] .rc-v { max-width: 62%; text-align: right; }
+  [data-v8] .rc-tot { display: flex; justify-content: space-between; gap: 12px; font-size: 20px; font-weight: 800; }
+  [data-v8] .rc-bar { height: 44px; width: 220px; max-width: 100%; margin: 16px auto 6px; background: repeating-linear-gradient(90deg, #111 0 2px, #fff 2px 4px, #111 4px 5px, #fff 5px 8px, #111 8px 11px, #fff 11px 12px, #111 12px 13px, #fff 13px 16px); }
+  [data-v8] .rc-ty { font-size: 12px; }
+  [data-v8] #sumCta { order: 2; }
+  [data-v8] .rcpt ~ .row { order: 3; justify-content: center; gap: 4px 18px; }
+  [data-v8] .rcpt ~ .help { order: 4; text-align: center; }
+  [data-v8] #sumAR { min-height: 48px; border: 2px solid var(--accent); background: none; color: var(--accent); }
+  [data-v8] #sumAR .i { color: var(--accent); }
+  [data-v8] #sumAR:hover { background: var(--tint); }
+  [data-v8] :is(#sumShare, #sumSave) { flex: none; min-height: 36px; padding: 4px 8px; border: 0; background: none; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  [data-v8] :is(#sumShare, #sumSave) .i { display: none; }
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
@@ -2015,6 +2044,7 @@
           <button class="sec-h" aria-expanded="false"><svg class="i"><use href="#i-list"/></svg><span class="sec-t">Summary</span><span class="sec-v"></span><svg class="i chev"><use href="#i-chev"/></svg></button>
           <div class="sec-b" hidden>
             <ul class="sumlist" id="sumList"></ul>
+            <div class="rcpt" id="sumRcpt"></div>
             <div class="row">
               <button class="chipbtn" type="button" id="sumAR"><svg class="i"><use href="#i-ar"/></svg>View it on your wall</button>
               <button class="chipbtn" type="button" id="sumShare"><svg class="i"><use href="#i-share"/></svg>Share</button>
@@ -2258,6 +2288,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="./js/main.js?v=202611032121" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611032139" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

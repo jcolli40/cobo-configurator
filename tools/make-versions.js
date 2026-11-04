@@ -13,7 +13,9 @@ const root = path.resolve(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const names = { v2: 'Standard or custom', v3: 'All options, priced', v4: 'Guided, photo first', v5: 'Auto-suggest', v6: 'Floating dock', v7: 'No popular designs', v8: 'Snap your wall (Gemini)', 'v8-rebrand': 'Rebrand preview' };
 
-for (const v of ['v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v8-rebrand']) {
+// Only v8 is rebuilt: Justin works on v8 alone, and v2-v7 stay exactly as they are unless he asks.
+// (To rebuild one of them on request, add it to this list for that run.)
+for (const v of ['v8', 'v8-rebrand']) {
   const rebrand = v === 'v8' || v === 'v8-rebrand';
   const lay = rebrand ? 'v5" data-v6="" data-v7="" data-v8="" data-rebrand="' : v === 'v6' ? 'v5" data-v6="' : v === 'v7' ? 'v5" data-v6="" data-v7="' : v;
   let html = src
