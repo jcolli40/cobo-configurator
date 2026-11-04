@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611032139';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611032139';
-import { wallTexture, wallSwatch } from './env.js?v=202611032139';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611032139';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611032158';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611032158';
+import { wallTexture, wallSwatch } from './env.js?v=202611032158';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611032158';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1997,6 +1997,15 @@ function wireSteps() {
   const logo = document.createElement('span'), img = document.createElement('img');
   logo.className = 't-logo'; img.src = new URL(document.documentElement.hasAttribute('data-rebrand') ? '../img/brand/COBO-Icon-FullColor.svg' : '../img/cobo-icon.svg', import.meta.url).href; img.alt = 'Compliance Boards';
   logo.append(img); $('.t-intro .t-card').prepend(logo);
+  // v8: a large animated COBO icon where the morphing board was (its status dot blinks red, then amber, then settles on green;
+  // with reduced motion it's the still icon)
+  if (V8 && !EMBED) {
+    const mark = document.createElement('picture'), still = document.createElement('source'), anim = document.createElement('img');
+    mark.className = 't-mark';
+    still.media = '(prefers-reduced-motion: reduce)'; still.srcset = new URL('../img/brand/COBO-Icon-FullColor.svg', import.meta.url).href;
+    anim.src = new URL('../img/brand/COBO-Icon-FullColor-Status-PlayOnce.svg', import.meta.url).href; anim.alt = '';
+    mark.append(still, anim); $('.t-intro').prepend(mark);
+  }
   if (V8) $('.t-intro h1').innerHTML = 'Compliance Board<span class="t-des">Designer</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
   $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
   $('#tourStart').innerHTML = '<span>Start</span><svg class="i"><use href="#i-right"/></svg>';   // one way in: Build
@@ -2619,12 +2628,13 @@ function tourStep(s) {
       refresh();
     }
     sway = true;                                             // framed by setStep once the view has its full size
-    if (V6 && s === 'intro') startMorph();
+    if (V6 && s === 'intro' && (!V8 || EMBED)) startMorph();   // (v8: no board on the welcome; the big animated icon stands in for it)
   } else {
     sway = null;
     stopMorph();
     if (showcase) { Object.assign(state, showcase.design); state.env = showcase.env; state.certNeed = showcase.need; showcase = null; refresh(true); updateUI(); }
   }
+  if (V8 && !EMBED) root.visible = s !== 'intro';
   if (s === 'snap') { if (touch.matches) startCam(); else camOff(); }
   else stopCam();
 }

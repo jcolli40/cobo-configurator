@@ -1654,6 +1654,12 @@
   [data-v8] #sumAR:hover { background: var(--tint); }
   [data-v8] :is(#sumShare, #sumSave) { flex: none; min-height: 36px; padding: 4px 8px; border: 0; background: none; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
   [data-v8] :is(#sumShare, #sumSave) .i { display: none; }
+  /* v8 welcome: a large animated COBO icon centered above the card, in place of the morphing board (the small icon on the card goes) */
+  .t-mark { display: none; }
+  [data-v8] .t-intro .t-mark { position: absolute; left: 0; right: 0; top: 10vh; display: flex; justify-content: center; pointer-events: none; }
+  [data-v8] .t-intro .t-mark img { height: min(34vh, 300px); width: auto; }
+  [data-v8] .t-intro .t-logo { display: none; }
+  @media (max-width: 860px) { [data-v8] .t-intro .t-mark { top: 19vh; } [data-v8] .t-intro .t-mark img { height: min(30vh, 240px); } }
   /* ===== v8: option titles (Documents, Size, Board Style, Edge, Caps, On your wall, Share, Save for later, Summary) and step titles =====
      Computers read a bit heavier than phones at the same number (bigger letters), so on computers the weights drop one step to look like the phone */
   @media (min-width: 861px) {
@@ -2289,6 +2295,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611032139" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611032158" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
