@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611041151';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611041151';
-import { wallTexture, wallSwatch } from './env.js?v=202611041151';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611041151';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611050558';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611050558';
+import { wallTexture, wallSwatch } from './env.js?v=202611050558';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611050558';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -91,6 +91,9 @@ const state = {
 
 /* ------------------------------------------------------------------ helpers */
 const $ = (s) => document.querySelector(s);
+// the board FACE's color: v8 looks in the real Wilsonart solids first, then the older named colors (presets and saved designs still use those)
+const faceColor = (v) => (v && v[0] === '#') ? { name: 'Custom color', hex: v } : (V8 && SOLIDS.find(c => c.name === v)) || COLORS.find(c => c.name === v) || null;
+const faceHexOf = (v) => faceColor(v)?.hex ?? '#888888';
 const colorHex = (v) => (v && v[0] === '#') ? v : (COLORS.find(c => c.name === v)?.hex ?? WOODS.find(c => c.name === v)?.hex ?? METALS.find(c => c.name === v)?.hex ?? '#888888');
 const woodOf = (v) => WOODS.find(w => w.name === v) || null;
 const metalOf = (v) => METALS.find(m => m.name === v) || null;
@@ -681,7 +684,7 @@ function buildBoard() {
   clearRoot();
   const { w, h } = dims();
   const T = HW.boardT, lam = HW.lamT, b = HW.bandT;
-  const faceHex = state.lamSel ? state.lamSel.avg : colorHex(state.face);
+  const faceHex = state.lamSel ? state.lamSel.avg : faceHexOf(state.face);
   const edgeHex = state.edge === 'match' ? faceHex : colorHex(state.edge);
   const cx = w / 2 - HW.inset, cy = h / 2 - HW.inset;
   const pts = [[-cx, -cy], [cx, -cy], [-cx, cy], [cx, cy]];
@@ -964,6 +967,7 @@ function swatchRow(el, items, getActive, onPick, extra) {
     // v6: each swatch carries its name underneath (tapping the name picks it too)
     const c = document.createElement('div'), n = document.createElement('span');
     c.className = 'swc'; n.textContent = it.name; n.setAttribute('aria-hidden', 'true');
+    if (it.n) { const no = document.createElement('small'); no.className = 'sn'; no.textContent = it.n; n.append(no); }   // (a Wilsonart design number, in grey under the name)
     n.addEventListener('click', () => b.click());
     c.append(b, n);
     el.appendChild(c);
@@ -1099,7 +1103,7 @@ function paintSelBar() {
   let name, color, img = null;
   if (kind === 'caps') { const f = FASTENERS.find(x => x.id === state.fastener) || FASTENERS[0]; name = f.name; color = f.color; }
   else {
-    const L = state.lamSel, face = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(c => c.name === state.face) || COLORS[0];
+    const L = state.lamSel, face = faceColor(state.face) || COLORS[0];
     if (state.edge === 'match') { name = L ? 'Matches the board (Wilsonart ' + L.n + ')' : face.name + ' (matches the board)'; color = face.hex; img = L?.thumb || null; }
     else { const wd = woodOf(state.edge), c = state.edge[0] === '#' ? { name: 'Custom color', hex: state.edge } : COLORS.find(x => x.name === state.edge) || wd || COLORS[0]; name = c.name; color = c.hex; if (wd) img = woodSwatch(wd); const mt = metalOf(state.edge); if (mt) { name = mt.name; color = mt.hex; img = metalSwatch(mt); } }
   }
@@ -1369,7 +1373,7 @@ function build() {
   wireBoardClicks();
   wireSheet();
 
-  swatchRow($('#faceSw'), COLORS, null, (n) => { state.face = n; state.lamSel = null; refresh(); });
+  swatchRow($('#faceSw'), V8 ? SOLIDS : COLORS, null, (n) => { state.face = n; state.lamSel = null; refresh(); });
   // Match toggle: off = back to the last edge color picked (or one that contrasts with the board)
   $('#edgeMatch').addEventListener('change', (e) => {
     state.edge = e.target.checked ? 'match' : (state.lastEdge || (state.face === 'Black' ? 'White' : 'Black'));
@@ -2489,7 +2493,7 @@ function setStep(s) {
   });
 }
 const hexL = (hex) => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
-const lookFace = (L) => (L.lam && findByNumber(L.lam)?.avg) || (L.lam ? '#808080' : colorHex(L.cfg.face));
+const lookFace = (L) => (L.lam && findByNumber(L.lam)?.avg) || (L.lam ? '#808080' : faceHexOf(L.cfg.face));
 // best looks for the wall first; boards that stand out from the wall get a boost
 function rankLooks(w) {
   return STYLES.map((s, i) => ({
@@ -2681,7 +2685,7 @@ function morphNext() {
   // one rebuild without the certificates (a texture board as its average color), then the glide only stretches it
   if (state.lamSel) { state.face = state.lamSel.avg; state.lamSel = null; }
   state.certNeed = 0; refresh();
-  const { w: w0, h: h0 } = dims(), c0 = new THREE.Color(colorHex(state.face)), c1 = new THREE.Color(L ? L.avg : colorHex(face));
+  const { w: w0, h: h0 } = dims(), c0 = new THREE.Color(faceHexOf(state.face)), c1 = new THREE.Color(L ? L.avg : faceHexOf(face));
   const caps = root.children.filter(o => o.name === 'cap'), mats = root.userData.mats || [];
   const t0 = performance.now(), dur = 650;
   const frame = (now) => {
@@ -3260,7 +3264,7 @@ function readParams(q) {
   else if (SIZES.some(s => s.id === q.get('size'))) d.sizeId = q.get('size');
   if (q.get('orient') === 'landscape' || q.get('orient') === 'portrait') d.orient = q.get('orient');
   if (q.get('color') === 'Light Blue') q.set('color', 'Powder Blue');   // (older shared links)
-  if (COLORS.some(c => c.name === q.get('color')) || hex(q.get('color'))) d.face = q.get('color');
+  if (COLORS.some(c => c.name === q.get('color')) || (V8 && SOLIDS.some(c => c.name === q.get('color'))) || hex(q.get('color'))) d.face = q.get('color');
   if (q.get('edge') === 'Light Blue') q.set('edge', 'Powder Blue');
   if (q.get('edge') === 'match' || COLORS.some(c => c.name === q.get('edge')) || hex(q.get('edge'))) d.edge = q.get('edge');
   if (FASTENERS.some(f => f.id === q.get('finish'))) d.fastener = q.get('finish');
@@ -3327,7 +3331,7 @@ function wireExtras() {
   $('#presetList').innerHTML = PICKS.map((p, i) => `<button type="button" class="preset" data-p="${i}"><i></i><b>${p.name}</b><small>${p.blurb}</small></button>`).join('');
   $('#presetList').querySelectorAll('.preset').forEach((b) => {
     const p = PICKS[+b.dataset.p], c = p.cfg;
-    b.querySelector('i').style.setProperty('--swatch', p.lam ? '#6b4a33' : colorHex(c.face));
+    b.querySelector('i').style.setProperty('--swatch', p.lam ? '#6b4a33' : faceHexOf(c.face));
     b.querySelector('i').style.setProperty('--edge', c.edge === 'match' ? 'transparent' : colorHex(c.edge));
   });
   $('#presetList').addEventListener('click', (e) => {
@@ -3862,8 +3866,8 @@ function openStyle(tab) {
 function paintColSelBar() {
   const bar = $('#colSelBar'); if (!bar) return;
   if (styleTab !== 'colors' || state.lamSel) { bar.hidden = true; return; }
-  const c = state.face[0] === '#' ? { name: 'Custom color', hex: state.face } : COLORS.find(x => x.name === state.face) || COLORS[0];
-  bar.hidden = false; bar.querySelector('.sb-sw').style.background = c.hex; bar.querySelector('b').textContent = c.name;
+  const c = faceColor(state.face) || COLORS[0];
+  bar.hidden = false; bar.querySelector('.sb-sw').style.background = c.hex; bar.querySelector('b').textContent = c.n ? c.n + ' · ' + c.name : c.name;
 }
 function setStyleTab(t) {
   styleTab = t;
