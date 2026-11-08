@@ -58,6 +58,8 @@ You can also link straight to a preset, handy from product pages:
 
 All five share one engine (`js/main.js`) and one page. **Edit `index.html` only**, then run `node tools/make-versions.js`, which writes `v2/` to `v5/index.html`. Before pushing, also run `node tools/stamp-version.js`.
 
+**v8 ships a slimmed copy.** `v8/` (and `v8-rebrand/`) load `js/main.v8.js` instead of `js/main.js`: the same engine with every version switch set for v8, the other versions' code removed, and minified. Their page styles also leave out rules that can never apply to v8, without comments. Both are made by `tools/build-v8.js`, which `make-versions.js` and `stamp-version.js` run for you (the first run needs internet, to fetch the esbuild tool once). Keep editing `js/main.js` and `index.html`; never edit `js/main.v8.js`.
+
 Rooms and lighting presets live in `ENVIRONMENTS` (config.js), with the wall textures drawn in `js/env.js`. Popular boards are in `PRESETS`, and volume discounts in `DISCOUNTS` (placeholders; set the same tiers as an automatic discount in Shopify).
 
 ## Other features (and where to tweak them)
