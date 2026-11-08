@@ -1624,7 +1624,7 @@
      Blue on white is only 3.8:1, so it's for buttons with bold white labels, links and large text; sky is for navy backgrounds only;
      green, amber and red are status colors */
   :root[data-rebrand] { --cobo-navy: #062b68; --cobo-blue: #1b88d4; --cobo-sky: #6cc0f8; --cobo-green: #3cb371; --cobo-amber: #f5a623; --cobo-red: #e5484d; --cobo-paper: #f6f4ef; --cobo-ink: #14213d;
-    --accent: var(--cobo-navy); --ink: var(--cobo-ink); --panel: var(--cobo-paper); --cta: var(--cobo-blue); --cta-hover: #1673b5; --btn-blue: var(--cobo-blue); --btn-blue-hover: #1673b5;
+    --accent: var(--cobo-navy); --ink: var(--cobo-ink); --panel: var(--cobo-paper); --cta: #1570b0; --cta-hover: #125f96; --btn-blue: #1570b0; --btn-blue-hover: #125f96;   /* (buttons: a deeper blue so white text passes WCAG AA, 5.3:1) */
     --tint: #e7f1fa; --tint-2: #c5ddf2; --bubble: #d4e8f8; --focus: #7db9ea; }
   [data-rebrand] .tipring::before, [data-rebrand] .tipring::after { background: conic-gradient(from var(--tipa), #062b68, #e5484d, #1b88d4, #3cb371, #062b68); }
   [data-rebrand] .t-cont { background: var(--cta); box-shadow: 0 10px 26px rgba(27, 136, 212, .35); }
@@ -1665,7 +1665,7 @@
   [data-v8] .aitrial .i { flex: none; width: 20px; height: 20px; color: var(--cobo-blue, #1b88d4); fill: currentColor; margin-top: 1px; }
   [data-v8] .aitrial b { display: block; color: var(--cobo-navy, #062b68); font-size: 19px; line-height: 1.25; margin-bottom: 2px; }
   [data-v8] .aitrial span { color: var(--muted); }
-  [data-v8] .aibadge { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: -12px; font-size: 12.5px; font-weight: 600; color: var(--cobo-blue, #1b88d4); }
+  [data-v8] .aibadge { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: -12px; font-size: 12.5px; font-weight: 600; color: #1570b0; }
   [data-v8] .aibadge .i { width: 15px; height: 15px; fill: currentColor; }
   [data-v8] .rc-ai .rc-v { font-weight: 800; }
   /* v8 computers: a small green pill to the left of the cart chip (placed by main.js), hidden while the cart is open */
@@ -1724,6 +1724,9 @@
   [data-v8] .mhead .x .i { margin: 0; width: 20px; height: 20px; }
   .mh-ic { display: none; }
   [data-v8] .mh-ic { display: block; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }   /* (read by screen readers, not shown) */
+  .no3d { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; padding: 24px; background: #f6f4ef; color: #14213d; font: 16px/1.5 system-ui, sans-serif; text-align: center; }
+  .no3d > div { max-width: 460px; } .no3d h2 { color: #062b68; margin: 0 0 10px; } .no3d a { color: #1570b0; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -1785,7 +1788,8 @@
   <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></symbol>
 </svg>
 
-<div class="app">
+<div class="app" role="main">
+  <h1 class="sr-only">Compliance Boards Board Builder</h1>
   <div id="stageWrap">
     <div id="stage"></div>
     <div class="hint pill">Drag to rotate · scroll to zoom · click the board to edit a part</div>
@@ -2321,6 +2325,14 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
+<!-- If this browser can't run the 3D builder (no WebGL, or an iPhone older than iOS 16.4), say so plainly instead of a blank page -->
+<div id="no3d" class="no3d" hidden><div><h2>The 3D board builder can't run in this browser</h2><p>Please update your browser, or try a recent Chrome, Safari or Edge. You can still order a standard board or ask us for a custom one.</p><p><a href="https://complianceboards.com/collections/all" target="_top">Shop standard boards</a> · <a href="https://complianceboards.com/pages/contact" target="_top">Contact us</a></p></div></div>
+<script>(function () {
+  var ok = !!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'));
+  try { var c = document.createElement('canvas'); ok = ok && !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { ok = false; }
+  if (!ok) document.getElementById('no3d').hidden = false;
+  window.__coboNo3d = !ok;
+})();</script>
 <script type="module" src="./js/main.js?v=202611081126" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

@@ -341,11 +341,29 @@ export const HW = {
 // The viewer runs in an iframe (GitHub Pages). "Add to cart" posts a message to the Shopify page,
 // which adds the variant via /cart/add.js (see shopify/cobo-configurator-embed.liquid).
 // Fill in variant IDs as: variantIds['12x24']['Black'] = 41269695348811
-// (12x24 IDs below came from the live site's product JSON; the other sizes still need theirs.)
+// (All six sizes are filled in from the store's product list. Colors that aren't variants, like the Wilsonart solids, use the size's Black board, with the real color written on the order.)
 export const SHOPIFY = {
   messageType: 'cobo:add-to-cart',
-  variantIds: {
-    '12x24': {
+  variantIds: {   // one product per size on complianceboards.com (product title = size), from /products.json on 2026-11-08
+    '6x12': {   // 6x6
+      'Black': 41268290715723,
+      'White': 41268290748491,
+      'Red': 41268290781259,
+      'Forest Green': 41268290814027,
+      'Orange': 41268290846795,
+      'Yellow': 41268290879563,
+      'Raw (unfinished)': 41268290912331,
+    },
+    '12x12': {   // 12x6
+      'Black': 41268289405003,
+      'White': 41268289437771,
+      'Red': 41268289470539,
+      'Forest Green': 41268289503307,
+      'Orange': 41268289536075,
+      'Yellow': 41268289568843,
+      'Raw (unfinished)': 41268289601611,
+    },
+    '12x24': {   // 12x24
       'Black': 41269695348811,
       'White': 41269695381579,
       'Red': 41269695414347,
@@ -353,6 +371,33 @@ export const SHOPIFY = {
       'Orange': 41269695479883,
       'Yellow': 41269695512651,
       'Raw (unfinished)': 41269695545419,
+    },
+    '12x36': {   // 12x36
+      'Black': 41268286914635,
+      'White': 41268286947403,
+      'Red': 41268286980171,
+      'Forest Green': 41268287012939,
+      'Orange': 41268287045707,
+      'Yellow': 41268287078475,
+      'Raw (unfinished)': 41268287111243,
+    },
+    '24x24': {   // 24x24
+      'Black': 41268288225355,
+      'White': 41268288258123,
+      'Red': 41268288290891,
+      'Forest Green': 41268288323659,
+      'Orange': 41268288356427,
+      'Yellow': 41268288389195,
+      'Raw (unfinished)': 41268288421963,
+    },
+    '24x36': {   // 24x36
+      'Black': 41268292059211,
+      'White': 41268292091979,
+      'Red': 41268292124747,
+      'Forest Green': 41268292157515,
+      'Orange': 41268292190283,
+      'Yellow': 41268292223051,
+      'Raw (unfinished)': 41268292255819,
     },
   },
   quoteEmail: 'support@complianceboards.com',

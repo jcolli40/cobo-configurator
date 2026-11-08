@@ -1,0 +1,204 @@
+<title>COBO Pre-Launch Audit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;600;700;800&family=Newsreader:ital,opsz,wght@1,6..72,500&display=swap">
+<style>
+/* layout: one reading column, findings as severity-striped rows, sketches as grey wireframe blocks */
+:root{
+  --bg:#f6f7fa; --surface:#ffffff; --fg:#14213d; --muted:#5a6478; --line:#dfe3ec;
+  --navy:#062b68; --blue:#1570b0; --wire:#e8ecf3; --wire2:#cfd6e3;
+  --high:#c0392b; --med:#c47f00; --low:#3a7d5c; --ok:#2e7d4f;
+  --display:"Albert Sans",system-ui,"Segoe UI",Arial,sans-serif; --serif:"Newsreader",Georgia,serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1424;--surface:#152038;--fg:#e8edf7;--muted:#9aa6bd;--line:#26324d;--navy:#9cc3ff;--blue:#6cb2f0;--wire:#1d2a45;--wire2:#2d3d60;--high:#ff7a6b;--med:#f0b44a;--low:#6fc49a;--ok:#6fc49a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1424;--surface:#152038;--fg:#e8edf7;--muted:#9aa6bd;--line:#26324d;--navy:#9cc3ff;--blue:#6cb2f0;--wire:#1d2a45;--wire2:#2d3d60;--high:#ff7a6b;--med:#f0b44a;--low:#6fc49a;--ok:#6fc49a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--display)}
+.wrap{max-width:860px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+h1{font-size:clamp(30px,5vw,42px);line-height:1.1;margin:0;color:var(--navy);text-wrap:balance;font-weight:800}
+h1 em,h2 em{font-family:var(--serif);font-weight:500}
+h2{font-size:26px;margin:0 0 14px;color:var(--navy);text-wrap:balance}
+h3{font-size:17px;margin:0 0 6px}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lede{color:var(--muted);max-width:65ch;margin-top:12px}
+section{display:grid;gap:14px}
+.top3{display:grid;gap:14px;counter-reset:t}
+.top3 article{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:44px 1fr;gap:4px 14px}
+.top3 article::before{counter-increment:t;content:counter(t);grid-row:span 3;font:800 30px/1 var(--display);color:var(--blue)}
+.top3 p,.top3 ul{color:var(--muted);font-size:15px;margin:0;padding-left:18px}
+.top3 p{padding-left:0}
+table{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.f{display:grid;gap:2px;padding:12px 14px 12px 16px;border-left:4px solid var(--low);background:var(--surface);border-radius:0 8px 8px 0}
+.f.h{border-color:var(--high)}.f.m{border-color:var(--med)}.f.ok{border-color:var(--ok)}
+.f b{font-size:15px}.f span{color:var(--muted);font-size:14px}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:99px;margin-right:6px;color:var(--surface);background:var(--low);vertical-align:2px}
+.tag.h{background:var(--high)}.tag.m{background:var(--med)}.tag.ok{background:var(--ok)}
+.list{display:grid;gap:8px}
+.sketches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:20px}
+.sk{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:10px;min-width:0}
+.sk h3{margin-bottom:2px}.sk>p{color:var(--muted);font-size:14px}
+.frame{display:grid;gap:6px;padding:10px;border:1px dashed var(--wire2);border-radius:8px}
+.blk{background:var(--wire);border-radius:5px;padding:8px 10px;font-size:12.5px;color:var(--muted);line-height:1.35}
+.blk b{color:var(--fg);font-size:13px}
+.blk.new{outline:2px solid var(--blue);outline-offset:-2px}
+.blk.cut{opacity:.45;text-decoration:line-through}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.row2{display:grid;grid-template-columns:1.4fr 1fr;gap:6px}
+.key{font-size:12.5px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.key i{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--wire);vertical-align:-2px;margin-right:5px}
+.key i.n{outline:2px solid var(--blue);outline-offset:-2px}.key i.c{opacity:.45}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bt{font:600 14px var(--display);padding:9px 16px;border-radius:6px;color:#fff}
+.note{font-size:13px;color:var(--muted)}
+ol.plan{margin:0;padding-left:22px;display:grid;gap:6px;color:var(--fg)}
+ol.plan span{color:var(--muted)}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Compliance Boards · complianceboards.com + Board Builder · 8 Nov 2026</p>
+  <h1>Pre-launch audit: <em>what to fix before going live</em></h1>
+  <p class="lede">Technical, accessibility, performance, and design/UX review of the new Shopify theme (preview 189807919179) and the v8 configurator. Restore point taken first: git tag <code>pre-audit-2026-11-08</code> in both repos plus a full copy of the preview theme. Nothing below has been changed yet.</p>
+</header>
+
+<section>
+  <h2>Top 3</h2>
+  <div class="top3">
+    <article><h3>Make the order actually match the board</h3>
+      <p>Right now most v8 boards can't be added to the cart, and the ones that can don't tell Chris Corneliuz what to build or charge the extras.</p>
+      <ul><li>Only 12x24 has Shopify variant IDs, and only for the 7 old color names; the 104 Wilsonart solids find no variant.</li><li>The order carries edge, caps and orientation, but not board color, laminate number or size.</li><li>Upcharges (laminate, wood/metal edge, brass caps) show in the price but Shopify never charges them.</li></ul></article>
+    <article><h3>Finish the homepage story and remove placeholders</h3>
+      <p>The homepage shows "$__" prices and "Feature one / Feature two" in two separate pricing sections. It's long, has two US maps, and has no proof (reviews, price-from, lead time, FAQ). See the homepage sketch below.</p></article>
+    <article><h3>One accessible brand blue, and a safety net for the 3D</h3>
+      <p>White on #1B88D4 fails contrast on every primary button on both sites. A slightly deeper button blue fixes all of them at once. The configurator also needs a fallback when 3D fails (old iPhones, WebGL lost), and the photo-reader worker needs rate limits before launch.</p></article>
+  </div>
+</section>
+
+<section>
+  <h2>Scores today</h2>
+  <div class="tbl"><table>
+    <tr><th>Page</th><th>Perform.</th><th>Access.</th><th>Best pr.</th><th>SEO</th><th>Source</th></tr>
+    <tr><td>Board Builder, phone</td><td>52 (was 39)</td><td>95</td><td>100</td><td>100</td><td>Clean Lighthouse, after Nov 8 speed push</td></tr>
+    <tr><td>Board Builder, desktop</td><td>79</td><td>95</td><td>100</td><td>100</td><td>Clean Lighthouse</td></tr>
+    <tr><td>New theme home, phone</td><td>51</td><td>88</td><td>79*</td><td>85</td><td>Lighthouse with extensions on*</td></tr>
+    <tr><td>Current live site, phone</td><td>98</td><td>96</td><td>100</td><td>100</td><td>Google PageSpeed (can't test preview)</td></tr>
+  </table></div>
+  <p class="note">*Browser extensions lowered this run. The new theme gets a clean score once it's live, or in a clean test browser.</p>
+</section>
+
+<section>
+  <h2>Launch blockers</h2>
+  <div class="list">
+    <div class="f h"><b><span class="tag h">Blocker</span>Placeholder pricing on the homepage</b><span>"$__", "Feature one", "Feature two", "Lead feature" in the Basic/Plus/Pro cards and the Enterprise block.</span></div>
+    <div class="f h"><b><span class="tag h">Blocker</span>Variant IDs missing</b><span>5 of 6 sizes have no Shopify variant; v8 color names don't match any variant. Fix: one variant per size, color carried as a line-item detail.</span></div>
+    <div class="f h"><b><span class="tag h">Blocker</span>Order missing the build spec; extras not charged</b><span>Add board color + Wilsonart number, size, laminate and the upcharge list to the order; charge extras via add-on variants or a bundle app. "Edit board" also loses the laminate.</span></div>
+    <div class="f h"><b><span class="tag h">Blocker</span>Product page link returned 404 on the preview</b><span>Confirm every product link (nav, footer, cart "Edit", share links) resolves; add URL redirects for old-theme pages.</span></div>
+    <div class="f h"><b><span class="tag h">High</span>Photo-reader worker can be abused</b><span>Only the browser's Origin header guards the Gemini key. Add per-visitor rate limits, make the daily cap mandatory, add a spend cap in Google AI Studio.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Accessibility (WCAG 2.2 AA)</h2>
+  <div class="list">
+    <div class="f h"><b><span class="tag h">High</span>Button contrast 3.8:1 (needs 4.5:1)</b><span>Every primary blue button on both sites. One token change: button blue to about #1570B0 (≈5:1); logo and accents keep #1B88D4.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Three H1 headings on the homepage</b><span>Logo, strip hero and split section are all H1. Keep one.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Images and videos without text alternatives</b><span>Made-in-USA badge has no alt; strip hero videos need aria-hidden (they're decorative). Footer copyright text is faint.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>App widget with white-on-white text</b><span>Comes from an app embed, not the theme; fix in that app's settings.</span></div>
+    <div class="f"><b><span class="tag">Low</span>Builder landmarks</b><span>Add a &lt;main&gt; and an H1 for screen readers on the builder steps (the welcome has one).</span></div>
+    <div class="f ok"><b><span class="tag ok">Good</span>Keyboard access in the builder</b><span>Every control reachable by Tab with a visible focus ring, on desktop and phone. Theme honors reduced motion and has pause buttons on animation.</span></div>
+  </div>
+  <p class="note">Automated tools catch about a third of WCAG issues. Before launch: one pass with VoiceOver on an iPhone and NVDA on Windows through "build a board, add to cart, check out".</p>
+</section>
+
+<section>
+  <h2>Performance</h2>
+  <div class="list">
+    <div class="f m"><b><span class="tag m">Med</span>Homepage videos</b><span>About 11 MB of mp4 in theme assets; ~1.5 MB starts on load. Show posters first, load clips as they scroll in, move videos to Shopify Files.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Builder graphics settings for phones</b><span>Lower shadow quality and pixel ratio on phones; stop keeping a copy of every frame (only needed for the cart thumbnail).</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Old-version code shipped to v8</b><span>~40-50% of the builder's code and CSS is for v1-v7 (~50 KB compressed). Strip it from the v8 build.</span></div>
+    <div class="f"><b><span class="tag">Low</span>Tracking scripts</b><span>Google Tag Manager / Facebook come from Customer Events or app embeds. Load them after the page appears.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Reliability and code</h2>
+  <div class="list">
+    <div class="f h"><b><span class="tag h">High</span>No fallback when 3D fails</b><span>iPhones can drop the 3D view under memory pressure; iOS before 16.4 shows a blank page. Add a "3D not available" fallback and recover from a lost 3D view.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Custom sizes not limited to what can be built</b><span>Links can set 1" or 96x96. Enforce 6" minimum, 48" short side, 96" long side.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>"Edit board" removes the old cart line before adding the new one</b><span>If the add fails, the board is gone. Add first, then remove.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Custom quote email may not open inside Shopify</b><span>Let the store page handle the quote (contact form) instead of a mailto from inside the frame.</span></div>
+    <div class="f m"><b><span class="tag m">Med</span>Builder messages go to any page that embeds it</b><span>Check the store's address on both send and receive.</span></div>
+    <div class="f"><b><span class="tag">Low</span>Test switches still on</b><span>?test=1 and ?scan=/screenshots should be removed for launch. Camera permission on the builder frame isn't needed unless Snap Your Wall runs there.</span></div>
+    <div class="f"><b><span class="tag">Low</span>SEO basics</b><span>Home title is just "Compliance Boards"; contact, collection and cart pages lack descriptions; confirm Product structured data on product pages.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Design and UX: <em>what I'd change</em></h2>
+  <p class="lede" style="margin:0">Sketches only. Nothing is built until you approve. Blue outline = new or changed, struck out = removed or merged.</p>
+  <div class="key"><span><i></i>keep</span><span><i class="n"></i>new / changed</span><span><i class="c"></i>remove / merge</span></div>
+  <div class="sketches">
+    <div class="sk">
+      <h3>A. Homepage: shorter, with proof</h3>
+      <p>Today: 10 sections, two pricing blocks, two US maps, no price or reviews. Proposed: 8 sections in buying order.</p>
+      <div class="frame">
+        <div class="blk"><b>Hero</b>: "Staying current has never looked better" + strip</div>
+        <div class="blk new"><b>Proof bar</b>: from $X · made in Georgia · ships in N days · 90 days of COBO AI free</div>
+        <div class="blk"><b>One system, two parts</b> (board + AI)</div>
+        <div class="blk"><b>Design your board in seconds</b> + Build Your Board</div>
+        <div class="blk new"><b>Real customers</b>: 3 photos + quotes (Taco Loco etc.)</div>
+        <div class="blk"><b>COBO AI dashboard</b> + See the demo</div>
+        <div class="blk new"><b>One pricing block</b>: Single / Multiple toggle, real prices</div>
+        <div class="blk cut"><b>Basic / Plus / Pro cards</b>: merged into the toggle above</div>
+        <div class="blk cut"><b>Second US map section</b>: Enterprise keeps one map</div>
+        <div class="blk new"><b>FAQ</b>: lead time, install, sizes, what AI does, cancel</div>
+        <div class="blk"><b>Footer</b></div>
+      </div>
+    </div>
+    <div class="sk">
+      <h3>B. Consistent buttons, one action per section</h3>
+      <p>Today buttons mix ALL CAPS, Title Case and sentence case, and two blues. Proposed: sentence case and one primary per section.</p>
+      <div class="frame">
+        <div class="btnrow"><span class="bt" style="background:#1570b0">Build your board</span><span class="bt" style="background:transparent;color:var(--navy);border:1.5px solid var(--navy)">See COBO AI</span></div>
+        <div class="blk"><b>Header</b>: "Board builder" (primary) · "Compliance Boards AI" becomes a text link</div>
+        <div class="blk new"><b>Hero</b>: "THE BOARDS / THE SOFTWARE" → "Build your board" / "See COBO AI"</div>
+        <div class="blk"><b>Button blue</b> #1570B0 everywhere white text sits on blue (passes AA)</div>
+      </div>
+    </div>
+    <div class="sk">
+      <h3>C. Board Builder: price and order clarity</h3>
+      <p>Customers should always know what they're buying and what the order will say.</p>
+      <div class="frame">
+        <div class="row2"><div class="blk">3D board</div><div class="blk new"><b>Summary card</b>: size · board color + Wilsonart # · edge · caps · extras with prices</div></div>
+        <div class="blk new"><b>Ships in N business days</b> under the price</div>
+        <div class="blk new"><b>3D fallback</b>: still image + same options when 3D can't load</div>
+        <div class="blk"><b>Add to cart</b>: sends exactly what the summary shows</div>
+      </div>
+    </div>
+    <div class="sk">
+      <h3>D. Phone homepage</h3>
+      <p>On phones the dashboard mock shows empty until it animates, and the page is ~10,000 px long. Proposed: start the dashboard filled in, and shorten by merging sections (sketch A).</p>
+      <div class="frame">
+        <div class="blk new"><b>Dashboard</b> visible at rest (animation adds to it, never starts blank)</div>
+        <div class="blk new"><b>Sticky "Build your board" bar</b> after the hero</div>
+        <div class="blk"><b>Copy fix</b>: "helps keeps" → "helps keep"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Suggested order of work</h2>
+  <ol class="plan">
+    <li>Cart and order fixes in the builder and Liquid <span>(needs variant IDs and the upcharge method from Chris Smith / Chris Corneliuz)</span></li>
+    <li>Button blue, headings, alt text, builder landmarks <span>(about half a day)</span></li>
+    <li>Worker rate limits and spend cap; 3D fallback; quote via store page</li>
+    <li>Homepage restructure <span>(after you approve sketch A, plus real prices and reviews from the client)</span></li>
+    <li>Video and script loading; strip old-version code</li>
+    <li>Screen-reader pass on real devices, then a clean Lighthouse on the live theme</li>
+  </ol>
+</section>
+</div>

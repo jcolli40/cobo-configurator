@@ -115,6 +115,7 @@ function dims() {
   let a, b;
   if (state.sizeId === 'custom') {
     a = Math.min(state.customA, state.customB); b = Math.max(state.customA, state.customB);
+    a = Math.min(Math.max(a, CUSTOM.min), CUSTOM.maxShort); b = Math.min(Math.max(b, CUSTOM.min), CUSTOM.maxLong);   // (only sizes we can build: 6" up to 48" x 96")
   } else {
     const s = SIZES.find(x => x.id === state.sizeId); a = s.a; b = s.b;
   }
@@ -130,6 +131,10 @@ renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.appendChild(renderer.domElement);
+// iPhones can drop the 3D view when memory runs low: keep the page, and redraw once the browser gives it back
+renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); });
+renderer.domElement.addEventListener('webglcontextrestored', () => { buildBoard(); dirty = true; });
+renderer.domElement.setAttribute('role', 'img'); renderer.domElement.setAttribute('aria-label', '3D preview of your board. The options panel lists every choice shown here.');
 
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
@@ -1240,7 +1245,8 @@ function currentSpec() {
   const ups = PRICED ? upcharges(L, G, B) : [];
   const custom = PRICED ? !std : (!std || L || G.img || B.img);
   const baseFace = PRICED && (L || state.face[0] === '#') ? 'Black' : state.face;   // v3/v5: options ride on a base board
-  const variantId = custom ? null : (SHOPIFY.variantIds[std.id]?.[baseFace] ?? null);
+  const sizeIds = custom ? null : SHOPIFY.variantIds[std.id];
+  const variantId = sizeIds ? (sizeIds[baseFace] ?? (V8 ? sizeIds.Black : null) ?? null) : null;   // (v8: the Wilsonart solids aren't variants, so they use the size's Black board; the order says the real color)
   return {
     size: std ? std.id : `custom ${fmt(w)}x${fmt(h)}`, widthIn: w, heightIn: h, orientation: state.orient,
     boardColor: L ? `Wilsonart ${L.n}${L.name ? ' ' + L.name : ''}` : faceName,
@@ -1448,6 +1454,11 @@ function build() {
   $('#edgeCustom').addEventListener('input', (e) => { state.edge = state.lastEdge = e.target.value; refresh(); });
   $('#cw').addEventListener('input', (e) => { state.customA = clamp(+e.target.value); refresh(true); });
   $('#ch').addEventListener('input', (e) => { state.customB = clamp(+e.target.value); refresh(true); });
+  for (const id of ['#cw', '#ch']) $(id).addEventListener('change', () => {   // (once they're done typing: snap to a size we can build)
+    const { w, h } = dims(), a = Math.min(w, h), b = Math.max(w, h);
+    if (state.customA <= state.customB) { state.customA = a; state.customB = b; } else { state.customA = b; state.customB = a; }
+    $('#cw').value = state.customA; $('#ch').value = state.customB; refresh(true);
+  });
   document.querySelectorAll('[data-orient]').forEach(b => b.addEventListener('click', () => { state.orient = b.dataset.orient; refresh(true); }));
   document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
   $('#sheets').addEventListener('change', (e) => {
@@ -4031,8 +4042,8 @@ function onCta() {
       (sp.logo ? `Logo: ${logoLine(sp.logo)}\n` : '') +
       (sp.logo || sp.background ? '\nPlease attach your image files to this email.\n' : ''));
     const url = `mailto:${SHOPIFY.quoteEmail}?subject=${encodeURIComponent('Custom board quote')}&body=${body}`;
-    if (embedded) window.parent.postMessage({ type: 'cobo:quote', payload: sp }, '*');
-    window.open(url, '_blank');
+    if (embedded && PARENT) toParent({ type: 'cobo:quote', payload: sp });   // (the store page opens the email: email links often do nothing inside a frame)
+    else window.open(url, '_blank');
     return;
   }
   const ed = editing;
@@ -4041,7 +4052,7 @@ function onCta() {
   if (thumb) { thumbs.set(id, thumb); saveThumbs(); }
   if (embedded) {
     // editing a cart line = remove the old line and add the new board in its place (done by the Shopify page)
-    window.parent.postMessage(ed ? { type: 'cobo:update', key: ed.key, payload: sp } : { type: SHOPIFY.messageType, payload: sp }, '*');
+    toParent(ed ? { type: 'cobo:update', key: ed.key, payload: sp } : { type: SHOPIFY.messageType, payload: sp });
     toast(ed ? 'Updating your cart…' : 'Adding to cart…');
   } else {
     // standalone preview (not inside Shopify): keep a pretend cart so the panel can be designed and tested
@@ -4064,7 +4075,7 @@ function setLineQty(i, q) {
   const it = cartItems[i];
   if (!it) return;
   q = Math.max(0, Math.min(999, q));
-  if (embedded) { window.parent.postMessage({ type: 'cobo:qty', key: it.key, quantity: q }, '*'); return; }
+  if (embedded) { toParent({ type: 'cobo:qty', key: it.key, quantity: q }); return; }
   if (q === 0) localCart.splice(i, 1);
   else { it.qty = q; it.line = q * it.unit; }
   localCartChanged();
@@ -4114,6 +4125,10 @@ function editCartItem(it) {
 // Inside Shopify, the store page sends the real cart in (see shopify/cobo-configurator-embed.liquid).
 // Opened on its own, the panel shows a pretend cart so the design can be tested.
 const embedded = window.parent !== window && !EMBED;   // (the morph embed talks to no one)
+// The store page that frames the builder: messages go only to it, and only its messages are read (not any site that frames us)
+const PARENT_OK = /^https:\/\/((www\.)?complianceboards\.com|[a-z0-9-]+\.myshopify\.com)$|^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const PARENT = (() => { try { const o = new URL(document.referrer).origin; return PARENT_OK.test(o) ? o : null; } catch { return null; } })();
+function toParent(msg) { if (PARENT) window.parent.postMessage(msg, PARENT); }
 // In the store: starting a design also takes the whole screen, hiding the browser's own bars where the browser
 // allows it (computers, Android; not iPhones, where the store page already fills the window). Esc or Back leaves it.
 function goFull() {
@@ -4130,7 +4145,7 @@ if (embedded) {
     const r = el.getBoundingClientRect();
     return r.top < 64 && r.bottom > 64 && r.width > innerWidth * 0.6;
   });
-  const check = () => { const c = covered(); if (c !== was) { was = c; window.parent.postMessage({ type: 'cobo:ui', sheet: c }, '*'); } };
+  const check = () => { const c = covered(); if (c !== was) { was = c; toParent({ type: 'cobo:ui', sheet: c }); } };
   const soon = () => { requestAnimationFrame(check); setTimeout(check, 450); };   // (and again once a sheet has slid into place)
   new MutationObserver(soon).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
   phone.addEventListener('change', soon);
@@ -4192,11 +4207,11 @@ $('#cartList').addEventListener('click', (e) => {
   if (q) setLineQty(+q.dataset.i, cartItems[+q.dataset.i].qty + +q.dataset.qd);
 });
 function goShopify(path) {
-  if (embedded) window.parent.postMessage({ type: 'cobo:go', path }, '*');
+  if (embedded) toParent({ type: 'cobo:go', path });
   else toast(`In Shopify this opens ${path}`);
 }
 window.addEventListener('message', (e) => {
-  if (!embedded || e.source !== window.parent) return;
+  if (!embedded || e.source !== window.parent || e.origin !== PARENT) return;
   const d = e.data;
   if (d?.type === 'cobo:cart' && d.cart) {
     const items = (d.cart.items || []).map(it => {
@@ -4214,7 +4229,7 @@ window.addEventListener('message', (e) => {
   if (d?.type === 'cobo:notice' && d.text) toast(String(d.text));
   if (d?.type === 'cobo:page' && /^https:\/\//.test(d.url || '')) parentPage = String(d.url);   // for share links
 });
-if (embedded) window.parent.postMessage({ type: 'cobo:get-cart' }, '*');
+if (embedded) toParent({ type: 'cobo:get-cart' });
 
 /* ------------------------------------------------------------------ phone AR */
 // The "View on your wall" button shows only where AR works: iPhone/iPad (Quick Look) or Android Chrome (WebXR).
