@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Compliance Boards Configurator (v8-rebrand: Rebrand preview)</title>
+<meta name="description" content="Design your Compliance Board in 3D: pick the size, board and edge colors and cap finish, add your licenses and certificates, then see it on your wall before you order.">
 <link rel="icon" type="image/png" sizes="32x32" href="../img/brand/COBO-Favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="../img/brand/COBO-Favicon-192.png">
 <link rel="apple-touch-icon" href="../img/brand/COBO-AppTile-180.png">
@@ -20,6 +21,9 @@
     "three/addons/exporters/GLTFExporter.js": "../vendor/GLTFExporter.js"
 } }
 </script>
+<!-- start downloading the 3D engine right away, alongside main.js (it would otherwise wait until main.js asks for it) -->
+<link rel="modulepreload" href="../vendor/three.module.min.js">
+<link rel="modulepreload" href="../vendor/OrbitControls.js">
 <style>
   :root {
     /* Colors. White panel with neutral greys (always light, even in dark mode); accent is COBO navy. */
@@ -2318,6 +2322,6 @@
   })();
 </script>
 <!-- ?v= is stamped by tools/stamp-version.js before each push, so phones always fetch matching files -->
-<script type="module" src="../js/main.js?v=202611051205" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="../js/main.js?v=202611081126" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>

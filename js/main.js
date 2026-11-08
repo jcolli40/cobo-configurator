@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611051205';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611051205';
-import { wallTexture, wallSwatch } from './env.js?v=202611051205';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611051205';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611081126';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611081126';
+import { wallTexture, wallSwatch } from './env.js?v=202611081126';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611081126';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -300,6 +300,7 @@ const backLamMat = new THREE.MeshStandardMaterial({ color: '#17171a', roughness:
 const alumMat = new THREE.MeshStandardMaterial({ color: '#c3c6cb', metalness: 1, roughness: 0.4, roughnessMap: brushedMap, envMap: envTex });
 const steelMat = new THREE.MeshStandardMaterial({ color: '#b9bcc2', metalness: 1, roughness: 0.35, envMap: envTex });
 
+let edgeArt = null;   // draws the wood + metal edge swatches (set up by build(); run once, by buildBoard)
 /* ------------------------------------------------------------------ sample certificates */
 const certCache = new Map();
 // Each sample title has its own look (paper, border, header, type, seal), so a board of samples reads like a real
@@ -326,6 +327,8 @@ function certificateTexture(w, h, title) {
   const face = L.sans ? 'system-ui, "Segoe UI", Arial, sans-serif' : 'Georgia, "Times New Roman", serif';
   const fit = (text, size, weight, maxW) => {          // shrink a line of text until it fits
     let s = size; g.font = `${weight} ${s}px ${face}`;
+    const w0 = g.measureText(text).width;                // (jump straight to about the right size, then fine-tune)
+    if (w0 > maxW) { s = Math.max(4, Math.floor(size * maxW / w0)); g.font = `${weight} ${s}px ${face}`; }
     while (g.measureText(text).width > maxW && s > 4) { s -= 1; g.font = `${weight} ${s}px ${face}`; }
   };
   g.fillStyle = L.paper; g.fillRect(0, 0, W, H);
@@ -679,7 +682,14 @@ function clearRoot() {
   root.clear();
 }
 
+// v8 welcome: the board is hidden behind the animated icon, so building it (and the 3D work that comes with it) waits
+// until they move on: the welcome shows and answers taps much sooner on phones
+let boardPending = false;
+const holdBoard = () => V8 && !EMBED && LAYOUT === 'v5' && (step() === 'intro' || step() === '');
 function buildBoard() {
+  if (holdBoard()) { boardPending = true; return; }
+  boardPending = false;
+  if (edgeArt) { edgeArt(); edgeArt = null; }              // (the wood and metal edge swatches are drawn the first time too)
   if (V8 && !EMBED && step() !== 'intro' && state.edge === 'match') state.edge = state.lastEdge && state.lastEdge !== 'match' ? state.lastEdge : 'Black';   // (v8, for now: no "match board color" option; the edge is always a color of its own)
   clearRoot();
   const { w, h } = dims();
@@ -1380,8 +1390,11 @@ function build() {
     refresh();
   });
   swatchRow($('#edgeSw'), V8 ? COLORS.concat(WOODS, METALS) : COLORS, null, (n) => { state.edge = state.lastEdge = n; refresh(); });
+  edgeArt = () => {
   if (V8) for (const wd of WOODS) { const b = $('#edgeSw').querySelector('.sw[data-k="' + wd.name + '"]'); if (b) b.style.background = 'center / cover url("' + woodSwatch(wd) + '")'; }   // (real-wood swatches)
   if (V8) for (const m of METALS) { const b = $('#edgeSw').querySelector('.sw[data-k="' + m.name + '"]'); if (b) b.style.background = 'center / cover url("' + metalSwatch(m) + '")'; }   // (brushed-metal swatches)
+  };
+  if (!holdBoard()) { edgeArt(); edgeArt = null; }
   swatchRow($('#wallSw'), WALLS, null, (n) => { state.wall = WALLS.findIndex(w => w.name === n); refresh(); });
   $('#wallCustom').addEventListener('input', (e) => { state.wall = -1; state.wallCustom = e.target.value; refresh(); });
 
@@ -2020,7 +2033,7 @@ function wireSteps() {
     const mark = document.createElement('picture'), still = document.createElement('source'), anim = document.createElement('img');
     mark.className = 't-mark';
     still.media = '(prefers-reduced-motion: reduce)'; still.srcset = new URL('../img/brand/COBO-Icon-FullColor.svg', import.meta.url).href;
-    anim.src = new URL('../img/brand/COBO-Icon-FullColor-Race-Loop.svg', import.meta.url).href; anim.alt = '';
+    anim.src = new URL('../img/brand/COBO-Icon-FullColor-Race-Loop.svg', import.meta.url).href; anim.alt = ''; anim.width = 236; anim.height = 200;   // (its size up front, so nothing shifts as it loads)
     mark.append(still, anim); $('.t-intro .t-card').prepend(mark);   // inside the card, so it sits just above the title
   }
   if (V8) $('.t-intro h1').innerHTML = '<span class="t-des"><b>Board</b>Builder</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
@@ -2493,6 +2506,7 @@ function setStep(s) {
   controls.enabled = !['styles', 'intro', 'snap'].includes(s);   // swipes change the look / tutorial screens: no turning
   if (s !== 'custom') { closeOptSheet(); if (!$('#lamPanel').hidden) closePicker(); setSheet(false); }
   if (LAYOUT === 'v5') tourStep(s);
+  if (boardPending && !holdBoard()) buildBoard();          // (the board waited for the welcome to close)
   limitZoom();                                             // (no limit while the tutorial frames the board itself)
   scrollTo(0, 0);
   updateStage();
