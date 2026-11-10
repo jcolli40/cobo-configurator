@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101741';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101741';
-import { wallTexture, wallSwatch } from './env.js?v=202611101741';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101741';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101808';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101808';
+import { wallTexture, wallSwatch } from './env.js?v=202611101808';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101808';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -62,7 +62,7 @@ const upAmt = (v) => (v && typeof v === 'object' ? (v[state.sizeId] ?? v.custom 
 // v8 in Shopify: what the shop offers (Board builder settings) and Shopify's own prices, sent by the store page (cobo:offers).
 // null = nothing arrived (builder opened on its own), so every option in config.js is offered at config.js prices.
 let OFFER = null;
-const offered = (list, key) => !OFFER || !OFFER[list] || OFFER[list].has(String(key));
+const offered = (list, key) => !OFFER || !OFFER[list] || OFFER[list].has(String(key).trim().toLowerCase());   // (any case: Chris types design numbers)
 
 /* ------------------------------------------------------------------ state */
 const state = {
@@ -4222,7 +4222,7 @@ function goShopify(path) {
 //       customBoard, customEdge: false = not offered }
 function applyOffers(o) {
   if (!V8 || !o || typeof o !== 'object') return;
-  const set = (a) => (Array.isArray(a) ? new Set(a.map(String)) : null);
+  const set = (a) => (Array.isArray(a) ? new Set(a.map(x => String(x).trim().toLowerCase())) : null);
   OFFER = { edgeColors: set(o.edgeColors), woods: set(o.woods), metals: set(o.metals), caps: set(o.caps),
             solids: set(o.solids), textures: set(o.textures), customBoard: o.customBoard !== false, customEdge: o.customEdge !== false };
   const num = (v) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : null);   // Shopify's prices replace the config.js ones

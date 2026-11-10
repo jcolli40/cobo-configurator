@@ -74,7 +74,7 @@
   const inStore = window.parent !== window && PARENT;
   addEventListener('message', (e) => {
     if (!inStore || e.source !== window.parent || e.origin !== PARENT || e.data?.type !== 'cobo:offers') return;
-    const o = e.data.offers || {}, set = (a) => (Array.isArray(a) ? new Set(a.map(String)) : null);
+    const o = e.data.offers || {}, set = (a) => (Array.isArray(a) ? new Set(a.map((x) => String(x).trim().toLowerCase())) : null);
     offers = { solids: set(o.solids), textures: set(o.textures), settings: 'solids' in o };
     render();
   });
@@ -83,7 +83,7 @@
   const isOffered = (it) => {
     if (!offers || !offers.settings) return false;
     const list = it.group === 'solid' ? offers.solids : offers.textures;
-    return !list || list.has(it.n || it.name);
+    return !list || list.has((it.n || it.name).toLowerCase());
   };
 
   function render() {
