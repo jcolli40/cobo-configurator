@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Swatch catalogue · Compliance Boards</title>
+<!-- Every laminate the board builder knows, in one scrolling grid, with a tick on the ones the shop offers.
+     Shown inside the store page /pages/<builder page>?view=swatches (theme section cobo-swatch-catalogue), which sends
+     the shop's offer list as "cobo:offers" (the same message the builder gets). View only: offers are changed in
+     Shopify (Content > Metaobjects > Board builder settings). Opened on its own, it shows the swatches without ticks. -->
+<style>
+  :root { --ink: #1c1c1e; --muted: #6e6e73; --line: #e6e6e9; --line-2: #d6d6db; --accent: #1b3a6b; --tint: #e8edf5; --ok: #29845a; --ok-ink: #0c5132; --bg: #fff;
+          font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink); }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); }
+  header { position: sticky; top: 0; z-index: 2; background: color-mix(in srgb, #fff 94%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; flex-wrap: wrap; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 17px; margin: 0; color: var(--accent); }
+  .count { color: var(--muted); font-size: 13px; }
+  .sp { flex: 1; }
+  input[type=search] { font: inherit; font-size: 14px; border: 1px solid var(--line-2); border-radius: 999px; padding: 8px 14px; min-width: 260px; }
+  input[type=search]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 20px 12px; max-width: 1280px; margin: 0 auto; }
+  .filters button { font: inherit; font-size: 13px; border: 1px solid var(--line-2); background: #fff; color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filters .only { margin-left: auto; border-color: var(--ok); color: var(--ok-ink); }
+  .filters .only[aria-pressed="true"] { background: var(--ok); color: #fff; }
+  .note { max-width: 1280px; margin: 12px auto 0; padding: 0 20px; font-size: 13px; color: var(--muted); }
+  main { max-width: 1280px; margin: 0 auto; padding: 14px 20px 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 16px 14px; list-style: none; margin: 0; padding: 0; }
+  .grid li { font-size: 12.5px; font-weight: 600; position: relative; line-height: 1.3; }
+  .grid .s { display: block; aspect-ratio: 1; border-radius: 8px; border: 1px solid rgba(0, 0, 0, .1); margin-bottom: 6px; background: #ddd center / cover; }
+  .grid small { display: block; color: var(--muted); font-weight: 400; }
+  .grid li.on .s { outline: 2px solid var(--ok); outline-offset: 2px; }
+  .grid .ok { position: absolute; top: 7px; right: 7px; width: 22px; height: 22px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px #fff; }
+  .grid .ok svg { width: 12px; height: 12px; }
+  .grid .grp { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 640px) {
+    .bar { padding: 10px 14px; } input[type=search] { min-width: 0; flex: 1 1 100%; }
+    .filters { padding: 0 14px 10px; } .filters .only { margin-left: 0; }
+    main { padding: 12px 14px 30px; } .grid { grid-template-columns: repeat(3, 1fr); gap: 14px 10px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Swatch catalogue</h1>
+    <span class="count" id="count" aria-live="polite"></span>
+    <span class="sp"></span>
+    <label class="vh" for="q">Search by design number or name</label>
+    <input type="search" id="q" placeholder="Design number or name" autocomplete="off">
+  </div>
+  <div class="filters" id="filters" role="group" aria-label="Show"></div>
+</header>
+<p class="note" id="note"></p>
+<main><ul class="grid" id="grid"></ul><p class="empty" id="empty" hidden>No swatches match.</p></main>
+
+<script type="module">
+  import { SOLIDS } from '../js/config.js';
+
+  const GROUPS = [['all', 'All'], ['solid', 'Solid colours'], ['Woodgrains', 'Woodgrains'], ['Stones', 'Stones'], ['Metal Looks', 'Metal looks'], ['other', 'Other']];
+  const tick = '<span class="ok" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2.5 6.2 5 8.6l4.6-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let items = [], offers = null, group = 'all', onlyOffered = false;
+
+  // the shop's offer list arrives from the store page (same check as the builder: only complianceboards.com / the store)
+  const PARENT_OK = /^https:\/\/((www\.)?complianceboards\.com|[a-z0-9-]+\.myshopify\.com)$|^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  const PARENT = (() => { try { const o = new URL(document.referrer).origin; return PARENT_OK.test(o) ? o : null; } catch { return null; } })();
+  const inStore = window.parent !== window && PARENT;
+  addEventListener('message', (e) => {
+    if (!inStore || e.source !== window.parent || e.origin !== PARENT || e.data?.type !== 'cobo:offers') return;
+    const o = e.data.offers || {}, set = (a) => (Array.isArray(a) ? new Set(a.map((x) => String(x).trim().toLowerCase())) : null);
+    offers = { solids: set(o.solids), textures: set(o.textures), settings: 'solids' in o };
+    render();
+  });
+  if (inStore) window.parent.postMessage({ type: 'cobo:get-offers' }, PARENT);
+
+  const isOffered = (it) => {
+    if (!offers || !offers.settings) return false;
+    const list = it.group === 'solid' ? offers.solids : offers.textures;
+    return !list || list.has((it.n || it.name).toLowerCase());
+  };
+
+  function render() {
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const shown = items.filter((it) => (group === 'all' || it.group === group)
+      && (!q || it.n.toLowerCase().includes(q) || it.name.toLowerCase().includes(q))
+      && (!onlyOffered || isOffered(it)));
+    const nOn = items.filter(isOffered).length;
+    document.getElementById('grid').innerHTML = shown.map((it) => {
+      const on = isOffered(it);
+      return `<li class="${on ? 'on' : ''}"><span class="s" style="${it.img ? `background-image:url('${esc(it.img)}')` : `background-color:${esc(it.hex)}`}"></span>${on ? tick : ''}`
+        + `${esc(it.name)}<small>${esc(it.n || ' ')}${on ? '<span class="vh"> (offered)</span>' : ''}</small></li>`;
+    }).join('');
+    document.getElementById('empty').hidden = shown.length > 0;
+    document.getElementById('count').textContent = `${shown.length} of ${items.length}`;
+    const counts = Object.fromEntries(GROUPS.map(([k]) => [k, k === 'all' ? items.length : items.filter((it) => it.group === k).length]));
+    document.getElementById('filters').innerHTML = GROUPS.filter(([k]) => counts[k]).map(([k, label]) =>
+      `<button type="button" data-g="${k}" aria-pressed="${group === k}">${label} (${counts[k]})</button>`).join('')
+      + (offers?.settings ? `<button type="button" class="only" aria-pressed="${onlyOffered}">✓ Offered only (${nOn})</button>` : '');
+    document.getElementById('note').textContent = offers?.settings
+      ? 'A green tick means the board builder offers it now. To change what is offered, use Content › Metaobjects › Board builder settings in Shopify.'
+      : inStore ? 'The shop settings are not set up yet, so no ticks are shown.' : 'Open this page from the store to see which swatches are offered.';
+  }
+
+  document.getElementById('filters').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('only')) onlyOffered = !onlyOffered; else group = b.dataset.g;
+    render();
+  });
+  document.getElementById('q').addEventListener('input', render);
+
+  const lib = await fetch('../data/laminates.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => ({ items: [] }));
+  const kind = (t) => (['Woodgrains', 'Stones', 'Metal Looks'].includes(t) ? t : 'other');
+  items = [
+    ...SOLIDS.map((s) => ({ n: s.n || '', name: s.name, hex: s.hex, group: 'solid' })),
+    ...(lib.items || []).map((x) => ({ n: x.n, name: x.name, img: x.thumb ? '../' + x.thumb : null, hex: x.avg, group: kind(x.type) })),
+  ];
+  render();
+</script>
+</body>
+</html>
