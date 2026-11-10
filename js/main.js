@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101506';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101506';
-import { wallTexture, wallSwatch } from './env.js?v=202611101506';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101506';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101741';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101741';
+import { wallTexture, wallSwatch } from './env.js?v=202611101741';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101741';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -59,6 +59,10 @@ const STEP_ORDER = Object.keys(STEPS6);
 let step6 = 'build';
 // an upcharge from UPCHARGES (config.js): one amount, or one per size
 const upAmt = (v) => (v && typeof v === 'object' ? (v[state.sizeId] ?? v.custom ?? 0) : (v || 0));
+// v8 in Shopify: what the shop offers (Board builder settings) and Shopify's own prices, sent by the store page (cobo:offers).
+// null = nothing arrived (builder opened on its own), so every option in config.js is offered at config.js prices.
+let OFFER = null;
+const offered = (list, key) => !OFFER || !OFFER[list] || OFFER[list].has(String(key));
 
 /* ------------------------------------------------------------------ state */
 const state = {
@@ -1105,7 +1109,7 @@ function paintEdgeUp() {
   const row = $('#edgeUpRow'); if (!row) return;
   row.hidden = edgeTab === 'colors';
   if (row.hidden) return;
-  const std = SIZES.find(x => x.id === state.sizeId), { w, h } = dims(), n = edgeTab === 'wood' ? WOODS.length : METALS.length;
+  const std = SIZES.find(x => x.id === state.sizeId), { w, h } = dims(), n = edgeTab === 'wood' ? WOODS.filter(x => offered('woods', x.name)).length : METALS.filter(x => offered('metals', x.name)).length;
   row.querySelector('.lbl').textContent = n + (edgeTab === 'wood' ? ' woods' : ' metals');
   $('#edgeUp').textContent = '+$' + upAmt(edgeTab === 'wood' ? UPCHARGES.edgeWood : UPCHARGES.edgeMetal) + ' for ' + (std ? std.a + ' × ' + std.b : fmt(w) + ' × ' + fmt(h));
 }
@@ -3813,6 +3817,7 @@ const findByNumber = (n) => library.find(it => it.n.toLowerCase() === String(n).
 const unknownLam = (n, hex) => ({ n: String(n).trim(), name: '', avg: hex, full: null, unknown: true });
 
 function passes(it, skip) {
+  if (!offered('textures', it.n)) return false;                        // (v8: the shop doesn't offer this one)
   const q = pick.q.trim().toLowerCase();
   if (q && !(it.n.toLowerCase().includes(q) || it.name.toLowerCase().includes(q))) return false;
   for (const k of Object.keys(FIELD)) {
@@ -4026,6 +4031,7 @@ function wirePicker() {
 }
 
 function refresh(refit = false) {
+  if (OFFER) keepOffered();
   buildBoard();
   if (refit && !sway) setView(state.view);   // (v5 tutorial screens keep their own framing)
 }
@@ -4210,9 +4216,67 @@ function goShopify(path) {
   if (embedded) toParent({ type: 'cobo:go', path });
   else toast(`In Shopify this opens ${path}`);
 }
+// ---- v8: the shop's offer list and prices (cobo:offers, from the store page; see OFFER near the top) ----
+// o = { sizes: { '6x12': 35.95, ... }, up: { laminate|edgeWood|edgeMetal: { '6x12': 20, ... }, customColor, edgeCustom },
+//       edgeColors, woods, metals, caps (names), solids, textures (Wilsonart numbers; Raw by name): a list, or null = all;
+//       customBoard, customEdge: false = not offered }
+function applyOffers(o) {
+  if (!V8 || !o || typeof o !== 'object') return;
+  const set = (a) => (Array.isArray(a) ? new Set(a.map(String)) : null);
+  OFFER = { edgeColors: set(o.edgeColors), woods: set(o.woods), metals: set(o.metals), caps: set(o.caps),
+            solids: set(o.solids), textures: set(o.textures), customBoard: o.customBoard !== false, customEdge: o.customEdge !== false };
+  const num = (v) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : null);   // Shopify's prices replace the config.js ones
+  for (const s of SIZES) { const p = num(o.sizes?.[s.id]); if (p != null) s.price = p; }
+  for (const k of ['laminate', 'edgeWood', 'edgeMetal']) for (const s of SIZES) { const p = num(o.up?.[k]?.[s.id]); if (p != null) UPCHARGES[k][s.id] = p; }
+  for (const k of ['customColor', 'edgeCustom']) { const p = num(o.up?.[k]); if (p != null) UPCHARGES[k] = p; }
+  renderSizes.key = null; renderSizes();                               // (the size tiles carry prices)
+  paintOffers();
+  if (!$('#lamPanel').hidden) renderPicker();
+  refresh();
+}
+const solidKey = (s) => s.n || s.name;                                 // (Raw has no Wilsonart number)
+const anyOffered = (list, items) => items.some(x => offered(list, x.name));
+// hide what isn't offered: swatches, custom colors, whole tabs (and the tab row when one tab is left)
+function paintOffers() {
+  const hide = (el, off) => el && el.toggleAttribute('data-off', !!off);
+  const cell = (b) => b.closest('.swc') || b;
+  for (const b of document.querySelectorAll('#faceSw .sw')) { const s = SOLIDS.find(x => x.name === b.dataset.k); hide(cell(b), s && !offered('solids', solidKey(s))); }
+  for (const b of document.querySelectorAll('#edgeSw .sw')) { const k = b.dataset.k; hide(cell(b), !offered(woodOf(k) ? 'woods' : metalOf(k) ? 'metals' : 'edgeColors', k)); }
+  hide($('#faceCustom')?.closest('.opt'), !OFFER.customBoard);
+  hide($('#edgeCustom')?.closest('.opt'), !OFFER.customEdge);
+  const woods = anyOffered('woods', WOODS), metals = anyOffered('metals', METALS);
+  hide(document.querySelector('#edgeTabs [data-etab="wood"]'), !woods);
+  hide(document.querySelector('#edgeTabs [data-etab="metal"]'), !metals);
+  hide($('#edgeTabs'), !woods && !metals);
+  if (edgeTab !== 'colors' && !(edgeTab === 'wood' ? woods : metals)) setEdgeTab('colors');
+  const tex = !OFFER.textures || OFFER.textures.size > 0, cols = OFFER.customBoard || SOLIDS.some(s => offered('solids', solidKey(s)));
+  hide(document.querySelector('.styletabs [data-tab="tex"]'), !tex);
+  hide(document.querySelector('.styletabs [data-tab="colors"]'), !cols);
+  hide(document.querySelector('#lamPanel > .styletabs'), !(tex && cols));
+  if (styleTab === 'tex' && !tex) setStyleTab('colors');
+  if (styleTab === 'colors' && !cols && tex) setStyleTab('tex');
+  for (const b of document.querySelectorAll('#fastSw .fast')) hide(b, !offered('caps', FASTENERS.find(f => f.id === b.dataset.k)?.name));
+}
+// the board on screen (from a link, a preset or the cart) uses something no longer offered: swap in the first offered choice
+function keepOffered() {
+  if (state.lamSel && !offered('textures', state.lamSel.n)) state.lamSel = null;
+  if (!state.lamSel) {
+    const s = SOLIDS.find(x => x.name === state.face);
+    if ((state.face[0] === '#' && !OFFER.customBoard) || (s && !offered('solids', solidKey(s)))) {
+      const first = SOLIDS.find(x => offered('solids', solidKey(x)));
+      if (first) state.face = first.name;
+    }
+  }
+  const e = state.edge;
+  if (e !== 'match' && ((e[0] === '#' && !OFFER.customEdge) || (e[0] !== '#' && !offered(woodOf(e) ? 'woods' : metalOf(e) ? 'metals' : 'edgeColors', e)))) state.edge = 'match';
+  const f = FASTENERS.find(x => x.id === state.fastener);
+  if (f && !offered('caps', f.name)) { const first = FASTENERS.find(x => offered('caps', x.name)); if (first) state.fastener = first.id; }
+}
+
 window.addEventListener('message', (e) => {
   if (!embedded || e.source !== window.parent || e.origin !== PARENT) return;
   const d = e.data;
+  if (d?.type === 'cobo:offers') { try { applyOffers(d.offers); } catch (err) { console.warn('COBO: shop settings not applied', err); } return; }
   if (d?.type === 'cobo:cart' && d.cart) {
     const items = (d.cart.items || []).map(it => {
       let cfg = null;
