@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101808';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101808';
-import { wallTexture, wallSwatch } from './env.js?v=202611101808';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101808';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101812';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101812';
+import { wallTexture, wallSwatch } from './env.js?v=202611101812';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101812';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -4225,6 +4225,9 @@ function applyOffers(o) {
   const set = (a) => (Array.isArray(a) ? new Set(a.map(x => String(x).trim().toLowerCase())) : null);
   OFFER = { edgeColors: set(o.edgeColors), woods: set(o.woods), metals: set(o.metals), caps: set(o.caps),
             solids: set(o.solids), textures: set(o.textures), customBoard: o.customBoard !== false, customEdge: o.customEdge !== false };
+  // every board needs caps and a face: if the settings leave none of either, offer them all rather than an empty panel
+  if (!FASTENERS.some(f => offered('caps', f.name))) OFFER.caps = null;
+  if (!OFFER.customBoard && !SOLIDS.some(s => offered('solids', s.n || s.name)) && OFFER.textures?.size === 0) OFFER.solids = null;
   const num = (v) => (typeof v === 'number' && isFinite(v) && v >= 0 ? v : null);   // Shopify's prices replace the config.js ones
   for (const s of SIZES) { const p = num(o.sizes?.[s.id]); if (p != null) s.price = p; }
   for (const k of ['laminate', 'edgeWood', 'edgeMetal']) for (const s of SIZES) { const p = num(o.up?.[k]?.[s.id]); if (p != null) UPCHARGES[k][s.id] = p; }
