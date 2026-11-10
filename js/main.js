@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611081906';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611081906';
-import { wallTexture, wallSwatch } from './env.js?v=202611081906';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611081906';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101506';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101506';
+import { wallTexture, wallSwatch } from './env.js?v=202611101506';
+import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101506';   // dev copy: Part A "detect" (Gemini)
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -1660,8 +1660,8 @@ function paintReceipt(rows, total) {
   const meta = el('div', 'rc-row rc-sm');
   meta.append(el('span', '', 'BOARD DESIGN'), el('span', '', `${now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`));
   const lines = rows.map(([k, v]) => { const r = el('div', 'rc-row'); r.append(el('span', 'rc-k', k), el('i'), el('span', 'rc-v', v)); return r; });
-  // 90-day Compliance Boards AI trial: a free line on the receipt (billed separately by the AI company, never in this cart)
-  const ai = el('div', 'rc-row rc-ai'); ai.append(el('span', 'rc-k', 'COBO AI trial, 90 days'), el('i'), el('span', 'rc-v', 'FREE'));
+  // 3 months of Compliance Boards AI come with every board order: an "Included" line on the receipt (billed separately by the AI company, never in this cart; never call it a free trial)
+  const ai = el('div', 'rc-row rc-ai'); ai.append(el('span', 'rc-k', 'Compliance Boards AI, 3 months'), el('i'), el('span', 'rc-v', 'Included'));
   lines.push(ai);
   const tot = el('div', 'rc-tot');
   tot.append(el('span', '', 'TOTAL'), el('span', '', total));
@@ -1670,7 +1670,7 @@ function paintReceipt(rows, total) {
   paper.append(head, el('hr'), meta, el('hr'), ...lines, el('hr'), tot, bar, el('div', 'rc-c rc-ty', 'Thank you for designing with us! :)'));
   $('#sumRcpt').replaceChildren(paper);
 }
-// v8 computers: keep the "90 Days Free" pill just left of the cart chip (the chip's width changes with the total)
+// v8 computers: keep the "3 months of Compliance Boards AI" pill just left of the cart chip (the chip's width changes with the total)
 function placeAiPill() {
   const pill = $('#aiPill'), bs = $('#buysheet'); if (!pill || !bs) return;
   const r = bs.getBoundingClientRect();
