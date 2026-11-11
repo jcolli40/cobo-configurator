@@ -1584,6 +1584,11 @@
   @media (prefers-reduced-motion: no-preference) { [data-v8] #scanResult .addmenu:not([hidden]) { transform-origin: 50% 100%; animation-name: menuPop; } }
   [data-v8] .t-intro .t-m { display: none; }
   @media (max-width: 860px) { [data-v8] .t-intro .t-m { display: inline; } }   /* (phones: the welcome text breaks after "styling," so "then" starts the next line) */
+  /* v8 samples only (PHOTO_SCAN = false in js/config.js; main.js puts data-samples-only on <html>): no Snap and no uploads
+     anywhere. Documents opens straight to the paper-size counters under "How many documents?" */
+  [data-samples-only] :is(.camart, .addwrap, #addMenu, #scanResult, #ownDocs, .autorow, [data-snap], #docSamples .mixhead) { display: none !important; }
+  [data-samples-only] .t-intro .t-sub { text-wrap: balance; }   /* (phones: even lines, no word left on its own) */
+  @media (max-width: 860px) { [data-samples-only] .t-intro .t-dk { display: none; } }   /* (computers: the line breaks after "styling,") */
   [data-v8] .cart-h { display: none; }
   [data-v8] .buysheet .grab .gclose { display: none; }   /* (phones: no Collapse text; computers show it while the cart is open) */
   @media (min-width: 861px) {
@@ -2334,6 +2339,6 @@
   if (!ok) document.getElementById('no3d').hidden = false;
   window.__coboNo3d = !ok;
 })();</script>
-<script type="module" src="./js/main.js?v=202611101812" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
+<script type="module" src="./js/main.js?v=202611102040" onerror="window.dispatchEvent(new ErrorEvent('error', { message: 'main.js failed to load' }))"></script>
 </body>
 </html>
