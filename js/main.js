@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES } from './config.js?v=202611101812';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611101812';
-import { wallTexture, wallSwatch } from './env.js?v=202611101812';
-import { detectCertificates, certTypes, demoWall, cropCertificate, detectStatus, straightenCertificate } from './detect.js?v=202611101812';   // dev copy: Part A "detect" (Gemini)
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611102040';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611102040';
+import { wallTexture, wallSwatch } from './env.js?v=202611102040';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -37,9 +36,16 @@ const GUIDED = LAYOUT === 'v4' || LAYOUT === 'v5';
 const V6 = 'v6' in document.documentElement.dataset;
 const V7 = 'v7' in document.documentElement.dataset;   // v7 = v6 without popular designs
 const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wall in the Documents step (Gemini)
+// v8 photo scan ("Snap Your Docs": Gemini finds and names each document) is switched by PHOTO_SCAN in config.js.
+// Off = samples only: the customer counts their documents by paper size and sample certificates fill the board; no
+// camera, no uploads, and js/detect.js (which talks to the wall reader) isn't even loaded.
+const SCAN = V8 && PHOTO_SCAN;
+const SAMPLES_ONLY = V8 && !PHOTO_SCAN;
+if (SAMPLES_ONLY) document.documentElement.dataset.samplesOnly = '';   // (index.html hides every Snap / Upload control under [data-samples-only])
+const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611102040') : {};   // dev copy: Part A "detect" (Gemini)
 // v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
 let CAT = null;
-if (V8) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
+if (SCAN) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
 const US_STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware',
   DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas',
   KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi',
@@ -1771,8 +1777,8 @@ function wireDock() {
 // v6 Start: a new design begins as a blank black 24 x 36 board, nothing on it yet (Continue keeps the saved one)
 function blankBoard() {
   state.myCerts = []; docsKey = ''; sizePicked = false;
-  state.sheets = false;
-  applyDesign({ sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'chrome', certNeed: 0, sampleMix: {}, sampleTurn: {}, sheetTurn: false, sheets: false });
+  state.sheets = SAMPLES_ONLY;                               // (samples only: always on, none counted yet)
+  applyDesign({ sizeId: '24x36', orient: 'portrait', face: 'Black', edge: 'match', fastener: 'chrome', certNeed: 0, sampleMix: {}, sampleTurn: {}, sheetTurn: false, sheets: SAMPLES_ONLY });
 }
 // v6: the step bar and Next, the Documents option (your own first, then sample certificates), the room button on
 // the 3D view, Preview's buttons, and the welcome card's two ways to start
@@ -1783,7 +1789,7 @@ function wireSteps() {
   // the size is worked out from the documents: a one-line hint under the steps (Build, before any documents), a note at the
   // top of the Size pop-up, and a small tag on the Size button (Auto-fit / Your pick); see paintSizeAuto
   const hint = document.createElement('p'); hint.id = 'stepHint'; hint.className = 'stephint'; hint.hidden = true;
-  hint.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span>' + (V8 ? 'Add your documents and we\'ll find the best fit' : 'Add your documents and we\'ll pick the size you need.') + '</span>';
+  hint.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span>' + (SAMPLES_ONLY ? 'Tell us how many documents and we\'ll find the best fit' : V8 ? 'Add your documents and we\'ll find the best fit' : 'Add your documents and we\'ll pick the size you need.') + '</span>';
   $('#stepBar').after(hint);
   const sizeSec = $('.sec[data-sec="size"]'), sizeT = sizeSec.querySelector('.sec-t');
   sizeT.dataset.full = 'Size'; sizeT.insertAdjacentHTML('beforeend', '<small class="autotag" id="sizeTag" hidden></small>');
@@ -1861,7 +1867,7 @@ function wireSteps() {
     $('#okAll').addEventListener('click', () => { tickPop = state.myCerts.map((d, i) => (d.ok ? -1 : i)).filter(i => i >= 0); state.myCerts.forEach(d => { d.ok = true; }); docsKey = ''; if (!sizePicked) useBestFit(); else refresh(); });
     for (const id of ['#bizBtn', '#bizEdit']) $(id).addEventListener('click', () => openTypePicker($('#bizState'), 'Your business is in', $(id)));
     $('#bizState').addEventListener('change', (e) => { state.bizState = e.target.value; state.bizWhy = ''; state.bizStateOk = !!e.target.value; paintState(); });   // (picking one is confirming it)
-    detectStatus().then(s => { if (s?.country === 'US' && s.region) guessState({ state: s.region }, 'ip'); });   // (the Worker knows the visitor's state)
+    if (SCAN) detectStatus().then(s => { if (s?.country === 'US' && s.region) guessState({ state: s.region }, 'ip'); });   // (the Worker knows the visitor's state)
   }
   // ...in any mix of paper sizes: Letter (the count), then Legal, Tabloid and Half letter; each can be turned sideways
   const cc = $('.certcount'), letter = cc.querySelector('.opt');
@@ -1924,6 +1930,10 @@ function wireSteps() {
     snapBox.append(snapL);
     dt.querySelector('.addline').after(own.querySelector('.opt + .help'));   // (what Snap does: under the first line, above the button)
     menu.append(snapBox, upL, sampRow); dt.querySelector('.addwrap').append(menu); sr2.remove();
+    if (SAMPLES_ONLY) {                                        // samples only: "How many documents?" over the counters
+      dt.querySelector('.addline').textContent = 'How many documents?';
+      dt.querySelector('.addline + .help').textContent = 'Add the number of each paper size. We\'ll show sample certificates in their place and size the board to fit.';
+    }
     if (SHOW_TEST_PHOTO) {                                      // TEMPORARY testing button: sends a saved wall photo through the same path as a snapped one
       const tb = document.createElement('button'); tb.type = 'button'; tb.id = 'testPhoto'; tb.className = 'menurow testrow';
       tb.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-image"/></svg><span>Load test image</span><small>testing only</small>';
@@ -2052,7 +2062,7 @@ function wireSteps() {
     mark.append(still, anim); $('.t-intro .t-card').prepend(mark);   // inside the card, so it sits just above the title
   }
   if (V8) $('.t-intro h1').innerHTML = '<span class="t-des"><b>Board</b>Builder</span>'; else $('.t-intro h1').textContent = 'Compliance Board Designer';
-  $('.t-intro .t-sub').innerHTML = V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
+  $('.t-intro .t-sub').innerHTML = SAMPLES_ONLY ? 'Tell us your document sizes, choose your styling,<br class="t-dk"> then see it on your wall. You can change anything as you go.' : V8 ? 'Add your docs, choose your styling,<br class="t-m"> then see it on your wall.<br>You can change anything as you go.' : 'Add your docs, choose your styling, then see it on your wall. You can change anything as you go.';
   $('#tourStart').innerHTML = '<span>Start</span><svg class="i"><use href="#i-right"/></svg>';   // one way in: Build
   $('#tourSkipCard').hidden = true;
   // top of Style: v6 offers the popular designs as a starting point (v7 has none)
@@ -2349,6 +2359,7 @@ function packFresh(W, H, docs) {
 const chk = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i chk'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<use href="#i-check-circle"/>'; return s; };   // (the green check before "Found 4")
 let scans = [];                     // v8: each snapped photo: { full: the whole photo with its boxes, thumb: a square around the documents }
 async function scanWall(file, pre, add, replaceIdx) {   // pre: a Gemini answer already in hand for this photo (v8). add: keep the documents already on the list. replaceIdx: redo that earlier photo
+  if (SAMPLES_ONLY) return null;                              // (photo scan switched off in config.js)
   const keepOld = replaceIdx != null ? state.myCerts.filter(d => d.scanNo !== replaceIdx) : add ? state.myCerts.slice() : [];
   if (V8 && replaceIdx == null && !add) scans = [];
   const tmp = {};
@@ -2517,6 +2528,7 @@ let looks = [], lookAt = 0, wallInfo = null;
 let sway = null;            // v5 welcome/snap: the camera holds still at this framing (board beside the card)
 let showcase = null;        // v5: the room the board was in before the welcome screen showed it on brick
 function setStep(s) {
+  if (SAMPLES_ONLY && s === 'snap') s = 'custom';                 // (samples only: there's no photo step)
   document.documentElement.dataset.step = s;
   controls.enabled = !['styles', 'intro', 'snap'].includes(s);   // swipes change the look / tutorial screens: no turning
   if (s !== 'custom') { closeOptSheet(); if (!$('#lamPanel').hidden) closePicker(); setSheet(false); }
@@ -2634,6 +2646,7 @@ function wireLooks() {
 function firstStep(photoStep) {
   const q = new URLSearchParams(location.search);
   if (q.has('size') || q.has('color')) setStep('custom');
+  else if (SAMPLES_ONLY && q.has('scan')) setStep('intro');   // (samples only: no example scan or test photos)
   else if (q.get('scan') === 'demo') { setStep(photoStep); guideScan(null); }
   else if (/^\/screenshots\/[\w.-]+\.(jpe?g|png)$/i.test(q.get('scan') || '')) {   // testing: ?scan=/screenshots/<photo> (local only)
     setStep(photoStep);
@@ -3074,13 +3087,16 @@ function wireCoach() {
 // (?tips=reset shows them all again)
 function wireTips() {
   const docsN = () => state.myCerts.length, allOk = () => docsN() > 0 && state.myCerts.every(d => d.ok);
-  const haveDocs = () => state.myCerts.some(d => d.ok) || !!state.sheets, sheetIs = (k) => optOpen?.sec.dataset.sec === k;
+  const hasSamples = () => (SAMPLES_ONLY ? sampleCount() > 0 : !!state.sheets);   // (samples only: they're always on, so count them)
+  const haveDocs = () => state.myCerts.some(d => d.ok) || hasSamples(), sheetIs = (k) => optOpen?.sec.dataset.sec === k;
   const sec = (k) => $(`.sec[data-sec="${k}"] .sec-h`);
   const TIPS = [
-    { id: 'start', dim: true, el: () => sec('certs'), k: 'Start here', t: 'Add the documents you need to display, and we\'ll size the board around them.',
-      when: () => step6 === 'build' && !docsN() && !state.sheets, doneWhen: () => sheetIs('certs') || docsN() > 0 || !!state.sheets },
+    { id: 'start', dim: true, el: () => sec('certs'), k: 'Start here', t: SAMPLES_ONLY ? 'Tell us how many documents you post, and we\'ll size the board around them.' : 'Add the documents you need to display, and we\'ll size the board around them.',
+      when: () => step6 === 'build' && !docsN() && !hasSamples() && !(SAMPLES_ONLY && sheetIs('certs')), doneWhen: () => sheetIs('certs') || docsN() > 0 || hasSamples() },
     { id: 'add', el: () => $('#docTabOwn'), k: 'Add your documents', t: 'Snap a photo of them on your wall, or upload pictures. We\'ll find each one for you.',
-      when: () => sheetIs('certs') && !docsN() && !state.sheets, doneWhen: () => docsN() > 0 || !!state.sheets },
+      when: () => !SAMPLES_ONLY && sheetIs('certs') && !docsN() && !state.sheets, doneWhen: () => !SAMPLES_ONLY && (docsN() > 0 || !!state.sheets) },
+    { id: 'count', el: () => $('#docSamples .qty button:last-of-type'), k: 'How many documents?', t: 'Tap + for each document you post. We\'ll show sample certificates in their place.',   // (samples only, in place of the one above)
+      when: () => SAMPLES_ONLY && sheetIs('certs') && !sampleCount(), doneWhen: () => sampleCount() > 0 },
     { id: 'tick', el: () => $('#docList .doc:not(.ok) .okpill'), k: 'Check each one', t: 'Make sure each document is right, then tick Add to Board.',
       when: () => sheetIs('certs') && docsN() > 0 && !allOk() && !state.sheets, doneWhen: allOk },
     { id: 'db', el: () => $('#addDoc'), k: 'Missing one?', t: 'Pick it from our list of documents with Add from database.',
@@ -3312,7 +3328,7 @@ function readParams(q) {
   if (FASTENERS.some(f => f.id === q.get('finish'))) d.fastener = q.get('finish');
   if (q.get('finish') === 'alum') d.fastener = 'chrome';   // (old links: Brushed Aluminum was replaced by Brass)
   if (ENVIRONMENTS.some(e => e.id === q.get('room'))) d.env = q.get('room');
-  if (q.get('sheets') === '0') d.sheets = false;
+  if (q.get('sheets') === '0' && !SAMPLES_ONLY) d.sheets = false;   // (samples only: a design made with their own photos opens with samples)
   if (q.get('turn') === '1') d.sheetTurn = true;
   if (['wide', 'tall'].includes(q.get('turn'))) d.sheetTurn = q.get('turn');
   if (q.get('rot')) d.sampleTurn = Object.fromEntries(q.get('rot').split(',').filter(id => MIX_SIZES.includes(id)).map(id => [id, true]));
@@ -3403,6 +3419,7 @@ function wireExtras() {
   $('#certAdvice').addEventListener('click', (e) => { if (e.target.closest('#useFit')) useBestFit(); });
   // own documents (any size)
   const addCerts = async (files) => {
+    if (SAMPLES_ONLY) return;                                 // (samples only: no photos of their own)
     for (const f of files) {
       const own = {};
       try { await loadArt(own, f); } catch { toast(`Couldn't read ${f.name}`); continue; }
@@ -4031,6 +4048,7 @@ function wirePicker() {
 }
 
 function refresh(refit = false) {
+  if (SAMPLES_ONLY && !state.sheets) { state.sheets = true; $('#sheets').checked = true; }   // (samples only: always on)
   if (OFFER) keepOffered();
   buildBoard();
   if (refit && !sway) setView(state.view);   // (v5 tutorial screens keep their own framing)
@@ -4431,7 +4449,7 @@ if (LAYOUT === 'v4') wireGuide();
 if (LAYOUT === 'v5') wireTour();
 if (V6 && !EMBED) wireCoach();
 if (new URLSearchParams(location.search).get('docs') === 'demo') loadExampleDocs();
-if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED) scanExample();
+if (new URLSearchParams(location.search).get('scan') === 'demo' && !GUIDED && !SAMPLES_ONLY) scanExample();
 // ?peek=#fork scrolls that part of the panel into view (used for screenshots)
 const peek = new URLSearchParams(location.search).get('peek');
 if (peek) setTimeout(() => { try { document.querySelector(peek)?.scrollIntoView({ block: 'start' }); } catch { /* bad selector */ } }, 300);

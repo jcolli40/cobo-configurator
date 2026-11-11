@@ -2,6 +2,14 @@
 // Everything a non-coder would want to tweak lives in this file.
 // Units are INCHES everywhere.
 
+// ---- Photo scan ("Snap Your Docs", v8 only) ----
+// false = samples only: customers tell us how many documents of each paper size they have, and the board shows sample
+//         certificates in their place. No camera, no uploads, and nothing is sent to the AI wall reader (Gemini).
+// true  = the photo scan is back: customers can snap or upload their documents and the AI finds and names each one.
+//         Only turn it on once the Cloudflare Worker and its Google AI key are set up and paid for (see SNAPWALL-GEMINI.md).
+// To change it: change the word after the = sign below, then run tools/stamp-version.js and tools/make-versions.js.
+export const PHOTO_SCAN = false;
+
 // ---- Standard sizes (shorter side x longer side) and prices from complianceboards.com ----
 export const SIZES = [
   { id: '6x12',  a: 6,  b: 12, price: 35.95 },
