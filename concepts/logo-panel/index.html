@@ -1,0 +1,320 @@
+<meta charset="utf-8">
+<title>Logo Panel Sketches</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: page chrome is a quiet notebook; the product UI inside each frame copies v8's real tokens, always light, as v8 is. */
+:root{--bg:#f6f6f4;--fg:#1c1c1e;--mut:#66666b;--line:#dcdcd8;--card:#fff;--acc:#1b3a6b;--note:#fff7e0;--note-b:#e6cf86;--ok:#2e7d4f;
+ --font:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--head:"Space Grotesk",Inter,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141416;--fg:#ececef;--mut:#9a9aa2;--line:#2c2c31;--card:#1d1d21;--acc:#9db8e6;--note:#2a2512;--note-b:#6b5a1c;--ok:#6fcf97;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141416;--fg:#ececef;--mut:#9a9aa2;--line:#2c2c31;--card:#1d1d21;--acc:#9db8e6;--note:#2a2512;--note-b:#6b5a1c;--ok:#6fcf97;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--head);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:30px}h2{font-size:22px}h3{font-size:16px}
+p{margin:0}.mut{color:var(--mut)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.lede{max-width:68ch}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.note{background:var(--note);border:1px solid var(--note-b);border-radius:12px;padding:14px 16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+ul.tight{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--card)}
+.seg2 button{border:0;background:none;color:var(--fg);padding:7px 14px;border-radius:999px;font:inherit;font-size:13.5px;cursor:pointer}
+.seg2 button.on{background:var(--acc);color:var(--bg)}
+.opt-head{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between}
+.letter{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--acc);color:var(--bg);font:700 15px var(--head);margin-right:10px}
+.views{display:grid;grid-template-columns:minmax(0,1fr) 395px;gap:20px;align-items:start}
+@media (max-width:980px){.views{grid-template-columns:minmax(0,1fr)}}
+.scroll-x{overflow-x:auto;padding-bottom:6px}
+.cap{font-size:12px;color:var(--mut);margin-top:6px}
+.rule{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-end}
+.pros{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px;font-size:13.5px}
+.pros b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.shots{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:700px){.shots{grid-template-columns:1fr}}
+.shots img{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+
+/* ===== product frames: v8 tokens, copied ===== */
+.dev{--ink:#1c1c1e;--muted:#6e6e73;--faint:#9a9aa0;--line:#e6e6e9;--line-2:#d6d6db;--card:#fff;--hover:#f5f5f7;--accent:#1b3a6b;--tint:#e8edf5;--cta:#1b3a6b;--btn-blue:#1f7bb6;--bubble:#cfe0f7;--radius:14px;--shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+ font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);font-size:14px;line-height:1.4}
+.dev *{box-sizing:border-box}
+.dev svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.desk{display:grid;grid-template-columns:minmax(210px,1fr) 340px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(ellipse at 40% 35%,#fff,#e9e9ec);overflow:hidden;min-height:480px}
+.desk .stagebox{display:grid;place-items:center;padding:18px 8px}
+.desk .side{padding:14px 14px 14px 0}
+@media (max-width:640px){.desk{grid-template-columns:1fr}.desk .side{padding:0 12px 12px}}
+.phone{width:375px;height:760px;border:10px solid #1c1c1e;border-radius:38px;background:radial-gradient(ellipse at 50% 25%,#fff,#e6e6ea);position:relative;overflow:hidden;margin:0 auto}
+.phone .stagebox{height:300px;display:grid;place-items:center}
+.phone .sheet{position:absolute;left:0;right:0;bottom:0;top:300px;background:#f4f2ec;border-radius:20px 20px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px 14px 0;overflow-y:auto}
+.phone .sheet:before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:#cfcfd4;margin:-4px auto 10px}
+.pcard{background:#f4f2ec;border:1px solid #e9e6dd;border-radius:18px;padding:16px;box-shadow:var(--shadow);height:100%;display:flex;flex-direction:column;gap:12px}
+.phone .pcard{background:none;border:0;box-shadow:none;padding:0 0 70px}
+.ph{display:flex;align-items:center;gap:10px}.ph .t{font-size:16px;font-weight:600;color:var(--accent);flex:1}
+.up{font-style:normal;font-size:11.5px;font-weight:700;color:var(--accent);background:var(--bubble);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.help{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.upload{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);background:#fff;border-radius:10px;padding:8px 14px;font-size:13.5px;cursor:default}
+.fname{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--muted)}
+.link{border:0;background:none;color:var(--accent);font-size:13px;cursor:pointer;padding:4px 2px;text-decoration:underline;font-family:inherit}
+.opts{display:grid;gap:13px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#f8f7f3}
+.fld{display:grid;gap:5px;font-size:12.5px;color:var(--muted)}
+.fld>span{display:flex;justify-content:space-between;gap:8px}
+.fld output{color:var(--ink);font-variant-numeric:tabular-nums}
+.fld select{font:inherit;font-size:13.5px;color:var(--ink);background:#fff;border:1px solid var(--line-2);border-radius:8px;padding:8px}
+.dev input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.opt{display:flex;align-items:center;gap:11px;min-height:34px;font-size:14px}
+.opt>span{flex:1}
+.switch{appearance:none;width:40px;height:24px;border-radius:999px;background:#cfcfd4;position:relative;cursor:pointer;flex:none;transition:.15s;margin:0}
+.switch:before{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch:checked{background:var(--accent)}.switch:checked:before{left:19px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:#fff}
+.seg button{border:0;background:#fff;padding:9px 8px;font:inherit;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid var(--line-2)}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+.warn{display:flex;gap:8px;align-items:flex-start;background:#fff4e0;border:1px solid #efcf8e;color:#6a4a00;border-radius:10px;padding:8px 10px;font-size:12.5px}
+.warn svg{margin-top:1px}
+.okline{display:flex;gap:8px;align-items:center;font-size:12.5px;color:#2e7d4f}
+.fee{display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px solid var(--line);padding-top:10px;margin-top:auto}
+.fee b{font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--muted)}
+.stp{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.stp>header{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.stp .n{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--faint);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--muted);flex:none}
+.stp.on{border-color:var(--accent)}.stp.on .n{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.done .n{background:#e8f4ec;border-color:#2e7d4f;color:#2e7d4f}
+.stp header b{font-size:14px;font-weight:600;flex:1}.stp header small{color:var(--muted);font-size:12px}
+.stp .bd{padding:2px 12px 12px;display:grid;gap:11px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1.5px solid var(--line-2);background:#fff;border-radius:12px;padding:8px;display:grid;gap:5px;justify-items:center;cursor:pointer;font:inherit;color:var(--ink)}
+.tile.on{border-color:var(--accent);background:var(--tint);box-shadow:0 0 0 1px var(--accent) inset}
+.tile span{font-size:12.5px;font-weight:600}
+.chk{background-image:linear-gradient(45deg,#d9d9de 25%,transparent 25%,transparent 75%,#d9d9de 75%),linear-gradient(45deg,#d9d9de 25%,transparent 25%,transparent 75%,#d9d9de 75%);background-size:12px 12px;background-position:0 0,6px 6px;background-color:#fff}
+.thumb{border:1.5px solid var(--line-2);border-radius:10px;overflow:hidden;display:block;width:100%;aspect-ratio:2/1}
+.meter{height:8px;border-radius:99px;background:linear-gradient(90deg,#d9534f 0 35%,#e8a33a 35% 62%,#3f9a62 62%);position:relative}
+.meter i{position:absolute;top:-3px;width:4px;height:14px;border-radius:2px;background:var(--ink);transform:translateX(-2px)}
+details.adv{border:1px dashed var(--line-2);border-radius:10px;padding:8px 10px;background:#fff}
+details.adv summary{cursor:pointer;font-size:13px;color:var(--accent);font-weight:600}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#e8edf5;color:#1b3a6b;border-radius:6px;padding:1px 6px}
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:10px">
+  <div class="eyebrow">COBO BoardBuilder v8 · Logo panel · sketch, nothing built</div>
+  <h1>Logo panel: four options</h1>
+  <p class="lede mut">Every option does the same job: upload, remove a white background, set a size, pick Top or Bottom (1&Prime; from the edge), and show the logo fee. They differ in how the panel is laid out. The controls below really work, so you can try them in every option at once.</p>
+  <div class="bar" id="globals">
+    <span class="eyebrow">Try it</span>
+    <div class="seg2" id="sampleSeg" role="group" aria-label="Sample file">
+      <button data-s="jpg" class="on">Harbor logo.jpg (white background)</button>
+      <button data-s="png">Harbor logo.png (transparent)</button>
+    </div>
+    <span class="mut" style="font-size:13px">Board: 24&Prime; × 36&Prime;, portrait, black. Preview is full colour.</span>
+  </div>
+</header>
+
+<section class="box" style="display:grid;gap:14px">
+  <h2>The placement rule, both ways</h2>
+  <p class="mut">The logo is centred left to right. Its top edge (Top) or bottom edge (Bottom) sits exactly 1&Prime; from the board edge. Width follows the size slider. Logo is <span id="ruleW">6</span>&Prime; wide here.</p>
+  <div class="rule" id="ruleBoards"></div>
+</section>
+
+<div class="note" id="findings">
+  <h3 style="margin-bottom:6px">Found while reading v8 (affects every option)</h3>
+  <ul class="tight">
+    <li><b>Shoppers cannot reach the Logo section in v8 today.</b> The Logo section is still in the page, but the three steps only list Documents and Size (Build), Board, Edge and Caps (Style), and the Preview items (<code>STEPS6</code> in <code>js/main.js</code>). The build has to add Logo to a step. All four options below assume it goes in <b>Style</b>, after Caps.</li>
+    <li>On phones a section opens as a bottom sheet; on desktop as a card beside the board. Both are shown.</li>
+    <li>Today's panel (screenshots at the bottom): a white JPG logo prints as a white box on the black board. That is the problem the knockout fixes.</li>
+  </ul>
+</div>
+
+<div id="options" style="display:grid;gap:56px"></div>
+
+<section class="box" style="display:grid;gap:12px">
+  <h2>Before: today's Logo panel</h2>
+  <p class="mut">Real v8 at localhost, 24&Prime; × 36&Prime; black board, a JPG logo on white uploaded. The Logo section was forced visible, because no step shows it.</p>
+  <div class="shots">
+    <figure style="margin:0"><img src="before-desktop.jpg" alt="Current Logo panel on desktop: layout menu, width, rotation, opacity and move sliders. The white logo box shows on the black board."><div class="cap">Desktop</div></figure>
+    <figure style="margin:0"><img src="before-phone.jpg" alt="Current Logo panel on a 375 px phone"><div class="cap">Phone (375 px)</div></figure>
+  </div>
+</section>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 4l2.4 5 5.4.7-4 3.7 1.1 5.4L12 16.2 7.1 18.8l1.1-5.4-4-3.7 5.4-.7z"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.01"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</defs></svg>
+
+<script>
+(function(){
+var FEE=45, BW=24, BH=36, INSET=1;
+var S={sample:'jpg',knock:true,tol:35,size:6,place:'top',adv:false};
+var SAMPLES={jpg:{name:'harbor-logo.jpg',px:[1200,600],opaque:true},png:{name:'harbor-logo.png',px:[900,450],opaque:false}};
+var $=function(s,r){return (r||document).querySelector(s)};
+
+/* ---------- logo art (viewBox 600x300). White ring centre + white-ish subline show what knockout does ---------- */
+function logoSVG(o){ // o: {bg:bool, fringe:bool, fade:number}
+  return '<rect width="600" height="300" fill="#fff" '+(o.bg?'':'opacity="0"')+'/>'
+  +'<circle cx="120" cy="150" r="78" fill="#e8792b" '+(o.fringe?'stroke="#f3e9df" stroke-width="5"':'')+'/><circle cx="120" cy="150" r="32" fill="#fff"/>'
+  +'<text x="225" y="150" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="76" fill="#2a9fd8" '+(o.fringe?'stroke="#e5f3fa" stroke-width="3" paint-order="stroke"':'')+'>HARBOR</text>'
+  +'<text x="228" y="206" font-family="Arial,Helvetica,sans-serif" font-size="34" letter-spacing="3" fill="#aebdd0" opacity="'+o.fade+'">SAFETY SERVICES</text>';
+}
+function curLogo(){
+  var sm=SAMPLES[S.sample], opaque=sm.opaque, knocked=opaque&&S.knock;
+  var fringe=knocked&&S.tol<12, fade=knocked&&S.tol>70?Math.max(0,1-(S.tol-70)/12):1;
+  return {bg:opaque&&!S.knock, fringe:fringe, fade:fade, knocked:knocked, opaque:opaque};
+}
+function ppi(){return SAMPLES[S.sample].px[0]/S.size}
+function maxW(){return BW-2*1.5}      // keep clear of the corner caps (caps sit 1" in, 1" wide)
+function clampSize(){ if(S.size>maxW()) S.size=maxW(); }
+
+/* ---------- board svg: viewBox in inches*10 ---------- */
+function boardSVG(px, place, opts){
+  opts=opts||{}; var w=S.size, h=w/2, L=curLogo();
+  var y = place==='top'? INSET : BH-INSET-h, x=(BW-w)/2;
+  var caps=[[1,1],[BW-1,1],[1,BH-1],[BW-1,BH-1]].map(function(c){return '<circle cx="'+c[0]*10+'" cy="'+c[1]*10+'" r="5" fill="url(#cap)" stroke="#6b6b70" stroke-width=".6"/>'}).join('');
+  var dimX=Math.max(30,(x-1.4)*10), y1=place==='top'?0:(BH-INSET)*10, y2=place==='top'?INSET*10:BH*10;
+  var dim='<g stroke="#8fc3ff" stroke-width="1.2" fill="none"><path d="M'+dimX+' '+y1+'V'+y2+'"/><path d="M'+(dimX-4)+' '+y1+'h8M'+(dimX-4)+' '+y2+'h8"/></g>'
+   +'<text x="'+(dimX+7)+'" y="'+((y1+y2)/2+4)+'" font-size="11" font-weight="700" fill="#8fc3ff" font-family="Arial">1″</text>';
+  var out='<svg viewBox="0 0 '+BW*10+' '+BH*10+'" width="'+BW*px+'" height="'+BH*px+'" role="img" aria-label="24 by 36 inch board, logo at '+place+'" style="display:block;filter:drop-shadow(6px 8px 8px rgba(0,0,0,.28))">'
+   +'<defs><radialGradient id="cap" cx="35%" cy="30%"><stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#9c9ca3"/></radialGradient></defs>'
+   +'<rect width="'+BW*10+'" height="'+BH*10+'" rx="3" fill="#121214"/><rect x="1" y="1" width="'+(BW*10-2)+'" height="'+(BH*10-2)+'" rx="2.5" fill="none" stroke="#2a2a2e" stroke-width="1"/>'
+   +caps+'<g transform="translate('+x*10+' '+y*10+') scale('+(w*10/600)+')">'+logoSVG(L)+'</g>'
+   +(opts.dim===false?'':dim)+'</svg>';
+  return out;
+}
+
+/* ---------- panel pieces ---------- */
+var I=function(n){return '<svg class="i"><use href="#i-'+n+'"/></svg>'};
+function uploadRow(){var sm=SAMPLES[S.sample];return '<div class="row"><span class="upload">'+I('image')+'Replace image…</span><span class="fname">'+sm.name+'</span><button class="link" type="button">Remove</button></div>'
+  +'<div class="hint">'+sm.px[0]+' × '+sm.px[1]+' px · '+(sm.opaque?'no transparency found':'transparent background found')+'</div>'}
+function header(){return '<div class="ph">'+I('logo').replace('class="i"','class="i" style="color:var(--accent)"')+'<span class="t">Logo</span><em class="up">+$'+FEE+'</em></div>'}
+function helpLine(){return '<p class="help">Printed on the board face. Adding a logo adds <b>$'+FEE+'</b> per board.</p>'}
+function knockCtl(){
+  var sm=SAMPLES[S.sample];
+  if(!sm.opaque) return '<div class="okline">'+I('check')+'Transparent background found. Nothing to remove.</div>';
+  return '<label class="opt"><span>Remove background</span><input type="checkbox" class="switch" data-k="knock" '+(S.knock?'checked':'')+' aria-label="Remove background"></label>'
+   +(S.knock?'<label class="fld"><span>Tolerance <output>'+S.tol+'</output></span><input type="range" min="0" max="100" step="1" value="'+S.tol+'" data-k="tol" aria-label="Tolerance"></label><p class="hint">Removes the background colour from the edges in. White inside the logo stays. Low leaves a light fringe; high starts eating pale parts of the logo.</p>':'');
+}
+function sizeCtl(){
+  var q=ppi(), bad=q<150;
+  return '<label class="fld"><span>Width <output>'+fmt(S.size)+'″ <span style="color:'+(bad?'#a05a00':'#2e7d4f')+'">· '+Math.round(q)+' px/in</span></output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
+   +(bad?'<div class="warn">'+I('warn')+'<span>May print blurry at this size ('+Math.round(q)+' px per inch). Aim for 150 or more: use a larger file or make the logo smaller.</span></div>':'');
+}
+function placeCtl(){
+  return '<div class="fld"><span>Placement</span><div class="seg" role="group" aria-label="Placement"><button type="button" data-p="top" class="'+(S.place==='top'?'on':'')+'">Top</button><button type="button" data-p="bottom" class="'+(S.place==='bottom'?'on':'')+'">Bottom</button></div></div>'
+   +'<p class="hint">Centred, '+(S.place==='top'?'top':'bottom')+' edge of the logo 1″ from the board’s '+S.place+' edge.</p>';
+}
+function feeLine(){var base=269.95;return '<div class="fee"><span class="hint" style="font-size:13px">Logo fee</span><span><b>+$'+FEE+'.00</b> <span class="hint">→ board $'+(base+FEE).toFixed(2)+'</span></span></div>'}
+function fmt(n){return (Math.round(n*100)/100).toString()}
+function pngTiles(){}
+
+/* ---------- the four panels ---------- */
+function panelA(){
+  return header()+helpLine()+uploadRow()+'<div class="opts">'+knockCtl()+'<hr style="border:0;border-top:1px solid var(--line);width:100%;margin:0">'+sizeCtl()+placeCtl()+'</div>'+feeLine();
+}
+var stepB=1;
+function panelB(){
+  var sm=SAMPLES[S.sample], L=curLogo();
+  function step(n,title,sum,body){var on=stepB===n, done=stepB>n;
+    return '<div class="stp '+(on?'on':done?'done':'')+'"><header data-st="'+n+'"><span class="n">'+(done?I('check').replace('class="i"','class="i" style="width:13px;height:13px;stroke-width:2.4"'):n)+'</span><b>'+title+'</b><small>'+(on?'':sum)+'</small></header>'+(on?'<div class="bd">'+body+'</div>':'')+'</div>'}
+  var s1=step(1,'Your file',sm.name,uploadRow()+'<button class="btn" data-next="2" type="button" style="all:unset;color:#fff;background:var(--btn-blue);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;text-align:center;cursor:pointer">Next: clean up</button>');
+  var s2=step(2,'Clean up',L.opaque?(S.knock?'Background removed':'Background kept'):'Transparent',knockCtl()+'<button data-next="3" type="button" style="all:unset;color:#fff;background:var(--btn-blue);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;text-align:center;cursor:pointer">Next: size and place</button>');
+  var s3=step(3,'Size and place',fmt(S.size)+'″ · '+(S.place==='top'?'Top':'Bottom'),sizeCtl()+placeCtl());
+  return header()+helpLine()+'<div style="display:grid;gap:10px">'+s1+s2+s3+'</div>'+feeLine();
+}
+function miniBoard(place){
+  var w=S.size/BW*48, h=w/2, y=place==='top'?1/BH*72:72-1/BH*72-h/ (BH/72) ;
+  var bh=72, bw=48, lw=S.size/BW*bw, lh=lw/2, ly=place==='top'?(INSET/BH)*bh:bh-(INSET/BH)*bh-lh;
+  return '<svg viewBox="0 0 48 72" width="48" height="72" aria-hidden="true"><rect width="48" height="72" rx="2" fill="#121214"/><g transform="translate('+((bw-lw)/2)+' '+ly+') scale('+(lw/600)+')">'+logoSVG(curLogo())+'</g></svg>';
+}
+function panelC(){
+  var L=curLogo(), sm=SAMPLES[S.sample], q=ppi(), pos=Math.max(2,Math.min(98,(q-60)/(300-60)*100));
+  var before='<svg viewBox="0 0 600 300" class="thumb" style="background:#fff"><g>'+logoSVG({bg:true,fade:1})+'</g></svg>';
+  var after='<div class="thumb chk"><svg viewBox="0 0 600 300" width="100%" height="100%">'+logoSVG({bg:false,fringe:S.tol<12,fade:S.tol>70?Math.max(0,1-(S.tol-70)/12):1})+'</svg></div>';
+  var clean=sm.opaque?'<div class="fld"><span>Background</span><div class="tiles">'
+     +'<button class="tile '+(!S.knock?'on':'')+'" data-kb="0" type="button">'+before+'<span>Keep white</span></button>'
+     +'<button class="tile '+(S.knock?'on':'')+'" data-kb="1" type="button">'+after+'<span>Remove white</span></button></div></div>'
+     +(S.knock?'<label class="fld"><span>Tolerance <output>'+S.tol+'</output></span><input type="range" min="0" max="100" step="1" value="'+S.tol+'" data-k="tol" aria-label="Tolerance"></label>':'')
+     :'<div class="okline">'+I('check')+'Transparent background found.</div>';
+  var qlbl=q>=150?'Sharp':q>=100?'May print blurry':'Will look blurry';
+  return header()+helpLine()+uploadRow()+'<div class="opts">'+clean
+   +'<label class="fld"><span>Width <output>'+fmt(S.size)+'″</output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
+   +'<div class="fld"><span>Print quality <output>'+Math.round(q)+' px/in · '+qlbl+'</output></span><div class="meter"><i style="left:'+pos+'%"></i></div></div>'
+   +(q<150?'<div class="warn">'+I('warn')+'<span>May print blurry at this size. Use a larger file or a smaller width.</span></div>':'')
+   +'<div class="fld"><span>Placement</span><div class="tiles">'
+   +'<button class="tile '+(S.place==='top'?'on':'')+'" data-p="top" type="button">'+miniBoard('top')+'<span>Top</span></button>'
+   +'<button class="tile '+(S.place==='bottom'?'on':'')+'" data-p="bottom" type="button">'+miniBoard('bottom')+'<span>Bottom</span></button></div></div>'
+   +'<p class="hint">1″ from the '+S.place+' edge, centred.</p></div>'+feeLine();
+}
+function panelD(){
+  return header()+'<p class="help">Printed on the board face. Adds <b>$'+FEE+'</b> per board.</p>'+uploadRow()
+   +'<div class="opts">'+knockCtl()+'<div class="two" style="display:grid;gap:10px">'+sizeCtl()
+   +'<div class="fld"><span>Placement</span><div class="seg"><button type="button" data-p="top" class="'+(S.place==='top'?'on':'')+'">Top</button><button type="button" data-p="bottom" class="'+(S.place==='bottom'?'on':'')+'">Bottom</button></div></div></div></div>'
+   +'<details class="adv" '+(S.adv?'open':'')+' data-adv><summary>Advanced: repeat the logo as a pattern</summary><div style="display:grid;gap:10px;margin-top:10px"><p class="help">Turns off the Top/Bottom rule. Fee stays $'+FEE+'. Patterns can also go in <b>Background image</b>.</p>'
+   +'<label class="fld"><span>Layout</span><select><option>Grid</option><option>Offset rows (brick)</option><option>Offset columns (half-drop)</option><option>Honeycomb</option><option>Checkerboard / diamond</option><option>Mirrored grid</option><option>Scatter (random)</option></select></label>'
+   +'<label class="fld"><span>Spacing between copies <output>1″</output></span><input type="range" min="0" max="12" step=".25" value="1"></label></div></details>'
+   +feeLine();
+}
+
+var OPTIONS=[
+ {k:'A',name:'One simple panel',fn:panelA,sum:'Upload, then Remove background, Width, Top/Bottom, all in one short list. Layouts are gone.',
+  pro:'Fewest taps. Easiest to build: reuses the current sliders and sheet. Reads the same on phone and desktop.',con:'Everything shown at once; the phone sheet scrolls to reach Placement.',build:'Smallest'},
+ {k:'B',name:'Three small steps',fn:panelB,sum:'Your file, then Clean up, then Size and place. Finished steps fold up into a one-line summary.',
+  pro:'Never more than one or two controls on screen. Calm on a phone.',con:'More taps. A shopper with a clean transparent PNG still sees steps they do not need (Clean up skips itself).',build:'Medium'},
+ {k:'C',name:'Pictures, not menus',fn:panelC,sum:'Top/Bottom are two tiny boards you tap. Keep or Remove white is a before/after pair. A quality meter replaces the warning text until it is needed.',
+  pro:'Shoppers see the result of each choice before they tap. Best for non-designers.',con:'Tallest panel. Most new UI to build and test.',build:'Largest'},
+ {k:'D',name:'Simple panel + Advanced patterns',fn:panelD,sum:'Like A, tighter, and the old repeat layouts (Grid, Brick…) stay behind an Advanced fold that turns the 1″ rule off.',
+  pro:'Keeps pattern printing for anyone who relies on it. Nothing taken away.',con:'Two rules in one panel. Patterns already exist in Background image, so this may be a duplicate.',build:'Medium'}
+];
+
+var views=[]; // {opt, deskPanel, deskBoard, phPanel, phBoard}
+function build(){
+  var host=$('#options'); host.innerHTML='';
+  OPTIONS.forEach(function(o){
+    var sec=document.createElement('section'); sec.style.display='grid'; sec.style.gap='14px';
+    sec.innerHTML='<div class="opt-head"><h2><span class="letter">'+o.k+'</span>'+o.name+'</h2><span class="tag">Build size: '+o.build+'</span></div><p class="lede mut">'+o.sum+'</p>'
+     +'<div class="pros"><div><b>Good</b>'+o.pro+'</div><div><b>Trade-off</b>'+o.con+'</div></div>'
+     +'<div class="views"><div><div class="eyebrow" style="margin-bottom:6px">Desktop</div><div class="scroll-x"><div class="dev desk" style="min-width:560px"><div class="stagebox" data-b="d"></div><div class="side"><div class="pcard" data-p="d"></div></div></div></div></div>'
+     +'<div><div class="eyebrow" style="margin-bottom:6px">Phone, 375 px</div><div class="scroll-x"><div class="dev phone"><div class="stagebox" data-b="p"></div><div class="sheet"><div class="pcard" data-p="p"></div></div></div></div></div></div>';
+    host.appendChild(sec); views.push({o:o,sec:sec});
+  });
+}
+var openAdv=false;
+function paint(skip){
+  clampSize();
+  views.forEach(function(v){
+    var html=v.o.fn();
+    ['d','p'].forEach(function(t){
+      var p=$('[data-p="'+t+'"]',v.sec), sc=p.parentNode.scrollTop;
+      if(p!==skip) p.innerHTML=html;
+      p.parentNode.scrollTop=sc;
+      $('[data-b="'+t+'"]',v.sec).innerHTML=boardSVG(t==='d'?9:6.4,S.place);
+    });
+  });
+  $('#ruleW').textContent=fmt(S.size);
+  $('#ruleBoards').innerHTML='<figure style="margin:0">'+boardSVG(8,'top')+'<figcaption class="cap" style="text-align:center">Top</figcaption></figure><figure style="margin:0">'+boardSVG(8,'bottom')+'<figcaption class="cap" style="text-align:center">Bottom</figcaption></figure>';
+}
+document.addEventListener('input',function(e){var k=e.target.dataset&&e.target.dataset.k; if(!k) return;
+  if(k==='tol') S.tol=+e.target.value; if(k==='size') S.size=+e.target.value; if(k==='knock') S.knock=e.target.checked;
+  if(k==='knock'){paint();return}
+  var f=e.target, pa=f.closest('.pcard'); paint(pa);   // keep the slider being dragged; repaint it on release
+  var out=f.closest('.fld').querySelector('output'); if(out) out.textContent=(k==='size'?fmt(S.size)+'″':S.tol);
+});
+document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.k; if(k==='tol'||k==='size') paint();});
+document.addEventListener('change',function(e){ if(e.target.dataset&&e.target.dataset.k==='knock'){S.knock=e.target.checked;paint();} });
+document.addEventListener('click',function(e){
+  var t=e.target, b;
+  if((b=t.closest('[data-p]')) && b.dataset.p!=='d' && b.dataset.p!=='p' && b.tagName==='BUTTON'){S.place=b.dataset.p;paint();return}
+  if((b=t.closest('[data-kb]'))){S.knock=b.dataset.kb==='1';paint();return}
+  if((b=t.closest('[data-st]'))){stepB=+b.dataset.st;paint();return}
+  if((b=t.closest('[data-next]'))){stepB=+b.dataset.next;paint();return}
+  if((b=t.closest('#sampleSeg button'))){S.sample=b.dataset.s;[].forEach.call(document.querySelectorAll('#sampleSeg button'),function(x){x.classList.toggle('on',x===b)});paint();return}
+});
+build(); paint();
+})();
+</script>
