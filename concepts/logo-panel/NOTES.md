@@ -2,6 +2,9 @@
 
 Sketch: `index.html` (4 options, A-D). Screenshots of today's panel: `before-desktop.jpg`, `before-phone.jpg`. No code in `js/` or `v8/` changed.
 
+## DECISION (Justin, 18 Nov): go with Option A, one simple panel
+Upload SVG/EPS, Width slider, Top/Bottom, +$20 fee. Layouts (Grid, Brick...) are dropped for the logo. B, C and D are not built. Open items below still need answers before the build.
+
 ## Rules from Justin, 18 Nov (the sketch page now follows these)
 - Logo fee **$20** (replaces the placeholder 45; it will later come from the shop panel).
 - Max logo size **3.5" tall × 20" wide** (on a 24" board also keep it clear of the corner caps: 21" at most). The limit is two-sided, so a wide logo is limited by width and a tall one by height; the sketch's 4:1 sample tops out at 14" wide.
