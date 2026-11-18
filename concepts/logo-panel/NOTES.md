@@ -16,7 +16,7 @@ Sketch: `index.html` (4 options, A-D). Screenshots of today's panel: `before-des
 ## Findings
 - **Shoppers cannot reach the Logo section in v8 today.** `STEPS6` in `js/main.js` (line 63) lists build: certs, size; style: boardgrp, edge, caps; preview: arview, sharelink, saveit, summary. `logo` and `bgimg` are in the HTML but no step shows them (the section is `hidden`). The build must add `logo` to a step (sketches assume Style, after Caps).
 - Today's logo upload is a layout + 6 sliders (`wireArt`, `artTpl`). Placement is free (`offX`/`offY`); the order spec stores only `file` name, layout, width, spacing, rotation, opacity, move X/Y (`currentSpec`, ~line 1267). Fee: `UPCHARGES.logo` = 45, shown as a `+$` pill on the section header and a help line from `paintPrices`.
-- A white JPG prints as a white box on a black board. That is what the knockout fixes.
+- A white JPG printed as a white box on a black board. Going SVG/EPS-only removes that problem.
 - Logo width is also kept at board width minus 3" (clear of the corner caps, which sit 1" in and are 1" wide).
 - Certificates: the sample certificate fit does not know about a logo. Top/Bottom at 1" will collide with them on small boards. The build needs to keep certificates clear of the logo band (or the logo wins and certs move).
 - A dark logo on a black board will be hard to see. Consider a board-colour preview note or warning.
@@ -26,7 +26,7 @@ Sketch: `index.html` (4 options, A-D). Screenshots of today's panel: `before-des
 Today the order carries only the **file name**. Quoted boards open a mailto saying "Please attach your image files" (`js/main.js` ~line 4067). Priced boards go to the Shopify cart with no file at all. The cart add happens in the Shopify page, not in the iframe: `shopify/cobo-configurator-embed.liquid` (~lines 51-90) receives `cobo:add-to-cart` / `cobo:update` by postMessage and posts JSON to `/cart/add.js`.
 
 ### Main plan: send the file with the cart (needs a test before we trust it)
-How it would work: the iframe puts the original file (and the knocked-out PNG) in the `cobo:add-to-cart` message. A `File`/`Blob` survives postMessage (structured clone), even across origins. The parent builds a `FormData` (`id`, `quantity`, `properties[Logo (original)]` = File, `properties[Logo (print copy)]` = File, plus the existing text properties) and posts it to `/cart/add.js`. Shopify would host the files and the order would show links.
+How it would work: the iframe puts the original file in the `cobo:add-to-cart` message. A `File`/`Blob` survives postMessage (structured clone), even across origins. The parent builds a `FormData` (`id`, `quantity`, `properties[Logo (original)]` = File, `properties[Logo (print copy)]` = File, plus the existing text properties) and posts it to `/cart/add.js`. Shopify would host the files and the order would show links.
 
 **Plainly: this is not confirmed.**
 - Shopify's Ajax Cart reference documents `properties` as key-value text, and shows a FormData example only for a normal add-to-cart form. It says nothing about files, file size limits, or how many/long properties may be. ([Ajax Cart API reference](https://shopify.dev/docs/api/ajax/reference/cart))
@@ -58,7 +58,7 @@ Fits if Shopify rejects files or for quoted boards. The Worker already has an al
 3. If Shopify files fail, or for quoted custom boards: OK a Cloudflare R2 bucket + Worker route in his account, and where the board shop should see order files (link in the Shopify order, email, or a folder).
 4. Retention: how long to keep customer logo files, and the one-line privacy note on the page ("your file is stored to make your board").
 5. Should the shopper see the file link in the cart/checkout, or only the shop in the order (hidden `_` key)?
-6. Logo fee amount (45 is a placeholder) and whether it varies by board size like `laminate` does. It will later come from the shop panel.
+6. Confirm the $20 fee is one amount for every board size (not per size like `laminate`). It will later come from the shop panel.
 7. Which step the Logo option lives in (sketch assumes Style).
 8. Production method is still open, so the preview stays full colour.
 9. How to make the EPS preview (browser library or the Worker), and what to show if an EPS cannot be previewed.
