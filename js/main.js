@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611102040';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611102040';
-import { wallTexture, wallSwatch } from './env.js?v=202611102040';
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181757';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181757';
+import { wallTexture, wallSwatch } from './env.js?v=202611181757';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -42,7 +42,7 @@ const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wa
 const SCAN = V8 && PHOTO_SCAN;
 const SAMPLES_ONLY = V8 && !PHOTO_SCAN;
 if (SAMPLES_ONLY) document.documentElement.dataset.samplesOnly = '';   // (index.html hides every Snap / Upload control under [data-samples-only])
-const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611102040') : {};   // dev copy: Part A "detect" (Gemini)
+const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181757') : {};   // dev copy: Part A "detect" (Gemini)
 // v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
 let CAT = null;
 if (SCAN) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
@@ -60,7 +60,7 @@ const EMBED = new URLSearchParams(location.search).get('embed') === 'morph';
 // 3D view the whole time). Build starts with the customer's documents because the size depends on them.
 // Style: computers list Solid Colors and Textures & Patterns under a "Board style" heading; phones show Board | Edge |
 // Caps, and Board opens those two beside it (boardgrp).
-const STEPS6 = { build: ['certs', 'size'], style: ['boardgrp', 'edge', 'caps'], preview: ['arview', 'sharelink', 'saveit', 'summary'] };
+const STEPS6 = { build: ['certs', 'size'], style: V8 ? ['boardgrp', 'edge', 'caps', 'logo'] : ['boardgrp', 'edge', 'caps'], preview: ['arview', 'sharelink', 'saveit', 'summary'] };
 const STEP_ORDER = Object.keys(STEPS6);
 let step6 = 'build';
 // an upcharge from UPCHARGES (config.js): one amount, or one per size
@@ -91,7 +91,7 @@ const state = {
   wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offX: 0, offY: 0 },   // photo of the customer's own wall
   view: V8 ? 'front' : 'angle',   // (v8: the board straight on)
   art: {                    // uploaded images: { img (canvas), name, aspect, imgId, ...layout settings }
-    logo: { img: null, name: '', ...artDefaults('logo') },
+    logo: { img: null, name: '', kind: '', ...artDefaults('logo'), place: 'top' },   // (logo: SVG or EPS, centred, Top or Bottom)
     background: { img: null, name: '', ...artDefaults('background') },
   },
   lamSel: null,             // chosen Wilsonart laminate {n, name, avg, full, ...} (overrides face color)
@@ -529,11 +529,75 @@ function artTexture(L) {   // L = layer settings (cover/fit already turned into 
   L.cache._key = key; L.cache._tex = t;
   return t;
 }
+// Logo limits: ARTWORK.logo.sizeMax wide and maxH tall, and clear of the corner caps on a narrow board
+function logoMaxW() {
+  const c = ARTWORK.logo, A = state.art.logo, { w } = dims();
+  return Math.max(c.sizeMin, Math.min(c.sizeMax, c.maxH * (A.aspect || 1), w - 3));
+}
+// Read the logo file: SVG (drawn straight into the preview) or EPS (we can only read its shape). Anything else is refused.
+// Returns { ok: true } or { error: 'plain words' }. The file is never put in the page itself, only drawn from an <img>/canvas.
+async function loadLogo(L, file) {
+  const c = ARTWORK.logo, bad = (e) => ({ error: e });
+  const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+  const isEpsBin = head[0] === 0xC5 && head[1] === 0xD0 && head[2] === 0xD3 && head[3] === 0xC6;   // EPS with a preview header
+  const top = isEpsBin ? '' : await file.slice(0, 4096).text();
+  if (isEpsBin || /^%!PS-Adobe/.test(top)) {
+    if (file.size > c.maxEpsBytes) return bad('That EPS is too big (over ' + Math.round(c.maxEpsBytes / 1e6) + ' MB). Please send a smaller file.');
+    const body = await file.text();
+    const bb = /%%BoundingBox:\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)/.exec(body.slice(0, 200000));
+    const w = bb ? bb[3] - bb[1] : 0, h = bb ? bb[4] - bb[2] : 0;
+    if (!(w > 0 && h > 0)) return bad("We couldn't read the size of that EPS. Try saving it again from your design program, or use an SVG.");
+    return finishLogo(L, file, 'eps', w / h, epsPlaceholder(w / h));
+  }
+  if (file.size > c.maxSvgBytes) return bad('That SVG is too big (over ' + Math.round(c.maxSvgBytes / 1e6) + ' MB). Please send a smaller file.');
+  const text = await file.text();
+  if (!/<svg[\s>]/i.test(text)) return bad('Logos must be an SVG or EPS file.');
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml'), svg = doc.documentElement;
+  if (doc.querySelector('parsererror') || svg.localName !== 'svg') return bad("We couldn't read that SVG. Try saving it again from your design program.");
+  const num = (v) => (/%/.test(v || '') ? 0 : parseFloat(v));
+  const vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+  const hasVb = vb.length === 4 && vb[2] > 0 && vb[3] > 0;
+  const w = hasVb ? vb[2] : num(svg.getAttribute('width')), h = hasVb ? vb[3] : num(svg.getAttribute('height'));
+  if (!(w > 0 && h > 0)) return bad("We couldn't read the size of that SVG (it needs a viewBox, or a width and height).");
+  const k = ARTWORK.maxUploadPx / Math.max(w, h), pw = Math.max(1, Math.round(w * k)), ph = Math.max(1, Math.round(h * k));
+  doc.querySelectorAll('script,foreignObject').forEach(n => n.remove());       // (an <img> never runs scripts; this is belt and braces)
+  if (!hasVb) svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.setAttribute('width', pw); svg.setAttribute('height', ph);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = url; });
+    const cv = document.createElement('canvas'); cv.width = pw; cv.height = ph;
+    cv.getContext('2d').drawImage(img, 0, 0, pw, ph);
+    return finishLogo(L, file, 'svg', w / h, cv);
+  } catch { return bad("We couldn't read that SVG. Try saving it again from your design program."); }
+  finally { URL.revokeObjectURL(url); }
+}
+function finishLogo(L, file, kind, aspect, canvas) {
+  if (!(aspect > 0.02 && aspect < 50)) return { error: "That logo's shape is too extreme to place on a board." };
+  L.img = canvas; L.aspect = aspect; L.name = file.name; L.kind = kind; L.imgId = (L.imgId || 0) + 1;
+  L.size = Math.min(ARTWORK.logo.size, logoMaxW());
+  return { ok: true };
+}
+// A browser can't draw an EPS, so the preview shows its outline and "EPS logo"
+function epsPlaceholder(aspect) {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = Math.max(8, Math.round(1024 / aspect));
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(0, 0, c.width, c.height);
+  g.setLineDash([24, 14]); g.lineWidth = 6; g.strokeStyle = 'rgba(255,255,255,.85)'; g.strokeRect(3, 3, c.width - 6, c.height - 6);
+  g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `700 ${Math.round(Math.min(c.height * 0.4, 180))}px Arial,sans-serif`; g.fillText('EPS logo', c.width / 2, c.height / 2);
+  return c;
+}
 // A transparent plane (sw x sh inches) carrying the artwork, centered on the surface + the move sliders.
 function artMesh(key, sw, sh, rough) {
   const A = state.art[key];
   if (!A.img || A.hide) return null;   // hide = turned off with the eye icon (preview only)
   let L = { ...A, cache: A };
+  if (key === 'logo') {                                         // centred left to right; its top (or bottom) edge sits ARTWORK.logo.edge inches from the board's edge
+    const W = Math.min(A.size, logoMaxW()), lh = W / A.aspect, off = sh / 2 + HW.bandT - ARTWORK.logo.edge - lh / 2;
+    L = { ...A, cache: A, layout: 'single', size: W, gap: 1, rot: 0, opacity: 100, offX: 0, offY: A.place === 'bottom' ? -off : off };
+  }
   if (A.layout === 'cover' || A.layout === 'fit') {          // size the image from the board instead of the slider
     const wide = A.aspect > sw / sh;
     L = { ...L, layout: 'single', size: ((A.layout === 'cover') === wide ? sh * A.aspect : sw) * (A.layout === 'cover' ? 1.003 : 1) };
@@ -1248,7 +1312,7 @@ function currentSpec() {
   const edgeName = state.edge === 'match' ? 'Match board' : (state.edge[0] === '#' ? `Custom ${state.edge}` : state.edge);
   const faceName = state.face[0] === '#' ? `Custom color ${state.face}` : state.face;
   const L = state.lamSel;
-  const printing = !(LAYOUT === 'v2' && state.path === 'standard') && LAYOUT !== 'v5';   // v2 Standard boards and v5 have no printing
+  const printing = !(LAYOUT === 'v2' && state.path === 'standard') && (LAYOUT !== 'v5' || V8);   // v2 Standard boards and v5 have no printing (v8 prints the logo)
   const G = printing ? state.art.logo : {}, B = printing ? state.art.background : {};
   // v1/v2: custom size, laminate, logo or printed background = quoted, not priced online.
   // v3: options are priced with upcharges and go in the cart; only custom sizes are quoted.
@@ -1264,8 +1328,8 @@ function currentSpec() {
     patternRotated: L ? state.grain : null,
     edgeBanding: edgeName, fastenerFinish: f.name, sheetsShown: state.sheets,
     certificatesFit: lastSheets?.primary ? lastSheets.n : 0,   // how many 8.5x11 certificates fit
-    logo: G.img ? { file: G.name, layout: LAYOUTS.find(x => x.id === G.layout).name, widthIn: G.size, spacingIn: G.gap,
-                    rotationDeg: G.rot, opacityPct: G.opacity, moveXIn: G.offX, moveYIn: G.offY } : null,
+    logo: G.img ? { file: G.name, kind: G.kind, widthIn: Math.min(G.size, logoMaxW()), heightIn: Math.min(G.size, logoMaxW()) / G.aspect, placement: G.place === 'bottom' ? 'Bottom' : 'Top', edgeIn: ARTWORK.logo.edge } : null,
+    logoNote: G.img ? logoText({ file: G.name, kind: G.kind, widthIn: Math.min(G.size, logoMaxW()), heightIn: Math.min(G.size, logoMaxW()) / G.aspect, placement: G.place === 'bottom' ? 'Bottom' : 'Top', edgeIn: ARTWORK.logo.edge }) : '',
     background: B.img ? { file: B.name, layout: LAYOUTS.find(x => x.id === B.layout).name, widthIn: B.size, spacingIn: B.gap,
                           rotationDeg: B.rot, opacityPct: B.opacity, moveXIn: B.offX, moveYIn: B.offY } : null,
     quantity: state.qty,
@@ -1289,11 +1353,13 @@ function upcharges(L, G, B) {
   if (B?.img) out.push({ label: 'Printed background image', amount: upAmt(U.background) });
   return out;
 }
+function logoText(lg) { return lg.file + ' (' + lg.kind.toUpperCase() + ', ' + fmt(lg.widthIn) + '" wide × ' + fmt(lg.heightIn) + '" tall, ' + lg.placement + ', ' + lg.edgeIn + '" from the ' + lg.placement.toLowerCase() + ' edge)'; }
 function logoLine(lg) {
   const fixed = lg.layout.startsWith('Single') || lg.layout.startsWith('Fill') || lg.layout.startsWith('Fit');
   return `${lg.file} (${lg.layout}${lg.layout.startsWith('Fill') || lg.layout.startsWith('Fit') ? '' : `, ${fmt(lg.widthIn)}" wide`}${fixed ? '' : `, ${fmt(lg.spacingIn)}" spacing`}${lg.rotationDeg ? `, rotated ${lg.rotationDeg}°` : ''}${lg.opacityPct < 100 ? `, ${lg.opacityPct}% opacity` : ''})`;
 }
 function updateUI() {
+  syncLogoUI();
   paintActive();
   paintExtras();
   rememberDesign();
@@ -1333,7 +1399,7 @@ function updateUI() {
     laminate: state.lamSel ? `Wilsonart ${state.lamSel.n}` : 'None',
     edge: edgeTxt, caps: sp.fastenerFinish,
     bgimg: sp.background ? sp.background.layout : 'None',
-    logo: sp.logo ? sp.logo.file : 'None',
+    logo: sp.logo ? fmt(sp.logo.widthIn) + '" · ' + sp.logo.placement : 'None',
     certs: !state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample',
     wall: `${envNow().name}${state.wallPhoto.img ? ' · your wall' : ''}`,
     certs: showOwn() ? `${shownOwn().length} of yours` : (!state.sheets ? 'Hidden' : S0?.primary ? `${S0.n} fit` : 'Smaller sample'),
@@ -1442,7 +1508,7 @@ function build() {
   $('#wallPhotoW').addEventListener('input', (e) => { P.widthIn = +e.target.value; syncPhoto(); refresh(); });
   $('#wallPhotoY').addEventListener('input', (e) => { P.offY = +e.target.value; syncPhoto(); refresh(); });
   syncPhoto(); syncWallPhoto = syncPhoto;
-  wireArt('logo', $('#logoArt'));
+  wireLogo();
   wireArt('background', $('#bgArt'));
 
   // quantity
@@ -1566,6 +1632,38 @@ function wireBoardClicks() {
 }
 
 // Upload + layout controls for one artwork layer, cloned from <template id="artTpl"> in index.html
+let syncLogoUI = () => {};
+function wireLogo() {
+  const L = state.art.logo, c = ARTWORK.logo, $$ = (id) => document.getElementById(id);
+  const file = $$('logoFile'), size = $$('logoSize');
+  if (!file) return;
+  const sync = () => {
+    const max = logoMaxW(); if (L.size > max) L.size = max;
+    $$('logoOpts').hidden = !L.img; $$('logoClear').hidden = !L.img;
+    $$('logoName').textContent = L.img ? L.name : 'No file yet';
+    $$('logoPick').textContent = L.img ? 'Replace file…' : 'Upload SVG or EPS…';
+    if (!L.img) return;
+    size.min = c.sizeMin; size.max = max; size.step = 0.25; size.value = L.size;
+    $$('logoSizeOut').textContent = `${fmt(L.size)}" × ${fmt(L.size / L.aspect)}" tall`;
+    $$('logoLimit').textContent = L.size >= max - 0.001
+      ? `Largest this logo can be: ${fmt(max)}" wide (limit: ${c.sizeMax}" wide × ${c.maxH}" tall).`
+      : `Largest allowed: ${c.sizeMax}" wide × ${c.maxH}" tall. The logo keeps its shape.`;
+    document.querySelectorAll('#logoOpts [data-place]').forEach(b => { const on = b.dataset.place === L.place; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    $$('logoPlaceHelp').textContent = `Centred, ${c.edge}" from the ${L.place} edge of the board.`;
+    $$('logoKind').textContent = L.kind === 'eps' ? 'Your EPS is kept as it is for printing. The board preview only shows where it will sit.' : '';
+  };
+  size.addEventListener('input', () => { L.size = +size.value; sync(); refresh(); });
+  document.querySelectorAll('#logoOpts [data-place]').forEach(b => b.addEventListener('click', () => { L.place = b.dataset.place; sync(); refresh(); }));
+  file.addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    let r; try { r = await loadLogo(L, f); } catch { r = { error: "Sorry, that file couldn't be read. Use an SVG or EPS." }; }
+    if (r.error) toast(r.error);
+    sync(); refresh();
+  });
+  $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; sync(); refresh(); });
+  syncLogoUI = sync; sync();
+}
 function wireArt(key, mount) {
   const L = state.art[key], cfg = ARTWORK[key];
   const node = $('#artTpl').content.firstElementChild.cloneNode(true);
@@ -1629,7 +1727,7 @@ function paintSteps() {
   });
   $('#stepNext').hidden = !next || V7;            // (v7: no Next; the step numbers move between steps)
   if (next) $('#stepNextLbl').textContent = `Next: ${next[0].toUpperCase()}${next.slice(1)}`;
-  $('.p-body').dataset.n = step6 === 'style' ? 3 : STEPS6[step6].length;   // (phones: Board | Edge | Caps)
+  $('.p-body').dataset.n = STEPS6[step6].length;   // (phones: Board | Edge | Caps, and Logo in v8)
   $('#boardHead').hidden = step6 !== 'style';
   $('#popCall').hidden = step6 !== 'style' || V7;
 }
@@ -1644,6 +1742,7 @@ function paintSummary(sp) {
     ['Surface', surface],
     [V8 ? 'Edge' : 'Edge banding', state.edge === 'match' ? (V8 ? surface : 'Matches the board') : sp.edgeBanding],   // (v8: the edge is named by its color, and is just called Edge)
     ['Caps & studs', sp.fastenerFinish],
+    ...(sp.logo ? [['Logo', logoText(sp.logo)]] : []),
     ['Documents', own ? `${own} of your own` : mix && samples
       ? `Samples: ${[['Letter', state.certNeed], ...MIX_SIZES.map(id => [DOC_SIZES.find(x => x.id === id).name, state.sampleMix[id] || 0])].filter(([, n]) => n).map(([nm, n]) => `${n} ${nm}`).join(', ')} (preview only)`
       : samples ? `${samples} sample certificate${samples === 1 ? '' : 's'} (preview only)` : 'None shown'],
@@ -4063,7 +4162,7 @@ function onCta() {
   if (!sp.price) {
     const body = encodeURIComponent(`Custom compliance board quote request\n\nQuantity: ${sp.quantity}\nSize: ${fmt(sp.widthIn)}" W x ${fmt(sp.heightIn)}" H\nBoard color: ${sp.boardColor}\nEdge banding: ${sp.edgeBanding}\nFastener finish: ${sp.fastenerFinish}\n` +
       (sp.background ? `Background image: ${logoLine(sp.background)}\n` : '') +
-      (sp.logo ? `Logo: ${logoLine(sp.logo)}\n` : '') +
+      (sp.logo ? `Logo: ${logoText(sp.logo)}\n` : '') +
       (sp.logo || sp.background ? '\nPlease attach your image files to this email.\n' : ''));
     const url = `mailto:${SHOPIFY.quoteEmail}?subject=${encodeURIComponent('Custom board quote')}&body=${body}`;
     if (embedded && PARENT) toParent({ type: 'cobo:quote', payload: sp });   // (the store page opens the email: email links often do nothing inside a frame)

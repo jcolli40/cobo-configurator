@@ -90,6 +90,7 @@
             'Edge banding': p.edgeBanding,
             'Cap & stud finish': p.fastenerFinish,
             'Orientation': p.orientation,
+            'Logo': p.logoNote || undefined,                       // file name, size and Top/Bottom (the file itself is not sent yet)
             '_cobo': JSON.stringify(p.config || {})              // hidden: lets "Edit board" reopen this exact board
           }
         }]
