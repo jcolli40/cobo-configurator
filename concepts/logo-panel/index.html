@@ -103,14 +103,14 @@ details.adv summary{cursor:pointer;font-size:13px;color:var(--accent);font-weigh
 <header style="display:grid;gap:10px">
   <div class="eyebrow">COBO BoardBuilder v8 · Logo panel · sketch, nothing built</div>
   <h1>Logo panel: four options</h1>
-  <p class="lede mut">Every option does the same job: upload, remove a white background, set a size, pick Top or Bottom (1&Prime; from the edge), and show the logo fee. They differ in how the panel is laid out. The controls below really work, so you can try them in every option at once.</p>
+  <p class="lede mut">Every option does the same job: upload an SVG or EPS, set a size (at most 20&Prime; wide × 3.5&Prime; tall), pick Top or Bottom (1&Prime; from the edge), and show the $20 logo fee. They differ in how the panel is laid out. SVG and EPS are vector files, so there is no background removal and no blur warning any more. The controls below really work, so you can try them in every option at once.</p>
   <div class="bar" id="globals">
     <span class="eyebrow">Try it</span>
     <div class="seg2" id="sampleSeg" role="group" aria-label="Sample file">
-      <button data-s="jpg" class="on">Harbor logo.jpg (white background)</button>
-      <button data-s="png">Harbor logo.png (transparent)</button>
+      <button data-s="svg" class="on">Harbor logo.svg</button>
+      <button data-s="eps">Harbor logo.eps</button>
     </div>
-    <span class="mut" style="font-size:13px">Board: 24&Prime; × 36&Prime;, portrait, black. Preview is full colour.</span>
+    <span class="mut" style="font-size:13px">Board: 24&Prime; × 36&Prime;, portrait, black. The sample logo is 4:1, so the 3.5&Prime; height limit caps it at 14&Prime; wide. Preview is full colour.</span>
   </div>
 </header>
 
@@ -124,8 +124,9 @@ details.adv summary{cursor:pointer;font-size:13px;color:var(--accent);font-weigh
   <h3 style="margin-bottom:6px">Found while reading v8 (affects every option)</h3>
   <ul class="tight">
     <li><b>Shoppers cannot reach the Logo section in v8 today.</b> The Logo section is still in the page, but the three steps only list Documents and Size (Build), Board, Edge and Caps (Style), and the Preview items (<code>STEPS6</code> in <code>js/main.js</code>). The build has to add Logo to a step. All four options below assume it goes in <b>Style</b>, after Caps.</li>
+    <li><b>EPS cannot be shown by a browser.</b> SVG previews directly. An EPS needs converting to SVG or PNG to draw the preview (in the browser with a library, or by the Worker). The sketches show an EPS preview as if that works; the build must pick how.</li>
     <li>On phones a section opens as a bottom sheet; on desktop as a card beside the board. Both are shown.</li>
-    <li>Today's panel (screenshots at the bottom): a white JPG logo prints as a white box on the black board. That is the problem the knockout fixes.</li>
+    <li>Today's panel (screenshots at the bottom) takes PNG, JPG, WebP, SVG and GIF, with a layout menu and six sliders. Limiting uploads to SVG and EPS removes the white-box problem and the blur question.</li>
   </ul>
 </div>
 
@@ -133,7 +134,7 @@ details.adv summary{cursor:pointer;font-size:13px;color:var(--accent);font-weigh
 
 <section class="box" style="display:grid;gap:12px">
   <h2>Before: today's Logo panel</h2>
-  <p class="mut">Real v8 at localhost, 24&Prime; × 36&Prime; black board, a JPG logo on white uploaded. The Logo section was forced visible, because no step shows it.</p>
+  <p class="mut">Real v8 at localhost, 24&Prime; × 36&Prime; black board, a JPG logo on white uploaded (v8 allowed this before the SVG/EPS-only rule). The Logo section was forced visible, because no step shows it.</p>
   <div class="shots">
     <figure style="margin:0"><img src="before-desktop.jpg" alt="Current Logo panel on desktop: layout menu, width, rotation, opacity and move sliders. The white logo box shows on the black board."><div class="cap">Desktop</div></figure>
     <figure style="margin:0"><img src="before-phone.jpg" alt="Current Logo panel on a 375 px phone"><div class="cap">Phone (375 px)</div></figure>
@@ -151,101 +152,69 @@ details.adv summary{cursor:pointer;font-size:13px;color:var(--accent);font-weigh
 
 <script>
 (function(){
-var FEE=45, BW=24, BH=36, INSET=1;
-var S={sample:'jpg',knock:true,tol:35,size:6,place:'top',adv:false};
-var SAMPLES={jpg:{name:'harbor-logo.jpg',px:[1200,600],opaque:true},png:{name:'harbor-logo.png',px:[900,450],opaque:false}};
+var FEE=20, BW=24, BH=36, INSET=1, MAXW=20, MAXH=3.5;
+var S={sample:'svg',size:8,place:'top',adv:false};
+var SAMPLES={svg:{name:'harbor-logo.svg',aspect:4,note:'Vector file. Prints sharp at any size.'},
+             eps:{name:'harbor-logo.eps',aspect:4,note:'Vector file. Prints sharp at any size. Preview is made from your EPS.'}};
 var $=function(s,r){return (r||document).querySelector(s)};
-
-/* ---------- logo art (viewBox 600x300). White ring centre + white-ish subline show what knockout does ---------- */
-function logoSVG(o){ // o: {bg:bool, fringe:bool, fade:number}
-  return '<rect width="600" height="300" fill="#fff" '+(o.bg?'':'opacity="0"')+'/>'
-  +'<circle cx="120" cy="150" r="78" fill="#e8792b" '+(o.fringe?'stroke="#f3e9df" stroke-width="5"':'')+'/><circle cx="120" cy="150" r="32" fill="#fff"/>'
-  +'<text x="225" y="150" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="76" fill="#2a9fd8" '+(o.fringe?'stroke="#e5f3fa" stroke-width="3" paint-order="stroke"':'')+'>HARBOR</text>'
-  +'<text x="228" y="206" font-family="Arial,Helvetica,sans-serif" font-size="34" letter-spacing="3" fill="#aebdd0" opacity="'+o.fade+'">SAFETY SERVICES</text>';
-}
-function curLogo(){
-  var sm=SAMPLES[S.sample], opaque=sm.opaque, knocked=opaque&&S.knock;
-  var fringe=knocked&&S.tol<12, fade=knocked&&S.tol>70?Math.max(0,1-(S.tol-70)/12):1;
-  return {bg:opaque&&!S.knock, fringe:fringe, fade:fade, knocked:knocked, opaque:opaque};
-}
-function ppi(){return SAMPLES[S.sample].px[0]/S.size}
-function maxW(){return BW-2*1.5}      // keep clear of the corner caps (caps sit 1" in, 1" wide)
+function fmt(n){return (Math.round(n*100)/100).toString()}
+function asp(){return SAMPLES[S.sample].aspect}
+function maxW(){return Math.min(MAXW, MAXH*asp(), BW-3)}   // 20" wide, 3.5" tall, and clear of the corner caps
 function clampSize(){ if(S.size>maxW()) S.size=maxW(); }
-
-/* ---------- board svg: viewBox in inches*10 ---------- */
-function boardSVG(px, place, opts){
-  opts=opts||{}; var w=S.size, h=w/2, L=curLogo();
-  var y = place==='top'? INSET : BH-INSET-h, x=(BW-w)/2;
+function logoSVG(){ // viewBox 600x150
+  return '<circle cx="75" cy="75" r="62" fill="#e8792b"/><circle cx="75" cy="75" r="26" fill="#121214"/>'
+  +'<text x="165" y="80" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="66" fill="#2a9fd8">HARBOR</text>'
+  +'<text x="167" y="128" font-family="Arial,Helvetica,sans-serif" font-size="30" letter-spacing="4" fill="#aebdd0">SAFETY SERVICES</text>';
+}
+function boardSVG(px, place){
+  var w=S.size, h=w/asp(), y=place==='top'?INSET:BH-INSET-h, x=(BW-w)/2;
   var caps=[[1,1],[BW-1,1],[1,BH-1],[BW-1,BH-1]].map(function(c){return '<circle cx="'+c[0]*10+'" cy="'+c[1]*10+'" r="5" fill="url(#cap)" stroke="#6b6b70" stroke-width=".6"/>'}).join('');
   var dimX=Math.max(30,(x-1.4)*10), y1=place==='top'?0:(BH-INSET)*10, y2=place==='top'?INSET*10:BH*10;
   var dim='<g stroke="#8fc3ff" stroke-width="1.2" fill="none"><path d="M'+dimX+' '+y1+'V'+y2+'"/><path d="M'+(dimX-4)+' '+y1+'h8M'+(dimX-4)+' '+y2+'h8"/></g>'
    +'<text x="'+(dimX+7)+'" y="'+((y1+y2)/2+4)+'" font-size="11" font-weight="700" fill="#8fc3ff" font-family="Arial">1″</text>';
-  var out='<svg viewBox="0 0 '+BW*10+' '+BH*10+'" width="'+BW*px+'" height="'+BH*px+'" role="img" aria-label="24 by 36 inch board, logo at '+place+'" style="display:block;filter:drop-shadow(6px 8px 8px rgba(0,0,0,.28))">'
+  return '<svg viewBox="0 0 '+BW*10+' '+BH*10+'" width="'+BW*px+'" height="'+BH*px+'" role="img" aria-label="24 by 36 inch board, logo at '+place+'" style="display:block;filter:drop-shadow(6px 8px 8px rgba(0,0,0,.28))">'
    +'<defs><radialGradient id="cap" cx="35%" cy="30%"><stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#9c9ca3"/></radialGradient></defs>'
    +'<rect width="'+BW*10+'" height="'+BH*10+'" rx="3" fill="#121214"/><rect x="1" y="1" width="'+(BW*10-2)+'" height="'+(BH*10-2)+'" rx="2.5" fill="none" stroke="#2a2a2e" stroke-width="1"/>'
-   +caps+'<g transform="translate('+x*10+' '+y*10+') scale('+(w*10/600)+')">'+logoSVG(L)+'</g>'
-   +(opts.dim===false?'':dim)+'</svg>';
-  return out;
+   +caps+'<g transform="translate('+x*10+' '+y*10+') scale('+(w*10/600)+')">'+logoSVG()+'</g>'+dim+'</svg>';
 }
-
-/* ---------- panel pieces ---------- */
 var I=function(n){return '<svg class="i"><use href="#i-'+n+'"/></svg>'};
-function uploadRow(){var sm=SAMPLES[S.sample];return '<div class="row"><span class="upload">'+I('image')+'Replace image…</span><span class="fname">'+sm.name+'</span><button class="link" type="button">Remove</button></div>'
-  +'<div class="hint">'+sm.px[0]+' × '+sm.px[1]+' px · '+(sm.opaque?'no transparency found':'transparent background found')+'</div>'}
+function uploadRow(){var sm=SAMPLES[S.sample];return '<div class="row"><span class="upload">'+I('image')+'Replace file…</span><span class="fname">'+sm.name+'</span><button class="link" type="button">Remove</button></div>'
+  +'<div class="hint">SVG or EPS only. '+sm.note+'</div>'}
 function header(){return '<div class="ph">'+I('logo').replace('class="i"','class="i" style="color:var(--accent)"')+'<span class="t">Logo</span><em class="up">+$'+FEE+'</em></div>'}
 function helpLine(){return '<p class="help">Printed on the board face. Adding a logo adds <b>$'+FEE+'</b> per board.</p>'}
-function knockCtl(){
-  var sm=SAMPLES[S.sample];
-  if(!sm.opaque) return '<div class="okline">'+I('check')+'Transparent background found. Nothing to remove.</div>';
-  return '<label class="opt"><span>Remove background</span><input type="checkbox" class="switch" data-k="knock" '+(S.knock?'checked':'')+' aria-label="Remove background"></label>'
-   +(S.knock?'<label class="fld"><span>Tolerance <output>'+S.tol+'</output></span><input type="range" min="0" max="100" step="1" value="'+S.tol+'" data-k="tol" aria-label="Tolerance"></label><p class="hint">Removes the background colour from the edges in. White inside the logo stays. Low leaves a light fringe; high starts eating pale parts of the logo.</p>':'');
-}
 function sizeCtl(){
-  var q=ppi(), bad=q<150;
-  return '<label class="fld"><span>Width <output>'+fmt(S.size)+'″ <span style="color:'+(bad?'#a05a00':'#2e7d4f')+'">· '+Math.round(q)+' px/in</span></output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
-   +(bad?'<div class="warn">'+I('warn')+'<span>May print blurry at this size ('+Math.round(q)+' px per inch). Aim for 150 or more: use a larger file or make the logo smaller.</span></div>':'');
+  var h=S.size/asp(), atMax=S.size>=maxW()-0.001;
+  return '<label class="fld"><span>Width <output>'+fmt(S.size)+'″ × '+fmt(h)+'″ tall</output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
+   +'<p class="hint">Largest allowed: 20″ wide × 3.5″ tall. '+(atMax?'<b>This logo is at its largest ('+fmt(maxW())+'″ wide) because of the height limit.</b>':'Your logo keeps its proportions.')+'</p>';
 }
 function placeCtl(){
   return '<div class="fld"><span>Placement</span><div class="seg" role="group" aria-label="Placement"><button type="button" data-p="top" class="'+(S.place==='top'?'on':'')+'">Top</button><button type="button" data-p="bottom" class="'+(S.place==='bottom'?'on':'')+'">Bottom</button></div></div>'
-   +'<p class="hint">Centred, '+(S.place==='top'?'top':'bottom')+' edge of the logo 1″ from the board’s '+S.place+' edge.</p>';
+   +'<p class="hint">Centred, '+S.place+' edge of the logo 1″ from the board’s '+S.place+' edge.</p>';
 }
 function feeLine(){var base=269.95;return '<div class="fee"><span class="hint" style="font-size:13px">Logo fee</span><span><b>+$'+FEE+'.00</b> <span class="hint">→ board $'+(base+FEE).toFixed(2)+'</span></span></div>'}
-function fmt(n){return (Math.round(n*100)/100).toString()}
-function pngTiles(){}
-
-/* ---------- the four panels ---------- */
-function panelA(){
-  return header()+helpLine()+uploadRow()+'<div class="opts">'+knockCtl()+'<hr style="border:0;border-top:1px solid var(--line);width:100%;margin:0">'+sizeCtl()+placeCtl()+'</div>'+feeLine();
-}
+function panelA(){return header()+helpLine()+uploadRow()+'<div class="opts">'+sizeCtl()+placeCtl()+'</div>'+feeLine()}
 var stepB=1;
+function btn(n,t){return '<button data-next="'+n+'" type="button" style="all:unset;color:#fff;background:var(--btn-blue);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;text-align:center;cursor:pointer">'+t+'</button>'}
 function panelB(){
-  var sm=SAMPLES[S.sample], L=curLogo();
   function step(n,title,sum,body){var on=stepB===n, done=stepB>n;
     return '<div class="stp '+(on?'on':done?'done':'')+'"><header data-st="'+n+'"><span class="n">'+(done?I('check').replace('class="i"','class="i" style="width:13px;height:13px;stroke-width:2.4"'):n)+'</span><b>'+title+'</b><small>'+(on?'':sum)+'</small></header>'+(on?'<div class="bd">'+body+'</div>':'')+'</div>'}
-  var s1=step(1,'Your file',sm.name,uploadRow()+'<button class="btn" data-next="2" type="button" style="all:unset;color:#fff;background:var(--btn-blue);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;text-align:center;cursor:pointer">Next: clean up</button>');
-  var s2=step(2,'Clean up',L.opaque?(S.knock?'Background removed':'Background kept'):'Transparent',knockCtl()+'<button data-next="3" type="button" style="all:unset;color:#fff;background:var(--btn-blue);border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:600;text-align:center;cursor:pointer">Next: size and place</button>');
-  var s3=step(3,'Size and place',fmt(S.size)+'″ · '+(S.place==='top'?'Top':'Bottom'),sizeCtl()+placeCtl());
-  return header()+helpLine()+'<div style="display:grid;gap:10px">'+s1+s2+s3+'</div>'+feeLine();
+  return header()+helpLine()+'<div style="display:grid;gap:10px">'
+   +step(1,'Your file',SAMPLES[S.sample].name,uploadRow()+btn(2,'Next: size'))
+   +step(2,'Size',fmt(S.size)+'″ wide',sizeCtl()+btn(3,'Next: placement'))
+   +step(3,'Placement',S.place==='top'?'Top':'Bottom',placeCtl())+'</div>'+feeLine();
 }
 function miniBoard(place){
-  var w=S.size/BW*48, h=w/2, y=place==='top'?1/BH*72:72-1/BH*72-h/ (BH/72) ;
-  var bh=72, bw=48, lw=S.size/BW*bw, lh=lw/2, ly=place==='top'?(INSET/BH)*bh:bh-(INSET/BH)*bh-lh;
-  return '<svg viewBox="0 0 48 72" width="48" height="72" aria-hidden="true"><rect width="48" height="72" rx="2" fill="#121214"/><g transform="translate('+((bw-lw)/2)+' '+ly+') scale('+(lw/600)+')">'+logoSVG(curLogo())+'</g></svg>';
+  var bh=72,bw=48,lw=S.size/BW*bw,lh=lw/asp(),ly=place==='top'?(INSET/BH)*bh:bh-(INSET/BH)*bh-lh;
+  return '<svg viewBox="0 0 48 72" width="48" height="72" aria-hidden="true"><rect width="48" height="72" rx="2" fill="#121214"/><g transform="translate('+((bw-lw)/2)+' '+ly+') scale('+(lw/600)+')">'+logoSVG()+'</g></svg>';
 }
 function panelC(){
-  var L=curLogo(), sm=SAMPLES[S.sample], q=ppi(), pos=Math.max(2,Math.min(98,(q-60)/(300-60)*100));
-  var before='<svg viewBox="0 0 600 300" class="thumb" style="background:#fff"><g>'+logoSVG({bg:true,fade:1})+'</g></svg>';
-  var after='<div class="thumb chk"><svg viewBox="0 0 600 300" width="100%" height="100%">'+logoSVG({bg:false,fringe:S.tol<12,fade:S.tol>70?Math.max(0,1-(S.tol-70)/12):1})+'</svg></div>';
-  var clean=sm.opaque?'<div class="fld"><span>Background</span><div class="tiles">'
-     +'<button class="tile '+(!S.knock?'on':'')+'" data-kb="0" type="button">'+before+'<span>Keep white</span></button>'
-     +'<button class="tile '+(S.knock?'on':'')+'" data-kb="1" type="button">'+after+'<span>Remove white</span></button></div></div>'
-     +(S.knock?'<label class="fld"><span>Tolerance <output>'+S.tol+'</output></span><input type="range" min="0" max="100" step="1" value="'+S.tol+'" data-k="tol" aria-label="Tolerance"></label>':'')
-     :'<div class="okline">'+I('check')+'Transparent background found.</div>';
-  var qlbl=q>=150?'Sharp':q>=100?'May print blurry':'Will look blurry';
-  return header()+helpLine()+uploadRow()+'<div class="opts">'+clean
-   +'<label class="fld"><span>Width <output>'+fmt(S.size)+'″</output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
-   +'<div class="fld"><span>Print quality <output>'+Math.round(q)+' px/in · '+qlbl+'</output></span><div class="meter"><i style="left:'+pos+'%"></i></div></div>'
-   +(q<150?'<div class="warn">'+I('warn')+'<span>May print blurry at this size. Use a larger file or a smaller width.</span></div>':'')
+  var w=S.size,h=w/asp(),pw=Math.min(100,w/MAXW*100),ph=Math.min(100,h/MAXH*100);
+  return header()+helpLine()+uploadRow()+'<div class="opts">'
+   +'<label class="fld"><span>Width <output>'+fmt(w)+'″</output></span><input type="range" min="1" max="'+maxW()+'" step="0.25" value="'+S.size+'" data-k="size" aria-label="Logo width in inches"></label>'
+   +'<div class="fld"><span>Size limits <output>'+fmt(w)+'″ of 20″ wide · '+fmt(h)+'″ of 3.5″ tall</output></span>'
+   +'<div class="meter" style="background:#e3e3e8"><div style="height:100%;width:'+pw+'%;background:var(--accent);border-radius:99px"></div></div>'
+   +'<div class="meter" style="background:#e3e3e8;margin-top:5px"><div style="height:100%;width:'+ph+'%;background:'+(ph>=99.9?'#e8a33a':'var(--accent)')+';border-radius:99px"></div></div></div>'
+   +(ph>=99.9?'<p class="hint"><b>At the height limit.</b> Taller than 3.5″ is not allowed.</p>':'')
    +'<div class="fld"><span>Placement</span><div class="tiles">'
    +'<button class="tile '+(S.place==='top'?'on':'')+'" data-p="top" type="button">'+miniBoard('top')+'<span>Top</span></button>'
    +'<button class="tile '+(S.place==='bottom'?'on':'')+'" data-p="bottom" type="button">'+miniBoard('bottom')+'<span>Bottom</span></button></div></div>'
@@ -253,26 +222,22 @@ function panelC(){
 }
 function panelD(){
   return header()+'<p class="help">Printed on the board face. Adds <b>$'+FEE+'</b> per board.</p>'+uploadRow()
-   +'<div class="opts">'+knockCtl()+'<div class="two" style="display:grid;gap:10px">'+sizeCtl()
-   +'<div class="fld"><span>Placement</span><div class="seg"><button type="button" data-p="top" class="'+(S.place==='top'?'on':'')+'">Top</button><button type="button" data-p="bottom" class="'+(S.place==='bottom'?'on':'')+'">Bottom</button></div></div></div></div>'
+   +'<div class="opts">'+sizeCtl()+'<div class="fld"><span>Placement</span><div class="seg"><button type="button" data-p="top" class="'+(S.place==='top'?'on':'')+'">Top</button><button type="button" data-p="bottom" class="'+(S.place==='bottom'?'on':'')+'">Bottom</button></div></div></div>'
    +'<details class="adv" '+(S.adv?'open':'')+' data-adv><summary>Advanced: repeat the logo as a pattern</summary><div style="display:grid;gap:10px;margin-top:10px"><p class="help">Turns off the Top/Bottom rule. Fee stays $'+FEE+'. Patterns can also go in <b>Background image</b>.</p>'
    +'<label class="fld"><span>Layout</span><select><option>Grid</option><option>Offset rows (brick)</option><option>Offset columns (half-drop)</option><option>Honeycomb</option><option>Checkerboard / diamond</option><option>Mirrored grid</option><option>Scatter (random)</option></select></label>'
-   +'<label class="fld"><span>Spacing between copies <output>1″</output></span><input type="range" min="0" max="12" step=".25" value="1"></label></div></details>'
-   +feeLine();
+   +'<label class="fld"><span>Spacing between copies <output>1″</output></span><input type="range" min="0" max="12" step=".25" value="1"></label></div></details>'+feeLine();
 }
-
 var OPTIONS=[
- {k:'A',name:'One simple panel',fn:panelA,sum:'Upload, then Remove background, Width, Top/Bottom, all in one short list. Layouts are gone.',
-  pro:'Fewest taps. Easiest to build: reuses the current sliders and sheet. Reads the same on phone and desktop.',con:'Everything shown at once; the phone sheet scrolls to reach Placement.',build:'Smallest'},
- {k:'B',name:'Three small steps',fn:panelB,sum:'Your file, then Clean up, then Size and place. Finished steps fold up into a one-line summary.',
-  pro:'Never more than one or two controls on screen. Calm on a phone.',con:'More taps. A shopper with a clean transparent PNG still sees steps they do not need (Clean up skips itself).',build:'Medium'},
- {k:'C',name:'Pictures, not menus',fn:panelC,sum:'Top/Bottom are two tiny boards you tap. Keep or Remove white is a before/after pair. A quality meter replaces the warning text until it is needed.',
-  pro:'Shoppers see the result of each choice before they tap. Best for non-designers.',con:'Tallest panel. Most new UI to build and test.',build:'Largest'},
- {k:'D',name:'Simple panel + Advanced patterns',fn:panelD,sum:'Like A, tighter, and the old repeat layouts (Grid, Brick…) stay behind an Advanced fold that turns the 1″ rule off.',
-  pro:'Keeps pattern printing for anyone who relies on it. Nothing taken away.',con:'Two rules in one panel. Patterns already exist in Background image, so this may be a duplicate.',build:'Medium'}
+ {k:'A',name:'One simple panel',fn:panelA,build:'Smallest',sum:'Upload, Width, Top/Bottom, all in one short list. Layouts are gone.',
+  pro:'Fewest taps. Easiest to build. Reads the same on phone and desktop. With only SVG/EPS and three controls, one panel is plenty.',con:'The size limits show only as a hint line.'},
+ {k:'B',name:'Three small steps',fn:panelB,build:'Medium',sum:'Your file, then Size, then Placement. Finished steps fold up into a one-line summary.',
+  pro:'One thing at a time on a phone.',con:'With so few controls, steps add taps for no gain. Probably more than this feature needs.'},
+ {k:'C',name:'Pictures, not menus',fn:panelC,build:'Larger',sum:'Top/Bottom are two tiny boards you tap. Two bars show how close the logo is to the 20″ wide and 3.5″ tall limits.',
+  pro:'Shoppers see where the logo lands and why it stops growing (the height limit usually hits first).',con:'Most new UI to build and test.'},
+ {k:'D',name:'Simple panel + Advanced patterns',fn:panelD,build:'Medium',sum:'Like A, and the old repeat layouts (Grid, Brick…) stay behind an Advanced fold that turns the 1″ rule off.',
+  pro:'Keeps pattern printing for anyone who relies on it.',con:'Two rules in one panel. Patterns already exist in Background image, and a repeating logo clashes with the 3.5″ height limit. Probably drop.'}
 ];
-
-var views=[]; // {opt, deskPanel, deskBoard, phPanel, phBoard}
+var views=[];
 function build(){
   var host=$('#options'); host.innerHTML='';
   OPTIONS.forEach(function(o){
@@ -284,7 +249,6 @@ function build(){
     host.appendChild(sec); views.push({o:o,sec:sec});
   });
 }
-var openAdv=false;
 function paint(skip){
   clampSize();
   views.forEach(function(v){
@@ -299,18 +263,14 @@ function paint(skip){
   $('#ruleW').textContent=fmt(S.size);
   $('#ruleBoards').innerHTML='<figure style="margin:0">'+boardSVG(8,'top')+'<figcaption class="cap" style="text-align:center">Top</figcaption></figure><figure style="margin:0">'+boardSVG(8,'bottom')+'<figcaption class="cap" style="text-align:center">Bottom</figcaption></figure>';
 }
-document.addEventListener('input',function(e){var k=e.target.dataset&&e.target.dataset.k; if(!k) return;
-  if(k==='tol') S.tol=+e.target.value; if(k==='size') S.size=+e.target.value; if(k==='knock') S.knock=e.target.checked;
-  if(k==='knock'){paint();return}
-  var f=e.target, pa=f.closest('.pcard'); paint(pa);   // keep the slider being dragged; repaint it on release
-  var out=f.closest('.fld').querySelector('output'); if(out) out.textContent=(k==='size'?fmt(S.size)+'″':S.tol);
+document.addEventListener('input',function(e){var k=e.target.dataset&&e.target.dataset.k; if(k!=='size') return;
+  S.size=+e.target.value; paint(e.target.closest('.pcard'));   // the slider being dragged keeps its panel; it repaints on release
+  var out=e.target.closest('.fld').querySelector('output'); if(out) out.textContent=fmt(S.size)+'″'+(out.textContent.indexOf('tall')>-1?' × '+fmt(S.size/asp())+'″ tall':'');
 });
-document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.k; if(k==='tol'||k==='size') paint();});
-document.addEventListener('change',function(e){ if(e.target.dataset&&e.target.dataset.k==='knock'){S.knock=e.target.checked;paint();} });
+document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.k; if(k==='size') paint();});
 document.addEventListener('click',function(e){
   var t=e.target, b;
   if((b=t.closest('[data-p]')) && b.dataset.p!=='d' && b.dataset.p!=='p' && b.tagName==='BUTTON'){S.place=b.dataset.p;paint();return}
-  if((b=t.closest('[data-kb]'))){S.knock=b.dataset.kb==='1';paint();return}
   if((b=t.closest('[data-st]'))){stepB=+b.dataset.st;paint();return}
   if((b=t.closest('[data-next]'))){stepB=+b.dataset.next;paint();return}
   if((b=t.closest('#sampleSeg button'))){S.sample=b.dataset.s;[].forEach.call(document.querySelectorAll('#sampleSeg button'),function(x){x.classList.toggle('on',x===b)});paint();return}
