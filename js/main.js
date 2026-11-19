@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181944';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181944';
-import { wallTexture, wallSwatch } from './env.js?v=202611181944';
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611191232';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611191232';
+import { wallTexture, wallSwatch } from './env.js?v=202611191232';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -42,7 +42,7 @@ const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wa
 const SCAN = V8 && PHOTO_SCAN;
 const SAMPLES_ONLY = V8 && !PHOTO_SCAN;
 if (SAMPLES_ONLY) document.documentElement.dataset.samplesOnly = '';   // (index.html hides every Snap / Upload control under [data-samples-only])
-const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181944') : {};   // dev copy: Part A "detect" (Gemini)
+const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611191232') : {};   // dev copy: Part A "detect" (Gemini)
 // v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
 let CAT = null;
 if (SCAN) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
@@ -584,7 +584,7 @@ async function loadLogo(L, file) {
 }
 function finishLogo(L, file, kind, aspect, canvas) {
   if (!(aspect > 0.02 && aspect < 50)) return { error: "That logo's shape is too extreme to place on a board." };
-  L.img = canvas; L.aspect = aspect; L.name = file.name; L.kind = kind; L.imgId = (L.imgId || 0) + 1;
+  L.img = canvas; L.aspect = aspect; L.name = file.name; L.kind = kind; L.file = file; L.imgId = (L.imgId || 0) + 1;   // (L.file: the original, sent to the Shopify cart)
   L.size = Math.min(ARTWORK.logo.size, logoMaxW());
   return { ok: true };
 }
@@ -1693,7 +1693,7 @@ function wireLogo() {
     }
     refresh();
   });
-  $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; refit(); });
+  $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; L.file = null; refit(); });
   syncLogoUI = sync; sync();
 }
 function wireArt(key, mount) {
@@ -4208,7 +4208,8 @@ function onCta() {
   if (thumb) { thumbs.set(id, thumb); saveThumbs(); }
   if (embedded) {
     // editing a cart line = remove the old line and add the new board in its place (done by the Shopify page)
-    toParent(ed ? { type: 'cobo:update', key: ed.key, payload: sp } : { type: SHOPIFY.messageType, payload: sp });
+    const logoFile = sp.logo ? state.art.logo.file || null : null;   // the shopper's original SVG/EPS: the store page attaches it to the cart line
+    toParent(ed ? { type: 'cobo:update', key: ed.key, payload: sp, logoFile } : { type: SHOPIFY.messageType, payload: sp, logoFile });
     toast(ed ? 'Updating your cart…' : 'Adding to cart…');
   } else {
     // standalone preview (not inside Shopify): keep a pretend cart so the panel can be designed and tested
