@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181934';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181934';
-import { wallTexture, wallSwatch } from './env.js?v=202611181934';
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181944';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181944';
+import { wallTexture, wallSwatch } from './env.js?v=202611181944';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -42,7 +42,7 @@ const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wa
 const SCAN = V8 && PHOTO_SCAN;
 const SAMPLES_ONLY = V8 && !PHOTO_SCAN;
 if (SAMPLES_ONLY) document.documentElement.dataset.samplesOnly = '';   // (index.html hides every Snap / Upload control under [data-samples-only])
-const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181934') : {};   // dev copy: Part A "detect" (Gemini)
+const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181944') : {};   // dev copy: Part A "detect" (Gemini)
 // v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
 let CAT = null;
 if (SCAN) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
@@ -1641,6 +1641,14 @@ function wireBoardClicks() {
 }
 
 // Upload + layout controls for one artwork layer, cloned from <template id="artTpl"> in index.html
+// true when every certificate still fits on the board with the logo in place
+function logoRoomOk(bw, bh) {
+  if (!state.art.logo.img) return true;
+  const d = dims(), w = bw ?? d.w, h = bh ?? d.h, own = shownOwn().length;
+  if (!own && !state.sheets) return true;
+  if (own || curDocs().length) return docsFit(w, h);
+  return !state.certNeed || fitsOn(w, h) >= state.certNeed;
+}
 let syncLogoUI = () => {};
 function wireLogo() {
   const L = state.art.logo, c = ARTWORK.logo, $$ = (id) => document.getElementById(id);
@@ -1659,9 +1667,12 @@ function wireLogo() {
       : `Largest allowed: ${c.sizeMax}" wide × ${c.maxH}" tall. The logo keeps its shape.`;
     document.querySelectorAll('#logoOpts [data-place]').forEach(b => { const on = b.dataset.place === L.place; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     $$('logoPlaceHelp').textContent = `Centered, ${c.edge}" from the ${L.place} edge of the board.`;
+    const tight = !logoRoomOk(), { w: bw, h: bh } = dims();
+    $$('logoRoom').hidden = !tight; $$('logoFewer').hidden = !!shownOwn().length;
+    $$('logoTurn').hidden = !(tight && logoRoomOk(bh, bw));     // turning the board sideways (the certificates stay upright) would hold everything
     $$('logoKind').textContent = L.kind === 'eps' ? 'Your EPS is kept as it is for printing. The board preview only shows where it will sit.' : '';
   };
-  const refit = () => { sync(); if (!sizePicked) useBestFit(); refresh(); };   // (the certificates move clear of the logo; an auto-fit board may grow to hold them)
+  const refit = () => { sync(); refresh(); };   // (the certificates move clear of the logo; if they no longer all fit, the panel asks the shopper what to do)
   size.addEventListener('input', () => { L.size = +size.value; sync(); refresh(); });
   size.addEventListener('change', refit);
   document.querySelectorAll('#logoOpts [data-place]').forEach(b => b.addEventListener('click', () => { L.place = b.dataset.place; refit(); }));
@@ -1671,6 +1682,16 @@ function wireLogo() {
     let r; try { r = await loadLogo(L, f); } catch { r = { error: "Sorry, that file couldn't be read. Use an SVG or EPS." }; }
     if (r.error) toast(r.error);
     refit();
+  });
+  $$('logoTurn').addEventListener('click', () => { state.orient = state.orient === 'portrait' ? 'landscape' : 'portrait'; refresh(true); });   // same size, turned the other way
+  $$('logoBigger').addEventListener('click', () => { sizePicked = false; useBestFit(); refresh(); });    // the next board size that holds every certificate and the logo
+  $$('logoFewer').addEventListener('click', () => {                                                      // keep the board, show only what fits
+    let guard = 60;
+    while (!logoRoomOk() && guard--) {
+      if (state.certNeed > 0) state.certNeed--;
+      else { const id = MIX_SIZES.find(i => state.sampleMix[i] > 0); if (!id) break; state.sampleMix[id]--; }
+    }
+    refresh();
   });
   $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; refit(); });
   syncLogoUI = sync; sync();
