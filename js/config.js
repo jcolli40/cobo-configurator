@@ -237,7 +237,7 @@ export const UPCHARGES = {
   edgeMetal: { '6x12': 9, '12x12': 12, '12x24': 18, '12x36': 23, '24x24': 24, '24x36': 30, custom: 30 },  // metallic edge banding (PLACEHOLDER amounts)
   edgeCustom: 10,                          // edge banding in a non-stock color (stock colors are included)
   caps: { chrome: 0, black: 0, brass: 0 },  // per board (4 caps): every finish is the same price
-  logo: 45,                                // printed logo
+  logo: 20,                                // printed logo (one price for every board size)
   background: 75,                          // printed background image
 };
 
@@ -312,7 +312,8 @@ export const SHEETS = {
 // ---- Uploaded artwork, both printed on the board face: background image (behind) and logo (in front) ----
 // size = width of one copy of the image, in inches. gap = space between copies. offsetMax = range of the move sliders.
 export const ARTWORK = {
-  logo:       { layout: 'single', size: 6,  sizeMin: 0.5, sizeMax: 24, gap: 1, gapMax: 12, offsetMax: 24 },
+  logo:       { layout: 'single', size: 6,  sizeMin: 1, sizeMax: 20, maxH: 3.5, edge: 1, gap: 1, gapMax: 12, offsetMax: 24,   // logo: SVG or EPS, at most 20" wide x 3.5" tall, centred, 1" from the top or bottom edge
+                maxSvgBytes: 5e6, maxEpsBytes: 20e6 },
   background: { layout: 'cover',  size: 12, sizeMin: 1,   sizeMax: 96, gap: 0, gapMax: 24, offsetMax: 48 },
   maxUploadPx: 2048,   // uploads are shrunk to this many pixels on the long side
   maxTexPx: 2048,      // largest texture made for one repeat of the pattern
