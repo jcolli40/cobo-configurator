@@ -312,8 +312,8 @@ export const SHEETS = {
 // ---- Uploaded artwork, both printed on the board face: background image (behind) and logo (in front) ----
 // size = width of one copy of the image, in inches. gap = space between copies. offsetMax = range of the move sliders.
 export const ARTWORK = {
-  logo:       { layout: 'single', size: 6,  sizeMin: 1, sizeMax: 20, maxH: 3.5, edge: 1, gap: 1, gapMax: 12, offsetMax: 24,   // logo: SVG or EPS, at most 20" wide x 3.5" tall, centred, 1" from the top or bottom edge
-                maxSvgBytes: 5e6, maxEpsBytes: 20e6 },
+  logo:       { layout: 'single', size: 6,  sizeMin: 1, sizeMax: 20, maxH: 3.5, edge: 1, gap: 1, gapMax: 12, offsetMax: 24,   // logo: SVG or EPS, at most 20" wide x 3.5" tall, centered, 1" from the top or bottom edge
+                certGap: 0.75, maxSvgBytes: 5e6, maxEpsBytes: 20e6 },
   background: { layout: 'cover',  size: 12, sizeMin: 1,   sizeMax: 96, gap: 0, gapMax: 24, offsetMax: 48 },
   maxUploadPx: 2048,   // uploads are shrunk to this many pixels on the long side
   maxTexPx: 2048,      // largest texture made for one repeat of the pattern

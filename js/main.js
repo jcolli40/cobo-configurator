@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181757';   // ?v= stamped by tools/stamp-version.js
-import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181757';
-import { wallTexture, wallSwatch } from './env.js?v=202611181757';
+import { SIZES, CUSTOM, COLORS, SOLIDS, WOODS, METALS, FASTENERS, WALLS, HW, SHOPIFY, LAMINATE, SHEETS, ARTWORK, ENVIRONMENTS, PRESETS, STYLES, DISCOUNTS, UPCHARGES, DOC_SIZES, PHOTO_SCAN } from './config.js?v=202611181934';   // ?v= stamped by tools/stamp-version.js
+import { findDocuments, sizeDocuments, wallLook, eraseDocuments } from './scan.js?v=202611181934';
+import { wallTexture, wallSwatch } from './env.js?v=202611181934';
 
 // Layout choices for uploaded artwork (logo + board background image). only: shown for that layer only.
 const LAYOUTS = [
@@ -42,7 +42,7 @@ const V8 = 'v8' in document.documentElement.dataset;   // v8 = v7 + Snap your wa
 const SCAN = V8 && PHOTO_SCAN;
 const SAMPLES_ONLY = V8 && !PHOTO_SCAN;
 if (SAMPLES_ONLY) document.documentElement.dataset.samplesOnly = '';   // (index.html hides every Snap / Upload control under [data-samples-only])
-const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181757') : {};   // dev copy: Part A "detect" (Gemini)
+const { detectCertificates, certTypes, demoWall, detectStatus, straightenCertificate } = SCAN ? await import('./detect.js?v=202611181934') : {};   // dev copy: Part A "detect" (Gemini)
 // v8: the certificate types (names in the documents checklist) and the states (the "Your business is in" check)
 let CAT = null;
 if (SCAN) certTypes().then(c => { CAT = c; docsKey = ''; }).catch(() => {});
@@ -91,7 +91,7 @@ const state = {
   wallPhoto: { img: null, name: '', aspect: 1, imgId: 0, widthIn: 108, offX: 0, offY: 0 },   // photo of the customer's own wall
   view: V8 ? 'front' : 'angle',   // (v8: the board straight on)
   art: {                    // uploaded images: { img (canvas), name, aspect, imgId, ...layout settings }
-    logo: { img: null, name: '', kind: '', ...artDefaults('logo'), place: 'top' },   // (logo: SVG or EPS, centred, Top or Bottom)
+    logo: { img: null, name: '', kind: '', ...artDefaults('logo'), place: 'top' },   // (logo: SVG or EPS, centered, Top or Bottom)
     background: { img: null, name: '', ...artDefaults('background') },
   },
   lamSel: null,             // chosen Wilsonart laminate {n, name, avg, full, ...} (overrides face color)
@@ -419,6 +419,12 @@ function certificateTexture(w, h, title) {
 
 // Fit as many certificates as possible on a w x h board: clear of the edges and the 4 caps.
 // Tries the real size (8.5x11) first, both ways round; smaller fallback sizes only if it doesn't fit at all.
+// The strip of board the logo takes at its top or bottom (inches, from the board edge). Certificates stay clear of it.
+function logoBand() {
+  const A = state.art.logo;
+  if (!V8 || !A.img || !A.aspect) return null;
+  return { side: A.place === 'bottom' ? 'bottom' : 'top', size: ARTWORK.logo.edge + Math.min(A.size, logoMaxW()) / A.aspect + ARTWORK.logo.certGap };
+}
 function sheetLayout(w, h, turn = false) {
   if (turn === true) {   // "Rotate certificates 90°": force the opposite way round from the automatic choice
     const auto = sheetLayout(w, h);
@@ -426,7 +432,10 @@ function sheetLayout(w, h, turn = false) {
   }
   const ways = (a, b) => turn === 'wide' ? [[b, a]] : turn === 'tall' ? [[a, b]] : [[a, b], [b, a]];
   const m = SHEETS.edgeMargin, clear = HW.capDia / 2 + SHEETS.capClearance;
-  const caps = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => [sx * (w / 2 - HW.inset), sy * (h / 2 - HW.inset)]);
+  // with a logo, the certificates use the rest of the board: a shorter area, shifted away from the logo
+  const band = logoBand(), bh = band ? band.size : 0, dy = band ? (band.side === 'top' ? -bh / 2 : bh / 2) : 0, H = h - bh;
+  if (H <= 2 * m) return null;
+  const caps = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => [sx * (w / 2 - HW.inset), sy * (h / 2 - HW.inset) - dy]);   // (in the certificate area's own coordinates)
   const hitsCap = (r) => caps.some(([cx, cy]) => {
     const dx = cx - Math.max(r.x - r.w / 2, Math.min(cx, r.x + r.w / 2));
     const dy = cy - Math.max(r.y - r.h / 2, Math.min(cy, r.y + r.h / 2));
@@ -438,7 +447,7 @@ function sheetLayout(w, h, turn = false) {
       const matches = (sw <= sh) === (w <= h);           // sheet turned the same way as the board
       for (const gap of SHEETS.gaps) {
         for (let cols = Math.floor((w - 2 * m + gap) / (sw + gap)); cols >= 1; cols--) {
-          for (let rows = Math.floor((h - 2 * m + gap) / (sh + gap)); rows >= 1; rows--) {
+          for (let rows = Math.floor((H - 2 * m + gap) / (sh + gap)); rows >= 1; rows--) {
             const n = cols * rows;
             if (best && (n < best.n || (n === best.n && (best.matches || !matches)))) break;
             const tw = cols * sw + (cols - 1) * gap, th = rows * sh + (rows - 1) * gap;
@@ -447,7 +456,7 @@ function sheetLayout(w, h, turn = false) {
               rects.push({ x: -tw / 2 + sw / 2 + c * (sw + gap), y: th / 2 - sh / 2 - r * (sh + gap), w: sw, h: sh });
             }
             if (rects.some(hitsCap)) continue;
-            best = { n, cols, rows, sw, sh, rects, matches };
+            best = { n, cols, rows, sw, sh, rects: rects.map(r => ({ ...r, y: r.y + dy })), matches };
             break;
           }
         }
@@ -594,7 +603,7 @@ function artMesh(key, sw, sh, rough) {
   const A = state.art[key];
   if (!A.img || A.hide) return null;   // hide = turned off with the eye icon (preview only)
   let L = { ...A, cache: A };
-  if (key === 'logo') {                                         // centred left to right; its top (or bottom) edge sits ARTWORK.logo.edge inches from the board's edge
+  if (key === 'logo') {                                         // centered left to right; its top (or bottom) edge sits ARTWORK.logo.edge inches from the board's edge
     const W = Math.min(A.size, logoMaxW()), lh = W / A.aspect, off = sh / 2 + HW.bandT - ARTWORK.logo.edge - lh / 2;
     L = { ...A, cache: A, layout: 'single', size: W, gap: 1, rot: 0, opacity: 100, offX: 0, offY: A.place === 'bottom' ? -off : off };
   }
@@ -1649,19 +1658,21 @@ function wireLogo() {
       ? `Largest this logo can be: ${fmt(max)}" wide (limit: ${c.sizeMax}" wide × ${c.maxH}" tall).`
       : `Largest allowed: ${c.sizeMax}" wide × ${c.maxH}" tall. The logo keeps its shape.`;
     document.querySelectorAll('#logoOpts [data-place]').forEach(b => { const on = b.dataset.place === L.place; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    $$('logoPlaceHelp').textContent = `Centred, ${c.edge}" from the ${L.place} edge of the board.`;
+    $$('logoPlaceHelp').textContent = `Centered, ${c.edge}" from the ${L.place} edge of the board.`;
     $$('logoKind').textContent = L.kind === 'eps' ? 'Your EPS is kept as it is for printing. The board preview only shows where it will sit.' : '';
   };
+  const refit = () => { sync(); if (!sizePicked) useBestFit(); refresh(); };   // (the certificates move clear of the logo; an auto-fit board may grow to hold them)
   size.addEventListener('input', () => { L.size = +size.value; sync(); refresh(); });
-  document.querySelectorAll('#logoOpts [data-place]').forEach(b => b.addEventListener('click', () => { L.place = b.dataset.place; sync(); refresh(); }));
+  size.addEventListener('change', refit);
+  document.querySelectorAll('#logoOpts [data-place]').forEach(b => b.addEventListener('click', () => { L.place = b.dataset.place; refit(); }));
   file.addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = '';
     if (!f) return;
     let r; try { r = await loadLogo(L, f); } catch { r = { error: "Sorry, that file couldn't be read. Use an SVG or EPS." }; }
     if (r.error) toast(r.error);
-    sync(); refresh();
+    refit();
   });
-  $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; sync(); refresh(); });
+  $$('logoClear').addEventListener('click', () => { L.img = null; L.name = ''; L.kind = ''; refit(); });
   syncLogoUI = sync; sync();
 }
 function wireArt(key, mount) {
@@ -2344,9 +2355,9 @@ function guessDoc(d) {
   d.size = best.id; d.turn = d.aspect > 1; d.cw = 8.5; d.ch = 11; d.px = d.py = null;
 }
 // Keep documents clear of the 4 caps (+ clearance), like the sample certificates
-function capHit(W, H) {
+function capHit(W, H, skip) {   // skip: 'top' or 'bottom' = that side's caps are under the logo, outside the area being packed
   const clear = HW.capDia / 2 + SHEETS.capClearance;
-  const caps = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => [sx * (W / 2 - HW.inset), sy * (H / 2 - HW.inset)]);
+  const caps = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => [sx * (W / 2 - HW.inset), sy * (H / 2 - HW.inset)]).filter(([, cy]) => !(skip === 'top' ? cy > 0 : skip === 'bottom' ? cy < 0 : false));
   return (r) => caps.some(([cx, cy]) => {
     const dx = cx - Math.max(r.x - r.w / 2, Math.min(cx, r.x + r.w / 2)), dy = cy - Math.max(r.y - r.h / 2, Math.min(cy, r.y + r.h / 2));
     return dx * dx + dy * dy < clear * clear;
@@ -2358,17 +2369,18 @@ function capHit(W, H) {
 // Returns what's placed and what doesn't fit.
 const packMemo = new Map();
 function packDocs(W, H, docs) {
-  const key = `${W}x${H}|${docs.map(d => [...docDims(d), d.sample ? (d.fixed ? 2 : 1) : 0].join(',')).join(';')}`;
-  if (!packMemo.has(key)) { if (packMemo.size > 400) packMemo.clear(); packMemo.set(key, packFresh(W, H, docs)); }
+  const band = logoBand(), bh = band ? band.size : 0, dy = band ? (band.side === 'top' ? -bh / 2 : bh / 2) : 0;   // (with a logo: the rest of the board, shifted away from it)
+  const key = `${W}x${H}|${bh}|${docs.map(d => [...docDims(d), d.sample ? (d.fixed ? 2 : 1) : 0].join(',')).join(';')}`;
+  if (!packMemo.has(key)) { if (packMemo.size > 400) packMemo.clear(); packMemo.set(key, packFresh(W, H - bh, docs, band?.side)); }
   const P = packMemo.get(key);
   // dragged documents stay where they were put (kept on the board)
-  return { missing: P.missing, places: P.places.map(p => {
-    const d = docs[p.i];
-    return d.px == null ? { ...p } : { ...p, x: Math.max(-W / 2 + p.w / 2, Math.min(W / 2 - p.w / 2, d.px)), y: Math.max(-H / 2 + p.h / 2, Math.min(H / 2 - p.h / 2, d.py)) };
+  return { missing: P.missing, places: P.places.map(q => {
+    const d = docs[q.i], p = { ...q, y: q.y + dy };
+    return d.px == null ? p : { ...p, x: Math.max(-W / 2 + p.w / 2, Math.min(W / 2 - p.w / 2, d.px)), y: Math.max(-H / 2 + p.h / 2, Math.min(H / 2 - p.h / 2, d.py)) };
   }) };
 }
-function packFresh(W, H, docs) {
-  const hits = capHit(W, H), g = 0.75;
+function packFresh(W, H, docs, skip) {
+  const hits = capHit(W, H, skip), g = 0.75;
   const items = () => docs.map((d, i) => { const [w, h] = docDims(d); return { i, w, h, turn: !!d.sample && !d.fixed }; });   // (a size mix keeps the turns they chose)
   const rowPack = (m) => {
     const AW = W - 2 * m, AH = H - 2 * m, missing = [], rows = [];
@@ -2407,7 +2419,7 @@ function packFresh(W, H, docs) {
         && (j < k || a.w !== b.w || a.h !== b.h || a.x !== b.x || a.y !== b.y)));
     };
     const rc = HW.capDia / 2 + SHEETS.capClearance, c = HW.inset - m;   // cap keep-out square, in packing coordinates
-    for (const [cx, cy] of [[c, c], [W - 2 * m - c, c], [c, H - 2 * m - c], [W - 2 * m - c, H - 2 * m - c]]) cut({ x: cx - rc + gap, y: cy - rc + gap, w: 2 * rc - gap, h: 2 * rc - gap });
+    for (const [cx, cy] of [[c, c], [W - 2 * m - c, c], [c, H - 2 * m - c], [W - 2 * m - c, H - 2 * m - c]].filter((_, i) => skip === 'top' ? i > 1 : skip === 'bottom' ? i < 2 : true)) cut({ x: cx - rc + gap, y: cy - rc + gap, w: 2 * rc - gap, h: 2 * rc - gap });
     const placed = [], missing = [];
     for (const [k, it] of list.entries()) {
       let best = null;
