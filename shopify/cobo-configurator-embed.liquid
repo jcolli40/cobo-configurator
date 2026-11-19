@@ -79,25 +79,42 @@
       return;
     }
     var updating = d.type === 'cobo:update';
-    removeLine(updating ? d.key : null).then(function () { return fetch('/cart/add.js', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: [{
-          id: p.variantId,
-          quantity: Math.max(1, parseInt(p.quantity, 10) || 1),
-          properties: {                                         // shows on the order so production knows the build
-            'Edge banding': p.edgeBanding,
-            'Cap & stud finish': p.fastenerFinish,
-            'Orientation': p.orientation,
-            'Logo': p.logoNote || undefined,                       // file name, size and Top/Bottom (the file itself is not sent yet)
-            '_cobo': JSON.stringify(p.config || {})              // hidden: lets "Edit board" reopen this exact board
-          }
-        }]
-      })
-    }); })
-    .then(function (r) { if (!r.ok) throw new Error('cart error'); return sendCart(true, updating); })
-    .catch(function () { tell({ type: 'cobo:notice', text: 'Sorry, we could not add that to the cart. Please try again.' }); });
+    var qty = Math.max(1, parseInt(p.quantity, 10) || 1);
+    var props = {                                               // shows on the order so production knows the build
+      'Edge banding': p.edgeBanding,
+      'Cap & stud finish': p.fastenerFinish,
+      'Orientation': p.orientation,
+      'Logo': p.logoNote || undefined,                           // file name, size and Top/Bottom
+      '_cobo': JSON.stringify(p.config || {})                    // hidden: lets "Edit board" reopen this exact board
+    };
+    // A logo file goes to Shopify with the cart line (multipart): Shopify stores it and the order shows a link ("Logo file").
+    // Accept only an SVG or EPS under 12 MB; anything else is left off (the customer is told).
+    var file = d.logoFile, sendFile = false;
+    if (file && typeof file === 'object' && typeof file.name === 'string' && typeof file.size === 'number') {
+      if (/\.(svg|eps)$/i.test(file.name) && file.size > 0 && file.size <= 12 * 1024 * 1024) sendFile = true;
+      else { tell({ type: 'cobo:notice', text: 'We could not attach that logo file (SVG or EPS, up to 12 MB). Please email it to us.' }); }
+    }
+    removeLine(updating ? d.key : null).then(function () {
+      if (!sendFile) {
+        return fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: [{ id: p.variantId, quantity: qty, properties: props }] })
+        });
+      }
+      var fd = new FormData();                                   // (the browser sets the multipart header itself)
+      fd.append('id', p.variantId);
+      fd.append('quantity', qty);
+      Object.keys(props).forEach(function (k) { if (props[k] !== undefined && props[k] !== null) fd.append('properties[' + k + ']', props[k]); });
+      fd.append('properties[Logo file]', file, file.name);
+      return fetch('/cart/add.js', { method: 'POST', body: fd });
+    })
+    .then(function (r) {
+      if (r.status === 413) { tell({ type: 'cobo:notice', text: 'That logo file is too big to attach. Please use a smaller SVG or EPS.' }); throw new Error('too big'); }
+      if (!r.ok) throw new Error('cart error');
+      return sendCart(true, updating);
+    })
+    .catch(function (e) { if (!e || e.message !== 'too big') tell({ type: 'cobo:notice', text: 'Sorry, we could not add that to the cart. Please try again.' }); });
   });
 })();
 </script>
